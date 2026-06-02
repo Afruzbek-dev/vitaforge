@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #07070a;
+    --surface: #0e0e14;
+    --card: #13131c;
+    --border: #1e1e2c;
+    --accent: #e8ff47;
+    --accent-dim: #e8ff4712;
+    --accent-border: #e8ff4735;
+    --text: #efefeb;
+    --muted: #52526a;
+    --subtle: #1a1a26;
+    --red: #ff5252;
+    --green: #4dffb4;
+    --blue: #5299ff;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { 
+    background: var(--bg); 
+    color: var(--text); 
+    font-family: 'DM Sans', sans-serif; 
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
+  code, pre { font-family: 'JetBrains Mono', monospace; }
+  
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--subtle); border-radius: 2px; }
+}
+
+@layer utilities {
+  .font-display { font-family: 'Syne', sans-serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  
+  .animate-fadeUp {
+    animation: fadeUp 0.5s ease both;
+  }
+  
+  .animate-glow {
+    animation: glow 3s ease infinite;
+  }
+  
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(232, 255, 71, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(232, 255, 71, 0.6); }
+  }
+  
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+}
