@@ -1,52 +1,142 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const STEPS = ["Asosiy", "Jismoniy", "Maqsad"];
+
+const GOALS = [
+  { value: "weight_loss", label: "Vazn yo'qotish", icon: "📉" },
+  { value: "muscle_gain", label: "Mushak olish", icon: "💪" },
+  { value: "endurance", label: "Chidamlilik", icon: "🏃" },
+  { value: "health", label: "Umumiy sog'liq", icon: "❤️" },
+];
+
+const ACTIVITY = [
+  { value: "sedentary", label: "Kam harakatli" },
+  { value: "light", label: "Engil faol" },
+  { value: "moderate", label: "O'rtacha" },
+  { value: "active", label: "Faol" },
+  { value: "very_active", label: "Juda faol" },
+];
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ age: "", gender: "male", height_cm: "", weight_kg: "", goal: "muscle_gain", activity_level: "moderate" });
+  const [form, setForm] = useState({ age: "", gender: "male", height_cm: "", weight_kg: "", goal: "muscle_gain", activity_level: "moderate", medical_notes: "" });
+
+  const f = (k: string) => (e: any) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const pct = ((step + 1) / STEPS.length) * 100;
 
   const submit = async () => {
     setLoading(true);
-    await api.onboarding.saveProfile({ ...form, age: +form.age, height_cm: +form.height_cm, weight_kg: +form.weight_kg });
-    router.push("/dashboard");
+    try {
+      await api.onboarding.saveProfile({ ...form, age: +form.age, height_cm: +form.height_cm, weight_kg: +form.weight_kg });
+      router.push("/dashboard");
+    } catch { setLoading(false); }
   };
 
-  const f = (k: string) => (e: any) => setForm((p) => ({ ...p, [k]: e.target.value }));
-
   return (
-    <div className="max-w-lg mx-auto space-y-6">
-      <h2 className="text-2xl font-bold">Profilingizni to'ldiring</h2>
-      <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium mb-1">Yosh</label>
-            <input type="number" value={form.age} onChange={f("age")} className="w-full border rounded-lg px-3 py-2" /></div>
-          <div><label className="block text-sm font-medium mb-1">Jins</label>
-            <select value={form.gender} onChange={f("gender")} className="w-full border rounded-lg px-3 py-2">
-              <option value="male">Erkak</option><option value="female">Ayol</option>
-            </select></div>
-          <div><label className="block text-sm font-medium mb-1">Bo'y (cm)</label>
-            <input type="number" value={form.height_cm} onChange={f("height_cm")} className="w-full border rounded-lg px-3 py-2" /></div>
-          <div><label className="block text-sm font-medium mb-1">Vazn (kg)</label>
-            <input type="number" value={form.weight_kg} onChange={f("weight_kg")} className="w-full border rounded-lg px-3 py-2" /></div>
+    <div className="max-w-lg mx-auto animate-fadeUp">
+      {/* Progress */}
+      <div className="mb-6">
+        <div className="flex justify-between text-xs text-muted font-mono mb-2">
+          <span>QADAM {step + 1}/{STEPS.length}</span>
+          <span>{STEPS[step]}</span>
         </div>
-        <div><label className="block text-sm font-medium mb-1">Maqsad</label>
-          <select value={form.goal} onChange={f("goal")} className="w-full border rounded-lg px-3 py-2">
-            <option value="weight_loss">Vazn yo'qotish</option><option value="muscle_gain">Mushak olish</option>
-            <option value="endurance">Chidamlilik</option><option value="health">Umumiy sog'liq</option>
-          </select></div>
-        <div><label className="block text-sm font-medium mb-1">Faollik darajasi</label>
-          <select value={form.activity_level} onChange={f("activity_level")} className="w-full border rounded-lg px-3 py-2">
-            <option value="sedentary">Kam harakatli</option><option value="light">Engil faol</option>
-            <option value="moderate">O'rtacha faol</option><option value="active">Faol</option>
-            <option value="very_active">Juda faol</option>
-          </select></div>
-        <button onClick={submit} disabled={loading} className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50">
-          {loading ? "Saqlanmoqda..." : "Davom etish →"}
-        </button>
+        <div className="h-1 bg-border rounded-full overflow-hidden">
+          <div className="h-full bg-accent rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+        </div>
       </div>
+
+      <Card className="border-accent-border/30">
+        <CardHeader>
+          <CardTitle>Profilingizni to'ldiring</CardTitle>
+          <CardDescription>AI sizga shaxsiy plan yaratishi uchun</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {step === 0 && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Yosh</Label>
+                  <Input type="number" value={form.age} onChange={f("age")} placeholder="25" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Jins</Label>
+                  <select value={form.gender} onChange={f("gender")} className="flex h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-vtext">
+                    <option value="male">Erkak</option>
+                    <option value="female">Ayol</option>
+                  </select>
+                </div>
+              </div>
+              <Button className="w-full" onClick={() => setStep(1)} disabled={!form.age}>Keyingi →</Button>
+            </>
+          )}
+
+          {step === 1 && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Bo'y (cm)</Label>
+                  <Input type="number" value={form.height_cm} onChange={f("height_cm")} placeholder="178" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Vazn (kg)</Label>
+                  <Input type="number" value={form.weight_kg} onChange={f("weight_kg")} placeholder="82" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Faollik darajasi</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {ACTIVITY.map((a) => (
+                    <button key={a.value} onClick={() => setForm((p) => ({ ...p, activity_level: a.value }))}
+                      className={`p-2 rounded-lg border text-sm text-left transition-colors ${form.activity_level === a.value ? "border-accent bg-accent/5 text-accent" : "border-border text-muted hover:border-accent-border"}`}>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={() => setStep(0)} className="flex-1">← Orqaga</Button>
+                <Button onClick={() => setStep(2)} disabled={!form.height_cm || !form.weight_kg} className="flex-1">Keyingi →</Button>
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <div className="space-y-2">
+                <Label>Maqsadingiz</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {GOALS.map((g) => (
+                    <button key={g.value} onClick={() => setForm((p) => ({ ...p, goal: g.value }))}
+                      className={`p-3 rounded-lg border text-left transition-colors ${form.goal === g.value ? "border-accent bg-accent/5" : "border-border hover:border-accent-border"}`}>
+                      <span className="text-lg">{g.icon}</span>
+                      <p className={`text-sm mt-1 ${form.goal === g.value ? "text-accent font-medium" : "text-muted"}`}>{g.label}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Tibbiy eslatmalar (ixtiyoriy)</Label>
+                <Input value={form.medical_notes} onChange={f("medical_notes")} placeholder="Allergiya, jarohat..." />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={() => setStep(1)} className="flex-1">← Orqaga</Button>
+                <Button onClick={submit} disabled={loading} className="flex-1">
+                  {loading ? "Saqlanmoqda..." : "Boshlash 🚀"}
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
