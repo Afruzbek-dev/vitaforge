@@ -2,6 +2,8 @@
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function PhotosPage() {
   const qc = useQueryClient();
@@ -20,41 +22,62 @@ export default function PhotosPage() {
   const photos = data?.data ?? [];
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">📸 Progress Fotolar</h1>
-      <div className="bg-white rounded-xl p-5 shadow-sm">
-        <h2 className="font-semibold mb-3">Foto yuklash</h2>
-        <div className="flex gap-3 items-center">
-          <select value={photoType} onChange={(e) => setPhotoType(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
-            <option value="front">Old</option>
-            <option value="side">Yon</option>
-            <option value="back">Orqa</option>
-          </select>
-          <button onClick={() => fileRef.current?.click()} disabled={upload.isPending}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
-            {upload.isPending ? "Yuklanmoqda..." : "📤 Foto tanlash"}
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); }} />
-        </div>
-        {upload.isSuccess && <p className="text-green-600 text-sm mt-2">✅ Foto yuklandi, AI tahlil qilmoqda...</p>}
+    <div className="max-w-4xl space-y-6 animate-fadeUp">
+      <div>
+        <h1 className="font-display font-bold text-2xl text-vtext">📸 Progress Fotolar</h1>
+        <p className="text-muted text-sm font-mono mt-1">AI TAHLILI BILAN</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {photos.map((p: any) => (
-          <div key={p.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
-            {p.url && <img src={p.url} alt={p.photo_type} className="w-full h-48 object-cover" />}
-            <div className="p-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{p.photo_type} · Hafta {p.week_number}</span>
-                {p.ai_score && <span className="text-indigo-600 font-medium">⭐ {p.ai_score}/10</span>}
-              </div>
-              {p.ai_analysis?.encouragement && <p className="text-xs text-gray-500 mt-1">{p.ai_analysis.encouragement}</p>}
-            </div>
+      {/* Upload */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Foto yuklash</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex gap-3 items-center">
+            <select value={photoType} onChange={(e) => setPhotoType(e.target.value)}
+              className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-vtext focus:border-accent-border">
+              <option value="front">Old</option>
+              <option value="side">Yon</option>
+              <option value="back">Orqa</option>
+            </select>
+            <Button onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
+              {upload.isPending ? "Yuklanmoqda..." : "📤 Foto tanlash"}
+            </Button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); }} />
           </div>
-        ))}
-      </div>
-      {photos.length === 0 && <div className="bg-white rounded-xl p-8 text-center shadow-sm text-gray-400">Hali foto yo'q</div>}
+          {upload.isSuccess && (
+            <p className="text-vgreen text-sm mt-3">✅ Foto yuklandi!</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Photo grid */}
+      {photos.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {photos.map((p: any) => (
+            <Card key={p.id} className="overflow-hidden">
+              {p.url && <img src={p.url} alt={p.photo_type} className="w-full h-48 object-cover" />}
+              <CardContent className="p-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted">{p.photo_type} · Hafta {p.week_number}</span>
+                  {p.ai_score && <span className="text-accent font-mono font-bold">⭐ {p.ai_score}/10</span>}
+                </div>
+                {p.ai_analysis?.encouragement && (
+                  <p className="text-xs text-muted mt-1">{p.ai_analysis.encouragement}</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-3xl mb-3">📸</p>
+            <p className="text-muted text-sm">Hali foto yo'q. Birinchi fotoni yuklang!</p>
+            <p className="text-accent text-xs font-mono mt-2">+20 ⚡ Kuch</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

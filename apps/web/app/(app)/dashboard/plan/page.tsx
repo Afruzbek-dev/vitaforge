@@ -123,6 +123,20 @@ export default function PlanPage() {
               {plan.nutrition?.avoid?.length > 0 && (
                 <p className="text-sm text-vred/70 mt-1">🚫 Oldini oling: {plan.nutrition.avoid.join(", ")}</p>
               )}
+              {plan.nutrition?.meal_plan && (
+                <div className="mt-4 space-y-2 border-t border-border pt-3">
+                  <p className="text-xs font-mono text-muted uppercase">Ovqatlanish jadvali</p>
+                  {Object.entries(plan.nutrition.meal_plan).map(([key, val]) => (
+                    <div key={key} className="flex gap-2 text-sm">
+                      <span className="text-accent font-mono text-xs w-24 shrink-0">{key === "breakfast" ? "🌅 Nonushta" : key === "lunch" ? "☀️ Tushlik" : key === "dinner" ? "🌙 Kechki" : key === "pre_workout" ? "⚡ Oldin" : "💪 Keyin"}</span>
+                      <span className="text-muted">{val as string}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {plan.nutrition?.water_liters && (
+                <p className="text-sm text-vblue mt-2">💧 Suv: {plan.nutrition.water_liters} litr / kun</p>
+              )}
             </CardContent>
           </Card>
 
