@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 
 const memberLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/dashboard/today", label: "Bugun", icon: "✅" },
   { href: "/dashboard/plan", label: "Plan", icon: "📋" },
   { href: "/dashboard/food", label: "Ovqat", icon: "🥗" },
   { href: "/dashboard/photos", label: "Fotolar", icon: "📸" },
@@ -13,6 +14,7 @@ const memberLinks = [
 ];
 const ownerLinks = [
   { href: "/gym", label: "Dashboard", icon: "📊" },
+  { href: "/gym/attendance", label: "Davomat", icon: "📅" },
   { href: "/gym/members", label: "A'zolar", icon: "👥" },
   { href: "/gym/invite", label: "Qo'shish", icon: "➕" },
   { href: "/gym/groups", label: "Guruhlar", icon: "🎯" },
