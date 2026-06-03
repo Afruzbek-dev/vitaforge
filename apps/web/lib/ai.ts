@@ -44,8 +44,24 @@ MASHQ QOIDALARI:
 Faqat JSON qaytarasan. Markdown yo'q.
 JSON: {"summary":"2 jumlada umumiy tavsif","workouts":[{"day":"Dushanba","type":"strength|cardio|rest|active_recovery","duration_min":60,"exercises":[{"name":"mashq nomi uzbekcha","sets":4,"reps":"8-10","rest_sec":90,"notes":"texnika eslatmasi"}]}],"nutrition":{"daily_calories":0,"protein_g":0,"carbs_g":0,"fat_g":0,"meal_plan":{"breakfast":"tushuntirish","lunch":"tushuntirish","dinner":"tushuntirish","pre_workout":"tushuntirish","post_workout":"tushuntirish"},"uzbek_foods_suggested":["..."],"avoid":["..."],"water_liters":0},"weekly_goal":"maqsad","motivation":"qisqa motivatsion xabar uzbekcha"}`;
 
-export async function generatePlan(profile: { age: number; gender: string; height_cm: number; weight_kg: number; goal: string; activity_level: string }): Promise<any> {
-  const prompt = `A'zo: ${profile.age} yosh, ${profile.gender}, ${profile.height_cm}cm, ${profile.weight_kg}kg. Maqsad: ${profile.goal}. Faollik: ${profile.activity_level}. O'zbek ovqatlari va mahalliy madaniyatga mos plan yarat.`;
+export async function generatePlan(profile: Record<string, any>): Promise<any> {
+  const prompt = `A'zo haqida to'liq ma'lumot:
+- Yosh: ${profile.age}, Jins: ${profile.gender}, Bo'y: ${profile.height_cm}cm, Vazn: ${profile.weight_kg}kg
+- Kasb: ${profile.job_type ?? "noaniq"}, Uyqu: ${profile.sleep_hours ?? 7} soat
+- Maqsad: ${profile.goal}, Muddat: ${profile.deadline ?? "3 oy"}
+- Tajriba: ${profile.experience ?? "beginner"}
+- Kasalliklar: ${profile.diseases ?? "yo'q"}, Allergiya: ${profile.allergies ?? "yo'q"}
+- Shikastlanish: ${profile.injuries ?? "yo'q"}, Dorilar: ${profile.medications ?? "yo'q"}
+- Ovqatlanish: kuniga ${profile.meals_per_day ?? 3} marta, Yoqtirmaydi: ${profile.disliked_foods ?? "yo'q"}
+- Suv: ${profile.water_intake ?? 2} litr/kun, Ishtaha vaqti: ${profile.appetite_time ?? "afternoon"}
+- Faollik: ${profile.activity_level}, Haftalik mashq: ${profile.workout_days ?? 4} kun, Seans: ${profile.session_minutes ?? 60} daqiqa
+- Joy: ${profile.location ?? "gym"}, Stress: ${profile.stress_level ?? "moderate"}
+- Hissiy ovqatlanish: ${profile.emotional_eating ?? "no"}, Iroda: ${profile.willpower ?? "moderate"}
+- Motivatsiya: ${profile.motivation ?? "sog'liq"}
+
+Shu ma'lumotlar asosida BMR va TDEE ni hisoblabga qarab to'liq haftalik plan yarat.
+O'zbek ovqatlari va mahalliy sport madaniyatiga mos qil.`;
+
   const text = await groqChat(PLAN_SYSTEM, [{ role: "user", content: prompt }]);
   try {
     const cleaned = text.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
