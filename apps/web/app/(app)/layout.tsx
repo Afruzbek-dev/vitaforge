@@ -2,8 +2,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { api, DEMO_MODE, SUPABASE_MODE } from "@/lib/api";
-import { DEMO_USERS } from "@/lib/mock-data";
+import { api, SUPABASE_MODE } from "@/lib/api";
 import { getSession } from "@/lib/auth";
 import Sidebar from "@/components/shared/sidebar";
 
@@ -13,17 +12,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) return;
-
-    if (DEMO_MODE) {
-      const token = localStorage.getItem("access_token");
-      if (!token) { router.push("/login"); return; }
-      // Determine role from stored flag
-      const isOwner = localStorage.getItem("demo_role") === "owner";
-      setAuth((isOwner ? DEMO_USERS.gym_owner : DEMO_USERS.member) as any, token);
-      return;
-    }
-
-    // Supabase or backend mode
     (async () => {
       try {
         if (SUPABASE_MODE) {
@@ -41,17 +29,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!user) return (
-    <div style={{ minHeight: "100vh", background: "#07070a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ display: "flex", gap: 5 }}>
-        {[0, 1, 2].map((i) => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#e8ff47", animation: `blink 1.2s ${i * 0.2}s ease infinite` }} />)}
+    <div className="min-h-screen bg-bg flex items-center justify-center">
+      <div className="flex gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />
+        ))}
       </div>
     </div>
   );
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#07070a" }}>
+    <div className="flex min-h-screen bg-bg">
       <Sidebar role={user.role} />
-      <main style={{ flex: 1, padding: "24px", overflowY: "auto", maxHeight: "100vh" }}>{children}</main>
+      <main className="flex-1 p-6 overflow-y-auto max-h-screen">{children}</main>
     </div>
   );
 }
