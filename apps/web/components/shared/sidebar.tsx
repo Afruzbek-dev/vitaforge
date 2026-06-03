@@ -2,8 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-
-const C = { surface: "#0e0e14", border: "#1e1e2c", accent: "#e8ff47", text: "#efefeb", muted: "#52526a", aDim: "#e8ff4712", aBd: "#e8ff4735" };
+import { Button } from "@/components/ui/button";
 
 const memberLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -15,6 +14,9 @@ const memberLinks = [
 const ownerLinks = [
   { href: "/gym", label: "Dashboard", icon: "📊" },
   { href: "/gym/members", label: "A'zolar", icon: "👥" },
+  { href: "/gym/invite", label: "Qo'shish", icon: "➕" },
+  { href: "/gym/groups", label: "Guruhlar", icon: "🎯" },
+  { href: "/gym/leaderboard", label: "Leaderboard", icon: "🏆" },
   { href: "/gym/analytics", label: "Analitika", icon: "📈" },
 ];
 
@@ -27,39 +29,28 @@ export default function Sidebar({ role }: { role: string }) {
   const logout = () => { localStorage.removeItem("access_token"); clearAuth(); router.push("/login"); };
 
   return (
-    <aside style={{ width: 220, background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", padding: "20px 12px", flexShrink: 0, minHeight: "100vh" }}>
-      {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28, paddingLeft: 4 }}>
-        <div style={{ width: 28, height: 28, borderRadius: 7, background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 14, color: "#07070a" }}>V</div>
-        <span style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 16, color: C.text }}>VitaForge</span>
-        <span style={{ background: C.aDim, color: C.accent, border: `1px solid ${C.aBd}`, fontSize: 8, padding: "2px 6px", borderRadius: 8, fontFamily: "JetBrains Mono, monospace", letterSpacing: 1 }}>DEMO</span>
+    <aside className="w-56 bg-surface border-r border-border flex flex-col py-5 px-3 shrink-0 min-h-screen">
+      <div className="flex items-center gap-2 px-3 mb-8">
+        <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center font-display font-bold text-sm text-bg">V</div>
+        <span className="font-display font-bold text-base text-vtext">VitaForge</span>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+      <nav className="flex-1 space-y-1">
         {links.map((l) => {
           const active = pathname === l.href;
           return (
-            <Link key={l.href} href={l.href} style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "9px 12px", borderRadius: 9,
-              background: active ? C.aDim : "transparent",
-              border: `1px solid ${active ? C.aBd : "transparent"}`,
-              color: active ? C.accent : C.muted,
-              fontSize: 13, fontWeight: active ? 600 : 400,
-              textDecoration: "none", transition: "all .15s",
-            }}>
-              <span style={{ fontSize: 15 }}>{l.icon}</span>
+            <Link key={l.href} href={l.href}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${active ? "bg-accent/10 border border-accent-border text-accent font-medium" : "text-muted hover:text-vtext hover:bg-surface border border-transparent"}`}>
+              <span className="text-base">{l.icon}</span>
               {l.label}
             </Link>
           );
         })}
       </nav>
 
-      {/* Logout */}
-      <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9, background: "transparent", border: "none", color: C.muted, fontSize: 13, cursor: "pointer", width: "100%" }}>
-        <span>🚪</span> Chiqish
-      </button>
+      <Button variant="ghost" onClick={logout} className="justify-start text-muted">
+        🚪 Chiqish
+      </Button>
     </aside>
   );
 }
