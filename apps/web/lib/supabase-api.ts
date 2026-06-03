@@ -104,14 +104,17 @@ export const supabaseApi = {
       return { data: { ...totals, entries: data?.length ?? 0 } };
     },
     parse: async (text: string) => {
-      // Without AI — basic lookup in uzbek_foods
+      // First try DB lookup
       const { data } = await sb().from("uzbek_foods").select("*").or(`name_uz.ilike.%${text}%,aliases.cs.{${text.toLowerCase()}}`).limit(1).single();
       if (data) {
         const serving = data.serving_size_g || 100;
         const mult = serving / 100;
         return { data: { food_name: data.name_uz, quantity_g: serving, calories: Math.round(data.calories_per_100g * mult), protein_g: Math.round(data.protein_g * mult), carbs_g: Math.round(data.carbs_g * mult), fat_g: Math.round(data.fat_g * mult), confidence: 0.9 } };
       }
-      return { data: { food_name: text, quantity_g: 100, calories: null, protein_g: null, carbs_g: null, fat_g: null, confidence: 0.2 } };
+      // Fallback to AI
+      const { parseFood } = await import("./ai");
+      const result = await parseFood(text);
+      return { data: result };
     },
   },
 
