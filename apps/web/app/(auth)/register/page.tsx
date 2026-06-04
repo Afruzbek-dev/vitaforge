@@ -38,7 +38,7 @@ export default function RegisterPage() {
     <Card className="w-full border-accent-border/30">
       <CardHeader className="text-center">
         <CardTitle className="text-xl">Ro'yxatdan o'tish</CardTitle>
-        <CardDescription>VitaForge AI ga qo'shiling</CardDescription>
+        <CardDescription>ZenFit AI ga qo'shiling</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

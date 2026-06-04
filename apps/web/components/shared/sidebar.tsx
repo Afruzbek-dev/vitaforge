@@ -8,6 +8,7 @@ const memberLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/dashboard/today", label: "Bugun", icon: "✅" },
   { href: "/dashboard/plan", label: "Plan", icon: "📋" },
+  { href: "/dashboard/plan/tracker", label: "Tracker", icon: "📅" },
   { href: "/dashboard/food", label: "Ovqat", icon: "🥗" },
   { href: "/dashboard/photos", label: "Fotolar", icon: "📸" },
   { href: "/dashboard/chat", label: "AI Chat", icon: "🤖" },
@@ -28,15 +29,15 @@ export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const clearAuth = useAuthStore((s) => s.clearAuth);
-  const links = role === "member" ? memberLinks : ownerLinks;
+  const links = role === "member" ? memberLinks : role === "trainer" ? ownerLinks.filter(l => l.href !== "/gym/settings") : ownerLinks;
 
   const logout = () => { localStorage.removeItem("access_token"); clearAuth(); router.push("/login"); };
 
   return (
     <aside className="w-56 bg-surface border-r border-border flex flex-col py-5 px-3 shrink-0 min-h-screen">
       <div className="flex items-center gap-2 px-3 mb-8">
-        <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center font-display font-bold text-sm text-bg">V</div>
-        <span className="font-display font-bold text-base text-vtext">VitaForge</span>
+        <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center font-display font-bold text-sm text-bg">Z</div>
+        <span className="font-display font-bold text-base text-vtext">ZenFit</span>
       </div>
 
       <nav className="flex-1 space-y-1">

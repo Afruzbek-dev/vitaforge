@@ -29,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
         const me = await api.users.me();
         const userData = me?.data ?? me;
+        if (!userData.plan) userData.plan = "free";
         setAuth(userData, "session");
         // Redirect based on role
         if (userData.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");

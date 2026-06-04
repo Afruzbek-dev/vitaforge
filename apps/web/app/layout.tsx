@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "VitaForge AI",
+  title: "ZenFit AI",
   description: "AI fitness platform",
 };
 

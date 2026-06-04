@@ -11,7 +11,7 @@ const PROMPTS = ["Osh necha kkal?", "Squat texnikasi", "Bugungi plan", "Motivats
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Salom! Men VitaForge AI treneringizman 💪\nOvqat, mashq yoki motivatsiya haqida so'rang." },
+    { role: "assistant", content: "Salom! Men ZenFit AI treneringizman 💪\nOvqat, mashq yoki motivatsiya haqida so'rang." },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);

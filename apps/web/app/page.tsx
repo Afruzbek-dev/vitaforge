@@ -15,8 +15,8 @@ export default function LandingPage() {
       {/* Nav */}
       <nav style={{ position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 24px", background: `${C.bg}f0`, backdropFilter: "blur(24px)", borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 7, background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700 }}>V</div>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 17 }}>VitaForge</span>
+          <div style={{ width: 30, height: 30, borderRadius: 7, background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700 }}>Z</div>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 17 }}>ZenFit</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ color: C.muted, fontSize: 12, fontFamily: "monospace" }}>
@@ -39,7 +39,7 @@ export default function LandingPage() {
 
         <p style={{ color: C.muted, fontSize: "clamp(15px, 2vw, 18px)", maxWidth: 560, lineHeight: 1.75, marginBottom: 16 }}>
           O'rtacha gym <strong style={{ color: C.text }}>har oyda 30–40% a'zosini</strong> yo'qotadi.
-          VitaForge har bir a'zoga AI shaxsiy trener va dietolog beradi —
+          ZenFit har bir a'zoga AI shaxsiy trener va dietolog beradi —
           natijada ular <strong style={{ color: C.accent }}>2.8x uzoqroq</strong> qoladi.
         </p>
 
