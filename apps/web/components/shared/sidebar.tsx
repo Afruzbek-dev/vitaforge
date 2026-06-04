@@ -11,6 +11,7 @@ const memberLinks = [
   { href: "/dashboard/food", label: "Ovqat", icon: "🥗" },
   { href: "/dashboard/photos", label: "Fotolar", icon: "📸" },
   { href: "/dashboard/chat", label: "AI Chat", icon: "🤖" },
+  { href: "/dashboard/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
 const ownerLinks = [
   { href: "/gym", label: "Dashboard", icon: "📊" },
@@ -20,6 +21,7 @@ const ownerLinks = [
   { href: "/gym/groups", label: "Guruhlar", icon: "🎯" },
   { href: "/gym/leaderboard", label: "Leaderboard", icon: "🏆" },
   { href: "/gym/analytics", label: "Analitika", icon: "📈" },
+  { href: "/gym/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
 
 export default function Sidebar({ role }: { role: string }) {

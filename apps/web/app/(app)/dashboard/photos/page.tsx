@@ -12,6 +12,7 @@ export default function PhotosPage() {
   const { data } = useQuery({ queryKey: ["photos"], queryFn: api.photos.history });
   const upload = useMutation({
     mutationFn: (file: File) => {
+      if (file.size > 1 * 1024 * 1024) throw new Error("Rasm hajmi 1MB dan oshmasin");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("photo_type", photoType);
@@ -47,6 +48,9 @@ export default function PhotosPage() {
           </div>
           {upload.isSuccess && (
             <p className="text-vgreen text-sm mt-3">✅ Foto yuklandi!</p>
+          )}
+          {upload.isError && (
+            <p className="text-vred text-sm mt-3">❌ {(upload.error as any)?.message ?? "Xatolik"}</p>
           )}
         </CardContent>
       </Card>
