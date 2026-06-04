@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,7 +119,12 @@ export default function SettingsPage() {
       )}
 
       {/* Logout */}
-      <Button variant="destructive" onClick={logout} className="w-full">🚪 Chiqish</Button>
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/pricing">
+          <Button variant="outline" className="w-full">⬆️ Tarif yangilash</Button>
+        </Link>
+        <Button variant="destructive" onClick={logout} className="w-full">🚪 Chiqish</Button>
+      </div>
     </div>
   );
 }

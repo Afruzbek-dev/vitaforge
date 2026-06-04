@@ -14,7 +14,7 @@ const schema = z.object({
   full_name: z.string().min(2, "Ism kamida 2 belgi"),
   email: z.string().email("Email noto'g'ri"),
   password: z.string().min(6, "Kamida 6 ta belgi"),
-  role: z.enum(["member", "gym_owner"]),
+  role: z.enum(["member", "gym_owner", "trainer"]),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -61,6 +61,7 @@ export default function RegisterPage() {
             <Label>Rol</Label>
             <select {...register("role")} className="flex h-10 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-vtext focus:outline-none focus:border-accent-border">
               <option value="member">Gym a'zosi</option>
+              <option value="trainer">Trener</option>
               <option value="gym_owner">Gym egasi</option>
             </select>
           </div>

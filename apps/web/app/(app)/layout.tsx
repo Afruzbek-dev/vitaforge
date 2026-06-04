@@ -63,29 +63,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 function MobileNav({ role }: { role: string }) {
   const pathname = usePathname();
   const memberLinks = [
-    { href: "/dashboard", icon: "📊" },
-    { href: "/dashboard/today", icon: "✅" },
-    { href: "/dashboard/food", icon: "🥗" },
-    { href: "/dashboard/chat", icon: "🤖" },
-    { href: "/dashboard/settings", icon: "⚙️" },
+    { href: "/dashboard", icon: "🏠", label: "Asosiy" },
+    { href: "/dashboard/today", icon: "✅", label: "Bugun" },
+    { href: "/dashboard/plan/tracker", icon: "📅", label: "Tracker" },
+    { href: "/dashboard/chat", icon: "🤖", label: "AI" },
+    { href: "/dashboard/settings", icon: "👤", label: "Profil" },
   ];
   const ownerLinks = [
-    { href: "/gym", icon: "📊" },
-    { href: "/gym/attendance", icon: "📅" },
-    { href: "/gym/members", icon: "👥" },
-    { href: "/gym/leaderboard", icon: "🏆" },
-    { href: "/gym/settings", icon: "⚙️" },
+    { href: "/gym", icon: "📊", label: "Asosiy" },
+    { href: "/gym/attendance", icon: "📅", label: "Davomat" },
+    { href: "/gym/members", icon: "👥", label: "A'zolar" },
+    { href: "/gym/leaderboard", icon: "🏆", label: "Top" },
+    { href: "/gym/settings", icon: "⚙️", label: "Sozlama" },
   ];
   const links = role === "member" ? memberLinks : ownerLinks;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border flex justify-around py-2 px-1">
-      {links.map((l) => (
-        <a key={l.href} href={l.href}
-          className={`flex flex-col items-center p-2 rounded-lg text-lg ${pathname === l.href ? "text-accent" : "text-muted"}`}>
-          {l.icon}
-        </a>
-      ))}
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-xl border-t border-border safe-bottom">
+      <div className="flex justify-around py-1.5 px-1">
+        {links.map((l) => {
+          const active = pathname === l.href || (l.href !== "/dashboard" && l.href !== "/gym" && pathname.startsWith(l.href));
+          return (
+            <a key={l.href} href={l.href} className={`flex flex-col items-center py-1.5 px-2 rounded-lg transition-colors ${active ? "text-accent" : "text-muted"}`}>
+              <span className="text-lg">{l.icon}</span>
+              <span className="text-[10px] mt-0.5">{l.label}</span>
+            </a>
+          );
+        })}
+      </div>
     </nav>
   );
 }
