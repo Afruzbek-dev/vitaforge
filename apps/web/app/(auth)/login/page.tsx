@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const TelegramLoginButton = dynamic(() => import("@/components/telegram-login"), { ssr: false });
 
 const schema = z.object({
   email: z.string().email("Email noto'g'ri"),
@@ -66,6 +69,21 @@ export default function LoginPage() {
             Hisobingiz yo'qmi?{" "}
             <Link href="/register" className="text-accent hover:underline">Ro'yxatdan o'ting</Link>
           </p>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-card px-2 text-muted">yoki</span></div>
+          </div>
+          <TelegramLoginButton botName="zenfituzbot" onAuth={async (tgUser) => {
+            try {
+              const res = await fetch("/api/auth/telegram", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(tgUser) });
+              const data = await res.json();
+              if (data.success && data.access_token) {
+                localStorage.setItem("access_token", data.access_token);
+                setAuth(data.user, data.access_token);
+                router.push(data.user?.role === "member" ? "/dashboard" : "/gym");
+              }
+            } catch {}
+          }} />
           <p className="text-center text-xs text-muted">
             <Link href="/reset-password" className="hover:text-accent transition">Parolni unutdim</Link>
           </p>
