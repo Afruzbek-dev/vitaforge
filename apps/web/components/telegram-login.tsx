@@ -2,7 +2,8 @@
 import { useEffect, useRef } from "react";
 
 interface Props {
-  onAuth: (data: { id_token: string; user: any }) => void;
+  onAuth: (data: any) => void;
+  botName?: string;
 }
 
 const CLIENT_ID = "8990371331";
