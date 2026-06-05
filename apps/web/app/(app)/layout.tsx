@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
 import { api, SUPABASE_MODE } from "@/lib/api";
 import { getSession } from "@/lib/auth";
+import { isTelegramWebApp, getTelegramInitData, expandWebApp } from "@/lib/telegram";
 import Sidebar from "@/components/shared/sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +24,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
     (async () => {
       try {
+        // Telegram Mini App auto-login
+        if (isTelegramWebApp()) {
+          expandWebApp();
+          const initData = getTelegramInitData();
+          if (initData) {
+            const res = await fetch("/api/telegram-auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData }) });
+            const data = await res.json();
+            if (data.success && data.user) {
+              if (data.access_token) localStorage.setItem("access_token", data.access_token);
+              setAuth(data.user, data.access_token ?? "tg-session");
+              return;
+            }
+          }
+        }
         if (SUPABASE_MODE) {
           const session = await getSession();
           if (!session) { router.push("/login"); return; }

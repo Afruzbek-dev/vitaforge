@@ -27,7 +27,13 @@ export async function POST(req: NextRequest) {
   const text = msg.text;
 
   if (text === "/start") {
-    await sendMsg(chatId, "🏋️ *ZenFit AI* ga xush kelibsiz!\n\n/food <ovqat> — Kaloriya\n/ask <savol> — AI trener\n/plan — Plan haqida\n/streak — Streak");
+    const webAppUrl = process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "https://vitaforge-afruzbeks-projects.vercel.app";
+    await fetch(`${TG}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      chat_id: chatId,
+      text: "🏋️ *ZenFit AI* ga xush kelibsiz!\n\n📱 Web App ni ochish uchun pastdagi tugmani bosing.\n\nBuyruqlar:\n/food <ovqat> — Kaloriya\n/ask <savol> — AI trener",
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: [[{ text: "📱 ZenFit ochish", web_app: { url: webAppUrl } }]] },
+    }) });
   } else if (text.startsWith("/food ")) {
     const answer = await aiResponse(`'${text.slice(6)}' ovqatining kaloriyasi, proteini, yog'i va karbohidratini qisqa ayt.`);
     await sendMsg(chatId, `🥗 ${answer}`);
