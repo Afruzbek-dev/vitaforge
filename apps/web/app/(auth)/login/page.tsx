@@ -66,6 +66,9 @@ export default function LoginPage() {
             Hisobingiz yo'qmi?{" "}
             <Link href="/register" className="text-accent hover:underline">Ro'yxatdan o'ting</Link>
           </p>
+          <p className="text-center text-xs text-muted">
+            <Link href="/reset-password" className="hover:text-accent transition">Parolni unutdim</Link>
+          </p>
         </form>
       </CardContent>
     </Card>
