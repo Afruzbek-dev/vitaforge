@@ -9,13 +9,13 @@ const memberLinks = [
   { href: "/dashboard/today", label: "Bugun", icon: "✅" },
   { href: "/dashboard/plan", label: "Plan", icon: "📋" },
   { href: "/dashboard/plan/tracker", label: "Tracker", icon: "📅" },
+  { href: "/dashboard/plan/instructions", label: "Ko'rsatma", icon: "📖" },
   { href: "/dashboard/food", label: "Ovqat", icon: "🥗" },
-  { href: "/dashboard/photos", label: "Fotolar", icon: "📸" },
   { href: "/dashboard/chat", label: "AI Chat", icon: "🤖" },
   { href: "/dashboard/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
 const ownerLinks = [
-  { href: "/gym", label: "Dashboard", icon: "📊" },
+  { href: "/gym", label: "CRM", icon: "📊" },
   { href: "/gym/attendance", label: "Davomat", icon: "📅" },
   { href: "/gym/members", label: "A'zolar", icon: "👥" },
   { href: "/gym/invite", label: "Qo'shish", icon: "➕" },
@@ -24,12 +24,19 @@ const ownerLinks = [
   { href: "/gym/analytics", label: "Analitika", icon: "📈" },
   { href: "/gym/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
+const trainerLinks = [
+  { href: "/gym", label: "Dashboard", icon: "📊" },
+  { href: "/gym/trainer", label: "A'zolarim", icon: "👥" },
+  { href: "/gym/attendance", label: "Davomat", icon: "📅" },
+  { href: "/gym/groups", label: "Guruhlar", icon: "🎯" },
+  { href: "/gym/leaderboard", label: "Leaderboard", icon: "🏆" },
+];
 
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const clearAuth = useAuthStore((s) => s.clearAuth);
-  const links = role === "member" ? memberLinks : role === "trainer" ? ownerLinks.filter(l => l.href !== "/gym/settings") : ownerLinks;
+  const links = role === "member" ? memberLinks : role === "trainer" ? trainerLinks : ownerLinks;
 
   const logout = () => { localStorage.removeItem("access_token"); clearAuth(); router.push("/login"); };
 

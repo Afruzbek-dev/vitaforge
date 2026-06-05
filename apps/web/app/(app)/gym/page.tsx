@@ -1,120 +1,147 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getSupabase } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
 import Link from "next/link";
 
-export default function GymPage() {
-  const { data: retention } = useQuery({ queryKey: ["gym", "retention"], queryFn: api.gym.retention });
-  const { data: churn } = useQuery({ queryKey: ["gym", "churn"], queryFn: api.gym.churnRisk });
-  const { data: members } = useQuery({ queryKey: ["gym", "members"], queryFn: api.gym.members });
-  const r = retention?.data;
-  const atRisk = churn?.data?.at_risk_members ?? [];
-  const memberList = members?.data ?? [];
+export default function GymDashboard() {
+  const sb = getSupabase();
+
+  const { data: stats } = useQuery({
+    queryKey: ["gym-crm-stats"],
+    queryFn: async () => {
+      const user = await getUser();
+      const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
+      const gid = me?.gym_id;
+      if (!gid) return { members: 0, trainers: 0, active: 0, churn_risk: 0, avg_streak: 0 };
+
+      const { count: members } = await sb.from("users").select("*", { count: "exact", head: true }).eq("gym_id", gid).eq("role", "member");
+      const { count: trainers } = await sb.from("users").select("*", { count: "exact", head: true }).eq("gym_id", gid).eq("role", "trainer");
+
+      const ago30 = new Date(Date.now() - 30 * 86400000).toISOString();
+      const { data: att } = await sb.from("attendance").select("member_id").eq("gym_id", gid).gte("checked_in_at", ago30);
+      const active = new Set(att?.map((a) => a.member_id)).size;
+
+      const ago14 = new Date(Date.now() - 14 * 86400000).toISOString();
+      const { data: recent } = await sb.from("attendance").select("member_id").eq("gym_id", gid).gte("checked_in_at", ago14);
+      const recentIds = new Set(recent?.map((a) => a.member_id));
+      const churn_risk = (members ?? 0) - recentIds.size;
+
+      const { data: streaks } = await sb.from("member_streaks").select("current_streak, member_id");
+      const gymStreaks = streaks?.filter((s) => recentIds.has(s.member_id)) ?? [];
+      const avg_streak = gymStreaks.length ? Math.round(gymStreaks.reduce((a, b) => a + b.current_streak, 0) / gymStreaks.length) : 0;
+
+      return { members: members ?? 0, trainers: trainers ?? 0, active, churn_risk: Math.max(0, churn_risk), avg_streak, retention: members ? Math.round((active / members) * 100) : 0 };
+    },
+  });
+
+  const { data: recentMembers } = useQuery({
+    queryKey: ["gym-recent-members"],
+    queryFn: async () => {
+      const user = await getUser();
+      const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
+      const { data } = await sb.from("users").select("id, full_name, role, created_at").eq("gym_id", me?.gym_id).order("created_at", { ascending: false }).limit(8);
+      return data ?? [];
+    },
+  });
+
+  const s = stats ?? { members: 0, trainers: 0, active: 0, churn_risk: 0, avg_streak: 0, retention: 0 };
 
   return (
-    <div className="max-w-4xl space-y-6 animate-fadeUp">
-      <div>
-        <h1 className="font-display font-bold text-2xl text-vtext">🏋️ Gym Dashboard</h1>
-        <p className="text-muted text-sm font-mono mt-1">OWNER PANEL</p>
+    <div className="max-w-5xl space-y-6 animate-fadeUp">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="font-display font-bold text-2xl text-vtext">📊 Gym CRM</h1>
+          <p className="text-muted text-xs font-mono mt-1">REAL-TIME ANALYTICS</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/gym/invite"><Button size="sm">+ A'zo qo'shish</Button></Link>
+        </div>
       </div>
 
-      {/* KPI */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { l: "JAMI", v: r?.total_members ?? "—", c: "text-vtext" },
-          { l: "FAOL (30 KUN)", v: r?.active_last_30_days ?? "—", c: "text-vgreen" },
-          { l: "RETENTION", v: r?.retention_rate ? `${r.retention_rate}%` : "—", c: "text-accent" },
+          { l: "A'ZOLAR", v: s.members, c: "text-vtext", icon: "👥" },
+          { l: "TRENERLAR", v: s.trainers, c: "text-vblue", icon: "💪" },
+          { l: "FAOL (30K)", v: s.active, c: "text-vgreen", icon: "✅" },
+          { l: "RETENTION", v: `${s.retention}%`, c: "text-accent", icon: "📈" },
+          { l: "CHURN XAVF", v: s.churn_risk, c: s.churn_risk > 0 ? "text-vred" : "text-muted", icon: "⚠️" },
+          { l: "AVG STREAK", v: `${s.avg_streak}d`, c: "text-accent", icon: "🔥" },
         ].map((k) => (
-          <Card key={k.l} className="border-l-2 border-l-accent">
-            <CardContent className="p-4">
-              <p className="text-muted text-xs font-mono">{k.l}</p>
-              <p className={`font-display font-bold text-3xl mt-1 ${k.c}`}>{k.v}</p>
+          <Card key={k.l}>
+            <CardContent className="p-3 text-center">
+              <p className="text-lg mb-0.5">{k.icon}</p>
+              <p className={`font-display font-bold text-xl ${k.c}`}>{k.v}</p>
+              <p className="text-muted text-[9px] font-mono">{k.l}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Churn alert */}
-      {atRisk.length > 0 && (
+      {/* Churn Alert */}
+      {s.churn_risk > 0 && (
         <Card className="border-vred/30 bg-vred/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base text-vred">⚠️ Churn xavfi ({atRisk.length} ta a'zo)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {atRisk.map((m: any) => (
-                <li key={m.id} className="flex justify-between text-sm items-center">
-                  <span className="text-vtext">{m.full_name}</span>
-                  <Link href={`/gym/members/${m.id}`}><Button variant="ghost" size="sm">Ko'rish →</Button></Link>
-                </li>
-              ))}
-            </ul>
+          <CardContent className="p-4 flex items-center gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <p className="text-vred text-sm font-medium">{s.churn_risk} ta a'zo 2 haftadan beri kelmadi</p>
+              <p className="text-muted text-xs">Ular bilan bog'laning yoki AI tavsiyasini ko'ring</p>
+            </div>
+            <Link href="/gym/analytics" className="ml-auto"><Button variant="outline" size="sm">Batafsil</Button></Link>
           </CardContent>
         </Card>
       )}
 
-      {/* Members table */}
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { href: "/gym/attendance", label: "Davomat", icon: "📅", desc: "Bugungi" },
+          { href: "/gym/members", label: "A'zolar", icon: "👥", desc: "CRM" },
+          { href: "/gym/groups", label: "Guruhlar", icon: "🎯", desc: "Maqsad bo'yicha" },
+          { href: "/gym/leaderboard", label: "Leaderboard", icon: "🏆", desc: "Top a'zolar" },
+        ].map((l) => (
+          <Link key={l.href} href={l.href}>
+            <Card className="hover:border-accent-border/50 transition-colors cursor-pointer h-full">
+              <CardContent className="p-4 text-center">
+                <span className="text-xl">{l.icon}</span>
+                <p className="font-display font-bold text-sm mt-1">{l.label}</p>
+                <p className="text-muted text-xs">{l.desc}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+      {/* Recent members + trainers */}
       <Card>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-base">👥 A'zolar ({memberList.length})</CardTitle>
-            <Link href="/gym/members"><Button variant="outline" size="sm">Barchasi →</Button></Link>
+            <CardTitle className="text-base">So'nggi qo'shilganlar</CardTitle>
+            <Link href="/gym/members"><Button variant="ghost" size="sm">Barchasi →</Button></Link>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-muted text-xs font-mono uppercase">
-                  <th className="text-left py-2">Ism</th>
-                  <th className="text-left py-2">Maqsad</th>
-                  <th className="text-left py-2">Status</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {memberList.slice(0, 5).map((m: any) => (
-                  <tr key={m.id} className="border-b border-border/50 hover:bg-surface/50">
-                    <td className="py-3 font-medium text-vtext">{m.full_name}</td>
-                    <td className="py-3 text-muted">{m.goal ?? "—"}</td>
-                    <td className="py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${m.onboarding_done ? "bg-vgreen/10 text-vgreen border border-vgreen/20" : "bg-accent/10 text-accent border border-accent-border"}`}>
-                        {m.onboarding_done ? "FAOL" : "KUTILMOQDA"}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <Link href={`/gym/members/${m.id}`}><Button variant="ghost" size="sm">→</Button></Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-2">
+            {(recentMembers ?? []).map((m: any) => (
+              <div key={m.id} className="flex items-center justify-between p-2 rounded-lg border border-border/50 hover:border-accent-border/30 transition">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${m.role === "trainer" ? "bg-vblue/20 text-vblue" : "bg-accent/10 text-accent"}`}>
+                    {m.full_name?.[0] ?? "?"}
+                  </div>
+                  <div>
+                    <p className="text-sm text-vtext">{m.full_name}</p>
+                    <p className="text-[10px] text-muted font-mono">{m.role === "trainer" ? "TRENER" : "A'ZO"}</p>
+                  </div>
+                </div>
+                <span className="text-[10px] text-muted">{new Date(m.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
           </div>
-          {memberList.length === 0 && <p className="text-muted text-sm text-center py-6">Hali a'zo yo'q</p>}
         </CardContent>
       </Card>
-
-      {/* Quick links */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link href="/gym/members">
-          <Card className="hover:border-accent-border/50 transition-colors cursor-pointer">
-            <CardContent className="p-4">
-              <span className="text-xl">👥</span>
-              <p className="font-display font-bold text-sm mt-2">A'zolar ro'yxati</p>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/gym/analytics">
-          <Card className="hover:border-accent-border/50 transition-colors cursor-pointer">
-            <CardContent className="p-4">
-              <span className="text-xl">📊</span>
-              <p className="font-display font-bold text-sm mt-2">Analitika</p>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
     </div>
   );
 }
