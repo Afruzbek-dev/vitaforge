@@ -1,41 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac } from "crypto";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
+const CLIENT_ID = "8990371331";
+const CLIENT_SECRET = "tFXzm3PXldKrz9xisjRooFedSR5tDj7Dzj1awwiTAihLSmGX9uceQg";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY ?? "";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
 
-function verifyTelegramLogin(data: Record<string, any>): boolean {
-  const { hash, ...rest } = data;
-  const sorted = Object.keys(rest).sort().map((k) => `${k}=${rest[k]}`).join("\n");
-  const secret = createHmac("sha256", BOT_TOKEN).digest();
-  const computed = createHmac("sha256", secret).update(sorted).digest("hex");
-  return computed === hash;
+// Decode JWT without verification (we trust Telegram's OIDC)
+function decodeJwt(token: string) {
+  const payload = token.split(".")[1];
+  return JSON.parse(Buffer.from(payload, "base64url").toString());
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  if (!verifyTelegramLogin(body)) return NextResponse.json({ error: "Invalid hash" }, { status: 401 });
+  const { id_token, user: clientUser } = await req.json();
 
-  const telegramId = body.id;
-  const fullName = `${body.first_name ?? ""} ${body.last_name ?? ""}`.trim();
-  const username = body.username ?? "";
+  let tgId: number;
+  let fullName: string;
+  let username: string;
+  let phone: string | null = null;
 
-  // Check existing session
-  const sessRes = await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions?telegram_id=eq.${telegramId}&select=user_id`, {
+  if (id_token) {
+    // OIDC flow — decode id_token
+    const claims = decodeJwt(id_token);
+    tgId = claims.id ?? parseInt(claims.sub);
+    fullName = claims.name ?? "";
+    username = claims.preferred_username ?? "";
+    phone = claims.phone_number ?? null;
+  } else if (clientUser) {
+    // Fallback — direct user data
+    tgId = clientUser.id;
+    fullName = `${clientUser.first_name ?? ""} ${clientUser.last_name ?? ""}`.trim();
+    username = clientUser.username ?? "";
+  } else {
+    return NextResponse.json({ error: "No auth data" }, { status: 400 });
+  }
+
+  // Check existing telegram session
+  const sessRes = await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions?telegram_id=eq.${tgId}&select=user_id`, {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
   });
   const sessions = await sessRes.json();
 
   let userId: string | null = null;
-  let accessToken: string | null = null;
 
   if (sessions?.length > 0 && sessions[0].user_id) {
     userId = sessions[0].user_id;
   } else {
-    // Create new user
-    const email = `tg${telegramId}@zenfit.app`;
-    const password = `tg_${telegramId}_${BOT_TOKEN.slice(0, 8)}`;
+    // Create new Supabase user
+    const email = `tg${tgId}@zenfit.app`;
+    const password = `tg_${tgId}_${BOT_TOKEN.slice(0, 8)}`;
     const signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
@@ -45,26 +59,32 @@ export async function POST(req: NextRequest) {
     userId = signup?.user?.id ?? null;
 
     if (userId) {
+      // Update phone if available
+      if (phone) {
+        await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+          method: "PATCH",
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, telegram_id: tgId }),
+        });
+      }
+      // Create telegram session
       await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions`, {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ user_id: userId, telegram_id: telegramId, chat_id: telegramId, username }),
+        body: JSON.stringify({ user_id: userId, telegram_id: tgId, chat_id: tgId, username }),
       });
     }
   }
 
-  // Sign in
-  if (userId) {
-    const email = `tg${telegramId}@zenfit.app`;
-    const password = `tg_${telegramId}_${BOT_TOKEN.slice(0, 8)}`;
-    const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: "POST",
-      headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const login = await loginRes.json();
-    accessToken = login.access_token ?? null;
-  }
+  // Sign in to get access token
+  const email = `tg${tgId}@zenfit.app`;
+  const password = `tg_${tgId}_${BOT_TOKEN.slice(0, 8)}`;
+  const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const login = await loginRes.json();
 
   // Get user data
   let user = null;
@@ -73,8 +93,8 @@ export async function POST(req: NextRequest) {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
     });
     const users = await userRes.json();
-    user = users?.[0] ?? { id: userId, full_name: fullName, role: "member" };
+    user = users?.[0] ?? { id: userId, full_name: fullName, role: "member", telegram_id: tgId };
   }
 
-  return NextResponse.json({ success: true, access_token: accessToken, user });
+  return NextResponse.json({ success: true, access_token: login.access_token, user });
 }

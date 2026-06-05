@@ -73,14 +73,14 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
             <div className="relative flex justify-center text-xs"><span className="bg-card px-2 text-muted">yoki</span></div>
           </div>
-          <TelegramLoginButton botName="zenfituzbot" onAuth={async (tgUser) => {
+          <TelegramLoginButton botName="zenfituzbot" onAuth={async (data) => {
             try {
-              const res = await fetch("/api/auth/telegram", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(tgUser) });
-              const data = await res.json();
-              if (data.success && data.access_token) {
-                localStorage.setItem("access_token", data.access_token);
-                setAuth(data.user, data.access_token);
-                router.push(data.user?.role === "member" ? "/dashboard" : "/gym");
+              const res = await fetch("/api/auth/telegram", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+              const result = await res.json();
+              if (result.success && result.access_token) {
+                localStorage.setItem("access_token", result.access_token);
+                setAuth(result.user, result.access_token);
+                router.push(result.user?.role === "member" ? "/dashboard" : "/gym");
               }
             } catch {}
           }} />

@@ -4,11 +4,25 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/store/auth";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const TelegramLoginButton = dynamic(() => import("@/components/telegram-login"), { ssr: false });
+
+function TelegramLoginBtn() {
+  const router = useRouter();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  return <TelegramLoginButton botName="zenfituzbot" onAuth={async (data) => {
+    const res = await fetch("/api/auth/telegram", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    const result = await res.json();
+    if (result.success && result.access_token) { localStorage.setItem("access_token", result.access_token); setAuth(result.user, result.access_token); router.push("/onboarding"); }
+  }} />;
+}
 
 const schema = z.object({
   full_name: z.string().min(2, "Ism kamida 2 belgi"),
@@ -77,6 +91,11 @@ export default function RegisterPage() {
             Hisobingiz bormi?{" "}
             <Link href="/login" className="text-accent hover:underline">Kirish</Link>
           </p>
+          <div className="relative my-3">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-card px-2 text-muted">yoki</span></div>
+          </div>
+          <TelegramLoginBtn />
         </form>
       </CardContent>
     </Card>
