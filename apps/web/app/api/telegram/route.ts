@@ -26,7 +26,59 @@ export async function POST(req: NextRequest) {
   const chatId = msg.chat.id;
   const text = msg.text;
 
-  if (text === "/start") {
+  if (text === "/start" || text.startsWith("/start ")) {
+    // Check if auth flow
+    const param = text.split(" ")[1] ?? "";
+    if (param.startsWith("auth_")) {
+      const authId = param;
+      const tgId = msg.from?.id;
+      const firstName = msg.from?.first_name ?? "";
+      const lastName = msg.from?.last_name ?? "";
+      const fullName = `${firstName} ${lastName}`.trim();
+      const tgUsername = msg.from?.username ?? "";
+
+      // Create or get user in Supabase
+      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+      const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY ?? "";
+      const BOT = process.env.TELEGRAM_BOT_TOKEN ?? "";
+
+      // Check if user exists
+      const checkRes = await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions?telegram_id=eq.${tgId}&select=user_id`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+      });
+      const existing = await checkRes.json();
+
+      let userId: string;
+      if (existing?.length > 0 && existing[0].user_id) {
+        userId = existing[0].user_id;
+        // Update with auth_id for polling
+        await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions?telegram_id=eq.${tgId}`, {
+          method: "PATCH",
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ username: authId }),
+        });
+      } else {
+        // Create account
+        const email = `tg${tgId}@zenfit.app`;
+        const password = `tg_${tgId}_${BOT.slice(0, 8)}`;
+        const signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+          method: "POST", headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, data: { full_name: fullName, role: "member" } }),
+        });
+        const signup = await signupRes.json();
+        userId = signup?.user?.id ?? "";
+        // Save session with auth_id
+        await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions`, {
+          method: "POST", headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ user_id: userId, telegram_id: tgId, chat_id: chatId, username: authId }),
+        });
+      }
+
+      await sendMsg(chatId, "✅ *Tasdiqlandi!*\n\nBrauzerga qayting — avtomatik kirish bo'ladi.");
+      return NextResponse.json({ ok: true });
+    }
+
+    // Normal /start
     const webAppUrl = process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "https://vitaforge-afruzbeks-projects.vercel.app";
     await fetch(`${TG}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
       chat_id: chatId,
