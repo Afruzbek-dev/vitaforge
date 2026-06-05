@@ -12,6 +12,13 @@ export const supabaseApi = {
     },
     register: async (body: { email: string; password: string; full_name: string; role: string }) => {
       const data = await signUp(body.email, body.password, { full_name: body.full_name, role: body.role });
+      // Auto-create gym for gym_owner
+      if (body.role === "gym_owner" && data.user) {
+        const slug = body.full_name.toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-gym";
+        const { data: gym } = await sb().from("gyms").insert({ name: `${body.full_name} Gym`, slug, owner_id: data.user.id }).select().single();
+        if (gym) await sb().from("users").update({ gym_id: gym.id }).eq("id", data.user.id);
+      }
+      // Auto-assign trainer to no gym (gym owner invites later)
       return { success: true, data: { user_id: data.user?.id } };
     },
     logout: async () => { await signOut(); return { success: true }; },
@@ -83,8 +90,11 @@ export const supabaseApi = {
     },
     getLog: async (date?: string) => {
       const user = await getUser();
-      let q = sb().from("food_logs").select("*").eq("member_id", user!.id).order("logged_at", { ascending: true });
-      if (date) q = q.gte("logged_at", `${date}T00:00:00`).lte("logged_at", `${date}T23:59:59`);
+      const target = date ?? new Date().toISOString().split("T")[0];
+      let q = sb().from("food_logs").select("*").eq("member_id", user!.id)
+        .gte("logged_at", `${target}T00:00:00`)
+        .lte("logged_at", `${target}T23:59:59`)
+        .order("logged_at", { ascending: true });
       const { data } = await q;
       return { data: data ?? [] };
     },

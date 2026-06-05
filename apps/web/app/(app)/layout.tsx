@@ -31,6 +31,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const userData = me?.data ?? me;
         if (!userData.plan) userData.plan = "free";
         setAuth(userData, "session");
+        // Check onboarding for members
+        if (userData.role === "member" && !pathname.startsWith("/onboarding") && !pathname.includes("/settings")) {
+          try {
+            const os = await api.onboarding.status();
+            if (!os?.data?.onboarding_done) { router.replace("/onboarding"); return; }
+          } catch {}
+        }
         // Redirect based on role
         if (userData.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
         else if ((userData.role === "gym_owner" || userData.role === "trainer") && pathname.startsWith("/dashboard")) router.replace("/gym");
