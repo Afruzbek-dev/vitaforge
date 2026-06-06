@@ -32,6 +32,7 @@ export default function LoginPage() {
       localStorage.setItem("access_token", token);
       const me = await api.users.me();
       const user = me?.data ?? me;
+      localStorage.setItem("zenfit_user", JSON.stringify(user));
       setAuth(user, token);
       router.push(user.role === "member" ? "/dashboard" : "/gym");
     } catch (e: any) {
@@ -79,6 +80,7 @@ export default function LoginPage() {
               const result = await res.json();
               if (result.success && result.access_token) {
                 localStorage.setItem("access_token", result.access_token);
+                localStorage.setItem("zenfit_user", JSON.stringify(result.user));
                 setAuth(result.user, result.access_token);
                 router.push(result.user?.role === "member" ? "/dashboard" : "/gym");
               }

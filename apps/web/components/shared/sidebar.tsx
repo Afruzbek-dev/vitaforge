@@ -38,7 +38,7 @@ export default function Sidebar({ role }: { role: string }) {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const links = role === "member" ? memberLinks : role === "trainer" ? trainerLinks : ownerLinks;
 
-  const logout = () => { localStorage.removeItem("access_token"); clearAuth(); router.push("/login"); };
+  const logout = () => { localStorage.removeItem("access_token"); localStorage.removeItem("zenfit_user"); clearAuth(); router.push("/login"); };
 
   return (
     <aside className="w-56 bg-surface border-r border-border flex flex-col py-5 px-3 shrink-0 min-h-screen">

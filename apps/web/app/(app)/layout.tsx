@@ -14,17 +14,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      // Role-based route protection
-      if (user.role === "member" && pathname.startsWith("/gym")) {
-        router.replace("/dashboard");
-      } else if ((user.role === "gym_owner" || user.role === "trainer") && pathname.startsWith("/dashboard")) {
-        router.replace("/gym");
-      }
+      if (user.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
+      else if ((user.role === "gym_owner" || user.role === "trainer") && pathname.startsWith("/dashboard")) router.replace("/gym");
       return;
     }
     (async () => {
       try {
-        // Telegram Mini App auto-login
+        // 1. Telegram Mini App auto-login
         if (isTelegramWebApp()) {
           expandWebApp();
           const initData = getTelegramInitData();
@@ -33,30 +29,45 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             const data = await res.json();
             if (data.success && data.user) {
               if (data.access_token) localStorage.setItem("access_token", data.access_token);
+              localStorage.setItem("zenfit_user", JSON.stringify(data.user));
               setAuth(data.user, data.access_token ?? "tg-session");
               return;
             }
           }
         }
+
+        // 2. Restore from localStorage (no re-login needed)
+        const storedUser = localStorage.getItem("zenfit_user");
+        const storedToken = localStorage.getItem("access_token");
+        if (storedUser && storedToken) {
+          const cached = JSON.parse(storedUser);
+          setAuth(cached, storedToken);
+          return;
+        }
+
+        // 3. Supabase session check
         if (SUPABASE_MODE) {
           const session = await getSession();
           if (!session) { router.push("/login"); return; }
         }
+
+        // 4. Fetch fresh user data
         const me = await api.users.me();
         const userData = me?.data ?? me;
         if (!userData.plan) userData.plan = "free";
+        localStorage.setItem("zenfit_user", JSON.stringify(userData));
         setAuth(userData, "session");
-        // Check onboarding for members
+
+        // Onboarding check
         if (userData.role === "member" && !pathname.startsWith("/onboarding") && !pathname.includes("/settings")) {
           try {
             const os = await api.onboarding.status();
             if (!os?.data?.onboarding_done) { router.replace("/onboarding"); return; }
           } catch {}
         }
-        // Redirect based on role
         if (userData.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
         else if ((userData.role === "gym_owner" || userData.role === "trainer") && pathname.startsWith("/dashboard")) router.replace("/gym");
-      } catch { clearAuth(); router.push("/login"); }
+      } catch { clearAuth(); localStorage.removeItem("zenfit_user"); router.push("/login"); }
     })();
   }, [pathname]);
 
@@ -70,18 +81,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-bg">
-      {/* Desktop sidebar */}
-      <div className="hidden md:block">
-        <Sidebar role={user.role} />
-      </div>
-      {/* Mobile bottom nav */}
+      <div className="hidden md:block"><Sidebar role={user.role} /></div>
       <MobileNav role={user.role} />
       <main className="flex-1 p-4 md:p-6 overflow-y-auto max-h-screen pb-20 md:pb-6">{children}</main>
     </div>
   );
 }
 
-// ─── Mobile Bottom Nav ───────────────────────────────────────
 function MobileNav({ role }: { role: string }) {
   const pathname = usePathname();
   const memberLinks = [
@@ -99,14 +105,13 @@ function MobileNav({ role }: { role: string }) {
     { href: "/gym/settings", icon: "⚙️", label: "Sozlama" },
   ];
   const links = role === "member" ? memberLinks : ownerLinks;
-
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-xl border-t border-border safe-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-xl border-t border-border">
       <div className="flex justify-around py-1.5 px-1">
         {links.map((l) => {
           const active = pathname === l.href || (l.href !== "/dashboard" && l.href !== "/gym" && pathname.startsWith(l.href));
           return (
-            <a key={l.href} href={l.href} className={`flex flex-col items-center py-1.5 px-2 rounded-lg transition-colors ${active ? "text-accent" : "text-muted"}`}>
+            <a key={l.href} href={l.href} className={`flex flex-col items-center py-1.5 px-2 rounded-lg ${active ? "text-accent" : "text-muted"}`}>
               <span className="text-lg">{l.icon}</span>
               <span className="text-[10px] mt-0.5">{l.label}</span>
             </a>
