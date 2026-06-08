@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
-const GROQ_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY ?? process.env.GROQ_API_KEY ?? "";
+const GROQ_KEY = process.env.NEXT_PUBLIC_AI_API_KEY ?? process.env.NEXT_PUBLIC_GROQ_API_KEY ?? "";
 const TG = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 async function sendMsg(chatId: number, text: string) {
@@ -9,10 +9,10 @@ async function sendMsg(chatId: number, text: string) {
 }
 
 async function aiResponse(text: string): Promise<string> {
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const res = await fetch("https://api.bluesminds.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "system", content: "Sen ZenFit AI fitness trener. O'zbek tilida qisqa javob ber." }, { role: "user", content: text }], max_tokens: 500 }),
+    body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "system", content: "Sen ZenFit AI fitness trener. O'zbek tilida qisqa javob ber." }, { role: "user", content: text }], max_tokens: 500 }),
   });
   const data = await res.json();
   return data.choices?.[0]?.message?.content ?? "Xatolik yuz berdi";

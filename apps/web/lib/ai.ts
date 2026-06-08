@@ -1,12 +1,12 @@
-// VitaForge AI Service — Groq (Llama 3.3 70B, bepul)
-const GROQ_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY ?? "";
-const BASE = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.3-70b-versatile";
+// ZenFit AI Service — BluesMinds API (OpenAI compatible)
+const API_KEY = process.env.NEXT_PUBLIC_AI_API_KEY ?? process.env.NEXT_PUBLIC_GROQ_API_KEY ?? "";
+const BASE = "https://api.bluesminds.com/v1/chat/completions";
+const MODEL = "gpt-4o-mini";
 
 async function groqChat(system: string, messages: { role: string; content: string }[]): Promise<string> {
   const res = await fetch(BASE, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_KEY}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${API_KEY}` },
     body: JSON.stringify({ model: MODEL, messages: [{ role: "system", content: system }, ...messages], max_tokens: 1500, temperature: 0.7 }),
   });
   const data = await res.json();
