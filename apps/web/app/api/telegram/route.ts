@@ -9,10 +9,10 @@ async function sendMsg(chatId: number, text: string) {
 }
 
 async function aiResponse(text: string): Promise<string> {
-  const res = await fetch("https://api.bluesminds.com/v1/chat/completions", {
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "system", content: "Sen ZenFit AI fitness trener. O'zbek tilida qisqa javob ber." }, { role: "user", content: text }], max_tokens: 500 }),
+    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "system", content: "Sen ZenFit AI fitness trener. O'zbek tilida qisqa javob ber." }, { role: "user", content: text }], max_tokens: 500 }),
   });
   const data = await res.json();
   return data.choices?.[0]?.message?.content ?? "Xatolik yuz berdi";

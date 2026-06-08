@@ -1,7 +1,7 @@
-// ZenFit AI Service — BluesMinds API (OpenAI compatible)
+// ZenFit AI Service — Groq (Llama 3.3 70B)
 const API_KEY = process.env.NEXT_PUBLIC_AI_API_KEY ?? process.env.NEXT_PUBLIC_GROQ_API_KEY ?? "";
-const BASE = "https://api.bluesminds.com/v1/chat/completions";
-const MODEL = "gpt-4o-mini";
+const BASE = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL = "llama-3.3-70b-versatile";
 
 async function groqChat(system: string, messages: { role: string; content: string }[]): Promise<string> {
   const res = await fetch(BASE, {
