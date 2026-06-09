@@ -20,7 +20,8 @@ const ownerLinks = [
   { href: "/gym/members", label: "A'zolar", icon: "👥" },
   { href: "/gym/invite", label: "Qo'shish", icon: "➕" },
   { href: "/gym/groups", label: "Guruhlar", icon: "🎯" },
-  { href: "/gym/leaderboard", label: "Leaderboard", icon: "🏆" },
+  { href: "/gym/challenges", label: "Challenge", icon: "🏆" },
+  { href: "/gym/leaderboard", label: "Leaderboard", icon: "🥇" },
   { href: "/gym/analytics", label: "Analitika", icon: "📈" },
   { href: "/gym/settings", label: "Sozlamalar", icon: "⚙️" },
 ];

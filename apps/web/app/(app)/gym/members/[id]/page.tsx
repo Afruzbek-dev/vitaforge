@@ -1,61 +1,164 @@
 "use client";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { getSupabase } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
 import Link from "next/link";
+
+const TABS = [
+  { id: "overview", label: "Umumiy" },
+  { id: "food", label: "Ovqat" },
+  { id: "attendance", label: "Davomat" },
+  { id: "photos", label: "Fotolar" },
+  { id: "plans", label: "Planlar" },
+];
 
 export default function MemberDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useQuery({ queryKey: ["gym", "member", id], queryFn: () => api.gym.member(id) });
-  const m = data?.data;
+  const sb = getSupabase();
+  const [tab, setTab] = useState("overview");
+  const [msg, setMsg] = useState("");
 
-  if (isLoading) return <div className="text-muted animate-pulse p-4">Yuklanmoqda...</div>;
-  if (!m) return <div className="text-vred p-4">A'zo topilmadi</div>;
+  const { data, isLoading } = useQuery({
+    queryKey: ["crm-member", id],
+    queryFn: async () => {
+      const { data: user } = await sb.from("users").select("*").eq("id", id).single();
+      const { data: profile } = await sb.from("member_profiles").select("*").eq("user_id", id).single();
+      const { data: streak } = await sb.from("member_streaks").select("*").eq("member_id", id).single();
+      const { data: food } = await sb.from("food_logs").select("food_name, calories, logged_at, meal_type").eq("member_id", id).order("logged_at", { ascending: false }).limit(30);
+      const { data: attendance } = await sb.from("attendance").select("checked_in_at").eq("member_id", id).order("checked_in_at", { ascending: false }).limit(30);
+      const { data: photos } = await sb.from("progress_photos").select("taken_at, ai_score, photo_type, week_number").eq("member_id", id).order("taken_at", { ascending: false }).limit(12);
+      const { data: plans } = await sb.from("fitness_plans").select("week_number, is_active, created_at, generated_by, nutrition").eq("member_id", id).order("created_at", { ascending: false }).limit(5);
+      return { user, profile, streak, food: food ?? [], attendance: attendance ?? [], photos: photos ?? [], plans: plans ?? [] };
+    },
+  });
+
+  if (isLoading || !data?.user) return <div className="text-muted animate-pulse p-4">Yuklanmoqda...</div>;
+  const { user: m, profile, streak, food, attendance, photos, plans } = data;
+
+  const risk = !streak?.last_activity ? "unknown" : (new Date().getTime() - new Date(streak.last_activity).getTime()) / 86400000 > 7 ? "high" : (streak?.current_streak ?? 0) < 3 ? "medium" : "low";
 
   return (
-    <div className="max-w-2xl space-y-6 animate-fadeUp">
-      <div className="flex items-center gap-3">
-        <Link href="/gym/members"><Button variant="ghost" size="sm">← Orqaga</Button></Link>
-        <h1 className="font-display font-bold text-xl text-vtext">{m.full_name}</h1>
+    <div className="max-w-3xl space-y-4 animate-fadeUp">
+      <Link href="/gym/members"><Button variant="ghost" size="sm">← Orqaga</Button></Link>
+
+      {/* Header */}
+      <Card className="border-accent-border/30">
+        <CardContent className="p-4 flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-display font-bold text-lg ${risk === "high" ? "bg-vred/20 text-vred" : risk === "medium" ? "bg-accent/20 text-accent" : "bg-vgreen/20 text-vgreen"}`}>
+            {m.full_name?.[0]}
+          </div>
+          <div className="flex-1">
+            <p className="font-display font-bold text-lg text-vtext">{m.full_name}</p>
+            <p className="text-muted text-xs">{m.phone ?? ""} · {profile?.goal ?? "Maqsad belgilanmagan"}</p>
+          </div>
+          <span className={`text-[10px] font-mono px-2 py-1 rounded-full ${risk === "high" ? "bg-vred/10 text-vred" : risk === "medium" ? "bg-accent/10 text-accent" : "bg-vgreen/10 text-vgreen"}`}>
+            {risk === "high" ? "⚠️ XAVF" : risk === "medium" ? "⚡ O'RTA" : "✅ YAXSHI"}
+          </span>
+        </CardContent>
+      </Card>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { l: "Streak", v: streak?.current_streak ?? 0, u: "kun" },
+          { l: "Kuch", v: streak?.total_points ?? 0, u: "⚡" },
+          { l: "Davomat", v: attendance.length, u: "/30 kun" },
+          { l: "Rekord", v: streak?.longest_streak ?? 0, u: "kun" },
+        ].map((s) => (
+          <Card key={s.l}><CardContent className="p-2 text-center"><p className="font-display font-bold text-lg text-accent">{s.v}</p><p className="text-[9px] text-muted">{s.l} {s.u}</p></CardContent></Card>
+        ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Profil</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {[["Yosh", m.profile?.age], ["Maqsad", m.profile?.goal], ["Vazn", m.profile?.weight_kg ? `${m.profile.weight_kg} kg` : null], ["Bo'y", m.profile?.height_cm ? `${m.profile.height_cm} cm` : null]]
-              .filter(([, v]) => v).map(([k, v]) => (
-                <div key={k as string} className="flex justify-between">
-                  <span className="text-muted">{k}</span>
-                  <span className="font-medium">{v}</span>
+      {/* Tabs */}
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        {TABS.map((t) => (
+          <Button key={t.id} variant={tab === t.id ? "default" : "secondary"} size="sm" onClick={() => setTab(t.id)} className="text-xs shrink-0">{t.label}</Button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {tab === "overview" && (
+        <Card><CardContent className="p-4 space-y-2 text-sm">
+          {[["Yosh", profile?.age], ["Bo'y", profile?.height_cm ? `${profile.height_cm} cm` : null], ["Vazn", profile?.weight_kg ? `${profile.weight_kg} kg` : null], ["Faollik", profile?.activity_level], ["Qo'shilgan", new Date(m.created_at).toLocaleDateString()]].filter(([, v]) => v).map(([k, v]) => (
+            <div key={k as string} className="flex justify-between"><span className="text-muted">{k}</span><span className="text-vtext">{v}</span></div>
+          ))}
+          {(streak?.badges ?? []).length > 0 && (
+            <div className="pt-2 border-t border-border"><p className="text-muted text-xs mb-1">Badges:</p><div className="flex flex-wrap gap-1">{streak.badges.map((b: string) => <span key={b} className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">{b}</span>)}</div></div>
+          )}
+        </CardContent></Card>
+      )}
+
+      {tab === "food" && (
+        <Card><CardContent className="p-4">
+          {food.length === 0 ? <p className="text-muted text-sm">Ma'lumot yo'q</p> : (
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {food.map((f: any, i: number) => (
+                <div key={i} className="flex justify-between text-xs border-b border-border/50 py-1.5">
+                  <span className="text-vtext">{f.food_name} <span className="text-muted">({f.meal_type})</span></span>
+                  <span className="text-accent font-mono">{Math.round(f.calories ?? 0)} kkal</span>
                 </div>
               ))}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+        </CardContent></Card>
+      )}
 
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Faollik</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted">Streak</span>
-              <span className="text-accent font-bold">{m.streak?.current ?? 0} kun</span>
+      {tab === "attendance" && (
+        <Card><CardContent className="p-4">
+          {attendance.length === 0 ? <p className="text-muted text-sm">Davomat yo'q</p> : (
+            <div className="grid grid-cols-7 gap-1">
+              {attendance.slice(0, 28).map((a: any, i: number) => (
+                <div key={i} className="w-full aspect-square rounded bg-vgreen/20 flex items-center justify-center text-[8px] text-vgreen">
+                  {new Date(a.checked_in_at).getDate()}
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted">Ball</span>
-              <span className="text-accent font-bold">{m.streak?.total_points ?? 0}</span>
+          )}
+        </CardContent></Card>
+      )}
+
+      {tab === "photos" && (
+        <Card><CardContent className="p-4">
+          {photos.length === 0 ? <p className="text-muted text-sm">Foto yo'q</p> : (
+            <div className="space-y-2">
+              {photos.map((p: any, i: number) => (
+                <div key={i} className="flex justify-between text-sm border-b border-border/50 py-1.5">
+                  <span className="text-vtext">Hafta {p.week_number} · {p.photo_type}</span>
+                  <span className="text-accent font-mono">{p.ai_score ? `⭐${p.ai_score}` : "—"}</span>
+                </div>
+              ))}
             </div>
-            {m.streak?.badges?.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {m.streak.badges.map((b: string) => (
-                  <span key={b} className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent-border font-mono">{b}</span>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent></Card>
+      )}
+
+      {tab === "plans" && (
+        <Card><CardContent className="p-4">
+          {plans.length === 0 ? <p className="text-muted text-sm">Plan yo'q</p> : (
+            <div className="space-y-2">
+              {plans.map((p: any, i: number) => (
+                <div key={i} className="flex justify-between text-sm border-b border-border/50 py-1.5">
+                  <span className="text-vtext">Hafta {p.week_number} <span className="text-muted text-xs">({p.generated_by})</span></span>
+                  <span className={`text-xs font-mono ${p.is_active ? "text-accent" : "text-muted"}`}>{p.is_active ? "FAOL" : "O'tgan"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent></Card>
+      )}
+
+      {/* Send message */}
+      <Card><CardContent className="p-3">
+        <div className="flex gap-2">
+          <Input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Telegram xabar yuborish..." className="text-sm" />
+          <Button size="sm" disabled={!msg.trim()}>Yuborish</Button>
+        </div>
+      </CardContent></Card>
     </div>
   );
 }
