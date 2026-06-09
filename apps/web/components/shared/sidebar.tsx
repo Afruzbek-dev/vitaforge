@@ -12,6 +12,7 @@ const memberLinks = [
   { href: "/dashboard/plan/instructions", label: "Ko'rsatma", icon: "📖" },
   { href: "/dashboard/food", label: "Ovqat", icon: "🥗" },
   { href: "/dashboard/chat", label: "AI Chat", icon: "🤖" },
+  { href: "/dashboard/referral", label: "Taklif", icon: "🎁" },
   { href: "/dashboard/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
 const ownerLinks = [
@@ -22,6 +23,7 @@ const ownerLinks = [
   { href: "/gym/groups", label: "Guruhlar", icon: "🎯" },
   { href: "/gym/challenges", label: "Challenge", icon: "🏆" },
   { href: "/gym/leaderboard", label: "Leaderboard", icon: "🥇" },
+  { href: "/gym/notify", label: "Xabar", icon: "📢" },
   { href: "/gym/analytics", label: "Analitika", icon: "📈" },
   { href: "/gym/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
