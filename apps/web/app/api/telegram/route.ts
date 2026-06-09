@@ -74,7 +74,12 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      await sendMsg(chatId, "✅ *Tasdiqlandi!*\n\nBrauzerga qayting — avtomatik kirish bo'ladi.");
+      await fetch(`${TG}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        chat_id: chatId,
+        text: "✅ *Ro'yxatdan o'tdingiz!*\n\nEndi ZenFit ni ochib foydalanishingiz mumkin 👇",
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: [[{ text: "📱 ZenFit ochish", web_app: { url: process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "https://vitaforge-pi.vercel.app" } }]] },
+      }) });
       return NextResponse.json({ ok: true });
     }
 
