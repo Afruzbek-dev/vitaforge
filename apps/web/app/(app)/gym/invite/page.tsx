@@ -32,14 +32,26 @@ export default function InvitePage() {
     mutationFn: async () => {
       const user = await getUser();
       const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
-      if (!me?.gym_id) throw new Error("Gym topilmadi");
+      let gymId = me?.gym_id;
+
+      // Gym yo'q bo'lsa — yaratish
+      if (!gymId) {
+        const { data: usr } = await sb.from("users").select("full_name").eq("id", user!.id).single();
+        const slug = (usr?.full_name ?? "gym").toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-" + Date.now().toString(36).slice(-4);
+        const { data: gym } = await sb.from("gyms").insert({ name: `${usr?.full_name ?? "My"} Gym`, slug, owner_id: user!.id }).select().single();
+        if (gym) {
+          gymId = gym.id;
+          await sb.from("users").update({ gym_id: gym.id }).eq("id", user!.id);
+        }
+      }
+      if (!gymId) throw new Error("Gym yaratilmadi");
 
       // Use Supabase Admin to create user (via RPC)
       const { data, error } = await sb.rpc("create_gym_member", {
         p_email: form.email,
         p_password: form.password,
         p_full_name: form.full_name,
-        p_gym_id: me.gym_id,
+        p_gym_id: gymId,
         p_role: form.role,
       });
 
