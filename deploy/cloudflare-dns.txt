@@ -1,0 +1,17 @@
+# Cloudflare DNS Records
+# vitaforge.uz domenini Cloudflare ga qo'shgandan so'ng quyidagilarni qo'shing:
+
+Type    Name    Content                         TTL     Proxy
+----------------------------------------------------------------------
+A       @       76.76.21.21                     Auto    ✅ Proxied
+A       www     76.76.21.21                     Auto    ✅ Proxied  
+A       app     76.76.21.21                     Auto    ✅ Proxied
+CNAME   api     YOUR-SERVICE.up.railway.app     Auto    ✅ Proxied
+
+# SSL/TLS:
+# Encryption mode: Full (strict)
+# Always Use HTTPS: ON
+# Minimum TLS Version: 1.2
+
+# Page Rules (ixtiyoriy):
+# vitaforge.uz/* → Forwarding URL (301) → https://app.vitaforge.uz/$1

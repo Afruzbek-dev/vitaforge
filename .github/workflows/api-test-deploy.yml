@@ -1,0 +1,72 @@
+name: API — Test & Deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/api/**']
+  pull_request:
+    branches: [main]
+    paths: ['apps/api/**']
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # ── Test ─────────────────────────────────────────────────────
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: apps/api/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r apps/api/requirements.txt pytest pytest-asyncio pytest-cov
+
+      - name: Run tests
+        working-directory: apps/api
+        run: pytest tests/ -v --tb=short --cov=. --cov-report=term-missing
+        env:
+          APP_ENV: test
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          JWT_SECRET: test-secret-32-chars-minimum-ok
+
+  # ── Deploy (only on main push) ────────────────────────────────
+  deploy:
+    name: Deploy to Railway
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy API service
+        run: railway up --service vitaforge-api --detach
+        working-directory: apps/api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Deploy Worker service
+        run: railway up --service vitaforge-worker --detach
+        working-directory: apps/api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f https://api.vitaforge.uz/health || exit 1
+        continue-on-error: true
