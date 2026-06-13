@@ -22,41 +22,45 @@ export default function InvitePage() {
     queryFn: async () => {
       const user = await getUser();
       const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
-      const { data } = await sb.from("users").select("id, full_name, role, created_at").eq("gym_id", me?.gym_id).neq("id", user!.id).order("created_at", { ascending: false });
+      if (!me?.gym_id) return [];
+      const { data } = await sb.from("users").select("id, full_name, role, created_at").eq("gym_id", me.gym_id).neq("id", user!.id).order("created_at", { ascending: false });
       return data ?? [];
     },
   });
 
-  // Create new user and add to gym
+  // Create new user via Supabase Auth signUp + assign gym_id
   const createUser = useMutation({
     mutationFn: async () => {
       const user = await getUser();
-      const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
+      const { data: me } = await sb.from("users").select("gym_id, full_name").eq("id", user!.id).single();
       let gymId = me?.gym_id;
 
-      // Gym yo'q bo'lsa — yaratish
+      // Gym yo'q bo'lsa yaratish
       if (!gymId) {
-        const { data: usr } = await sb.from("users").select("full_name").eq("id", user!.id).single();
-        const slug = (usr?.full_name ?? "gym").toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-" + Date.now().toString(36).slice(-4);
-        const { data: gym } = await sb.from("gyms").insert({ name: `${usr?.full_name ?? "My"} Gym`, slug, owner_id: user!.id }).select().single();
-        if (gym) {
-          gymId = gym.id;
-          await sb.from("users").update({ gym_id: gym.id }).eq("id", user!.id);
-        }
+        const slug = (me?.full_name ?? "gym").toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-" + Date.now().toString(36).slice(-4);
+        const { data: gym } = await sb.from("gyms").insert({ name: `${me?.full_name ?? "My"} Gym`, slug, owner_id: user!.id }).select().single();
+        if (gym) { gymId = gym.id; await sb.from("users").update({ gym_id: gym.id }).eq("id", user!.id); }
       }
       if (!gymId) throw new Error("Gym yaratilmadi");
 
-      // Use Supabase Admin to create user (via RPC)
-      const { data, error } = await sb.rpc("create_gym_member", {
-        p_email: form.email,
-        p_password: form.password,
-        p_full_name: form.full_name,
-        p_gym_id: gymId,
-        p_role: form.role,
+      // Supabase Auth orqali user yaratish
+      const { data: signupData, error: signupError } = await sb.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: { data: { full_name: form.full_name, role: form.role } },
       });
 
-      if (error) throw error;
-      return data;
+      if (signupError) throw signupError;
+      const newUserId = signupData.user?.id;
+      if (!newUserId) throw new Error("User yaratilmadi");
+
+      // Biroz kutish (trigger ishlashi uchun)
+      await new Promise((r) => setTimeout(r, 1500));
+
+      // gym_id va role ni yangilash
+      await sb.from("users").update({ gym_id: gymId, role: form.role }).eq("id", newUserId);
+
+      return newUserId;
     },
     onSuccess: () => {
       setMessage(`✅ ${form.full_name} yaratildi! Login: ${form.email} / ${form.password}`);
@@ -78,9 +82,11 @@ export default function InvitePage() {
     mutationFn: async (userId: string) => {
       const user = await getUser();
       const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
-      await sb.from("users").update({ gym_id: me?.gym_id }).eq("id", userId);
+      if (!me?.gym_id) throw new Error("Gym topilmadi");
+      await sb.from("users").update({ gym_id: me.gym_id }).eq("id", userId);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["gym"] }); setMessage("✅ A'zo qo'shildi!"); setFound([]); setSearch(""); },
+    onError: (e: any) => setMessage(`❌ ${e.message}`),
   });
 
   return (
@@ -90,7 +96,6 @@ export default function InvitePage() {
         <p className="text-muted text-xs font-mono mt-1">YANGI YARATISH YOKI MAVJUD QO'SHISH</p>
       </div>
 
-      {/* Mode toggle */}
       <div className="flex gap-2">
         <Button variant={mode === "create" ? "default" : "secondary"} size="sm" onClick={() => setMode("create")}>Yangi yaratish</Button>
         <Button variant={mode === "search" ? "default" : "secondary"} size="sm" onClick={() => setMode("search")}>Mavjud qidirish</Button>
@@ -102,42 +107,28 @@ export default function InvitePage() {
         </Card>
       )}
 
-      {/* CREATE MODE */}
       {mode === "create" && (
         <Card className="border-accent-border/30">
           <CardHeader><CardTitle className="text-base">Yangi foydalanuvchi yaratish</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Ism</Label>
-                <Input value={form.full_name} onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))} placeholder="Jasur Toshmatov" />
-              </div>
-              <div className="space-y-2">
-                <Label>Rol</Label>
-                <select value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
-                  className="flex h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-vtext">
-                  <option value="member">A'zo</option>
-                  <option value="trainer">Trener</option>
+              <div className="space-y-2"><Label>Ism</Label><Input value={form.full_name} onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))} placeholder="Jasur Toshmatov" /></div>
+              <div className="space-y-2"><Label>Rol</Label>
+                <select value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))} className="flex h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-vtext">
+                  <option value="member">A'zo</option><option value="trainer">Trener</option>
                 </select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Email (login uchun)</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder="user@email.com" />
-            </div>
-            <div className="space-y-2">
-              <Label>Parol</Label>
-              <Input value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder="Kamida 6 belgi" />
-            </div>
+            <div className="space-y-2"><Label>Email (login uchun)</Label><Input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder="user@email.com" /></div>
+            <div className="space-y-2"><Label>Parol (kamida 6 belgi)</Label><Input value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder="••••••" /></div>
             <Button onClick={() => createUser.mutate()} disabled={createUser.isPending || !form.full_name || !form.email || form.password.length < 6} className="w-full">
               {createUser.isPending ? "Yaratilmoqda..." : "👤 Foydalanuvchi yaratish"}
             </Button>
-            <p className="text-muted text-xs">Yaratilgan login/parol a'zoga beriladi. U shu bilan kiradi.</p>
+            <p className="text-muted text-xs">Login/parol a'zoga beriladi. U shu bilan kiradi.</p>
           </CardContent>
         </Card>
       )}
 
-      {/* SEARCH MODE */}
       {mode === "search" && (
         <Card>
           <CardHeader><CardTitle className="text-base">Mavjud foydalanuvchi qidirish</CardTitle></CardHeader>
@@ -150,13 +141,8 @@ export default function InvitePage() {
               <div className="space-y-2">
                 {found.map((u) => (
                   <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                    <div>
-                      <p className="text-sm text-vtext">{u.full_name}</p>
-                      <p className="text-xs text-muted">{u.gym_id ? "Boshqa gym da" : "Erkin"}</p>
-                    </div>
-                    <Button size="sm" onClick={() => addToGym.mutate(u.id)} disabled={!!u.gym_id}>
-                      {u.gym_id ? "Band" : "+ Qo'shish"}
-                    </Button>
+                    <div><p className="text-sm text-vtext">{u.full_name}</p><p className="text-xs text-muted">{u.gym_id ? "Boshqa gym" : "Erkin"}</p></div>
+                    <Button size="sm" onClick={() => addToGym.mutate(u.id)} disabled={!!u.gym_id}>{u.gym_id ? "Band" : "+ Qo'shish"}</Button>
                   </div>
                 ))}
               </div>
@@ -165,7 +151,6 @@ export default function InvitePage() {
         </Card>
       )}
 
-      {/* Current members */}
       <Card>
         <CardHeader><CardTitle className="text-base">Gym dagi a'zolar ({(members ?? []).length})</CardTitle></CardHeader>
         <CardContent>
