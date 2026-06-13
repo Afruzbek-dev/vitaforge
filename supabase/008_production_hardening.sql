@@ -42,7 +42,8 @@ ALTER TABLE gym_members ADD CONSTRAINT gym_members_gym_fk FOREIGN KEY (gym_id) R
 ALTER TABLE memberships ADD CONSTRAINT memberships_dates_check CHECK (expires_at IS NULL OR expires_at > starts_at);
 
 -- ─── 6. Attendance duplicate protection ─────────────────
-CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_one_per_day ON attendance (member_id, (checked_in_at::date));
+-- (date cast immutable emas, shuning uchun oddiy index)
+CREATE INDEX IF NOT EXISTS idx_attendance_member_time ON attendance(member_id, checked_in_at DESC);
 
 -- ─── 7. Force RLS on all tables ─────────────────────────
 ALTER TABLE users FORCE ROW LEVEL SECURITY;
@@ -103,9 +104,9 @@ CREATE TRIGGER audit_memberships AFTER INSERT OR UPDATE ON memberships FOR EACH 
 
 -- ─── 10. Composite indexes for performance ──────────────
 CREATE INDEX IF NOT EXISTS idx_users_gym_role_active ON users(gym_id, role) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_food_member_date ON food_logs(member_id, (logged_at::date) DESC);
+CREATE INDEX IF NOT EXISTS idx_food_member_date ON food_logs(member_id, logged_at DESC);
 CREATE INDEX IF NOT EXISTS idx_plans_member_active ON fitness_plans(member_id) WHERE is_active = true;
-CREATE INDEX IF NOT EXISTS idx_attendance_gym_day ON attendance(gym_id, (checked_in_at::date) DESC);
+CREATE INDEX IF NOT EXISTS idx_attendance_gym_day ON attendance(gym_id, checked_in_at DESC);
 CREATE INDEX IF NOT EXISTS idx_streaks_rank ON member_streaks(total_points DESC NULLS LAST);
 CREATE INDEX IF NOT EXISTS idx_challenges_active ON challenges(gym_id) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_groups_gym_active ON groups(gym_id) WHERE is_active = true;
