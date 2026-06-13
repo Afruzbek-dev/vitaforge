@@ -28,7 +28,14 @@ export default function GroupsPage() {
     queryFn: async () => {
       const user = await getUser();
       const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
-      const { data } = await sb.from("groups").select("*").eq("gym_id", me?.gym_id).eq("is_active", true).order("created_at", { ascending: false });
+      // Get groups: by gym_id OR by created_by (for groups created before gym existed)
+      let query = sb.from("groups").select("*").eq("is_active", true).order("created_at", { ascending: false });
+      if (me?.gym_id) {
+        query = query.or(`gym_id.eq.${me.gym_id},created_by.eq.${user!.id}`);
+      } else {
+        query = query.eq("created_by", user!.id);
+      }
+      const { data } = await query;
       // Get member counts and members per group
       const enriched = await Promise.all((data ?? []).map(async (g) => {
         const { data: gm } = await sb.from("group_members").select("member_id").eq("group_id", g.id);
@@ -57,9 +64,18 @@ export default function GroupsPage() {
   const createGroup = useMutation({
     mutationFn: async () => {
       const user = await getUser();
-      const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
+      const { data: me } = await sb.from("users").select("gym_id, full_name").eq("id", user!.id).single();
+      let gymId = me?.gym_id;
+
+      // Gym yo'q bo'lsa — yaratish
+      if (!gymId) {
+        const slug = (me?.full_name ?? "gym").toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-" + Date.now().toString(36).slice(-4);
+        const { data: gym } = await sb.from("gyms").insert({ name: `${me?.full_name ?? "My"} Gym`, slug, owner_id: user!.id }).select().single();
+        if (gym) { gymId = gym.id; await sb.from("users").update({ gym_id: gym.id }).eq("id", user!.id); }
+      }
+
       const color = GOALS.find((g) => g.value === goal)?.color ?? "#e8ff47";
-      await sb.from("groups").insert({ gym_id: me?.gym_id, name, goal, created_by: user!.id, color });
+      await sb.from("groups").insert({ gym_id: gymId, name, goal, created_by: user!.id, color });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["groups"] }); setName(""); setShowCreate(false); },
   });
