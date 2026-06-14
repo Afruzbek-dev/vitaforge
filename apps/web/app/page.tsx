@@ -110,9 +110,9 @@ export default function LandingPage() {
         <div className="grid md:grid-cols-4 gap-4">
           {[
             { name: "Free", price: "$0", unit: "abadiy", desc: "Sinab ko'rish", features: ["5 AI chat/kun", "1 plan/oy", "Ovqat tracker", "Streak system"], featured: false },
-            { name: "Starter", price: "$49", unit: "/oy", desc: "Kichik gym", features: ["100 a'zo", "20 AI chat/kun", "Haftalik plan", "Progress foto AI", "1 trener"], featured: false },
-            { name: "Pro", price: "$99", unit: "/oy", desc: "O'suvchi gym", features: ["500 a'zo", "Cheksiz AI", "Churn prediction", "5 trener", "Haftalik hisobot"], featured: true },
-            { name: "Network", price: "$249", unit: "/oy", desc: "Korporativ", features: ["Cheksiz a'zo", "White-label", "API kirish", "Custom AI", "24/7 support"], featured: false },
+            { name: "Starter", price: "$39", unit: "/oy", desc: "Kichik gym", features: ["100 a'zo", "20 AI chat/kun", "Haftalik plan", "Progress foto AI", "1 trener"], featured: false },
+            { name: "Pro", price: "$69", unit: "/oy", desc: "O'suvchi gym", features: ["500 a'zo", "Cheksiz AI", "Churn prediction", "5 trener", "Haftalik hisobot"], featured: true },
+            { name: "Scale", price: "$149", unit: "/oy", desc: "Katta gym", features: ["Cheksiz a'zo", "White-label", "API kirish", "Custom AI", "24/7 support"], featured: false },
           ].map((p) => (
             <div key={p.name} className={`rounded-2xl p-6 border ${p.featured ? "bg-accent/5 border-accent/40" : "bg-card border-border"} relative`}>
               {p.featured && <span className="absolute top-4 right-4 text-[9px] font-mono bg-accent/20 text-accent border border-accent/30 rounded-full px-2 py-0.5">TAVSIYA</span>}

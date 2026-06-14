@@ -1,0 +1,97 @@
+-- ZenFit — Kengaytirilgan O'zbek ovqat bazasi (100+ ta)
+-- Supabase SQL Editor da run qiling
+
+INSERT INTO uzbek_foods (name_uz, name_ru, name_en, category, calories_per_100g, protein_g, carbs_g, fat_g, serving_size_g, aliases, verified) VALUES
+-- ASOSIY TAOMLAR
+('Osh (palov)', 'Плов', 'Plov', 'main_dish', 180, 5.2, 25.0, 7.0, 350, ARRAY['palov','plov','osh'], true),
+('Shurpa (mol)', 'Шурпа говяжья', 'Beef shurpa', 'soup', 65, 4.5, 5.0, 3.0, 400, ARRAY['shorpa','shorva'], true),
+('Shurpa (qo''y)', 'Шурпа баранья', 'Lamb shurpa', 'soup', 75, 5.0, 4.5, 4.2, 400, ARRAY['qoy shorva'], true),
+('Manti', 'Манты', 'Manti', 'main_dish', 195, 9.8, 22.0, 8.0, 200, ARRAY['manty','manti'], true),
+('Somsa (go''shtli)', 'Самса мясная', 'Meat samsa', 'snack', 320, 11.0, 32.0, 16.0, 120, ARRAY['samsa','somsa'], true),
+('Somsa (kartoshkali)', 'Самса с картошкой', 'Potato samsa', 'snack', 240, 5.0, 35.0, 9.0, 120, ARRAY['kartoshka somsa'], true),
+('Lag''mon (qo''lda)', 'Лагман ручной', 'Handmade lagman', 'main_dish', 145, 6.0, 18.0, 5.5, 350, ARRAY['lagmon','lagman'], true),
+('Lag''mon (qovurilgan)', 'Жареный лагман', 'Fried lagman', 'main_dish', 175, 7.0, 20.0, 7.5, 350, ARRAY['qovurilgan lagmon','boss lagmon'], true),
+('Dimlama', 'Димлама', 'Dimlama', 'main_dish', 95, 5.5, 8.0, 4.5, 300, ARRAY['dimlama'], true),
+('Kabob (mol)', 'Кабоб говяжий', 'Beef kebab', 'main_dish', 285, 22.0, 2.0, 21.0, 150, ARRAY['kebab','kabob'], true),
+('Kabob (qo''y)', 'Кабоб бараний', 'Lamb kebab', 'main_dish', 310, 20.0, 1.5, 25.0, 150, ARRAY['qoy kabob'], true),
+('Kabob (tovuq)', 'Кабоб куриный', 'Chicken kebab', 'main_dish', 195, 28.0, 2.0, 8.0, 150, ARRAY['tovuq kabob'], true),
+('Qozon kabob', 'Казан кабоб', 'Kazan kabob', 'main_dish', 310, 20.0, 5.0, 24.0, 200, ARRAY['qazon kabob'], true),
+('Tandir kabob', 'Тандыр кабоб', 'Tandoor kebab', 'main_dish', 265, 24.0, 1.0, 18.0, 150, ARRAY['tandir kabob'], true),
+('Chuchvara', 'Чучвара', 'Chuchvara', 'main_dish', 175, 8.5, 20.0, 6.5, 250, ARRAY['chuchvara'], true),
+('Norin', 'Норин', 'Norin', 'main_dish', 165, 7.0, 22.0, 5.0, 300, ARRAY['norin'], true),
+('Mastava', 'Мастава', 'Mastava', 'soup', 80, 4.0, 10.0, 2.5, 400, ARRAY['mastava','mastoba'], true),
+('Do''lma (uzum bargi)', 'Долма', 'Dolma', 'main_dish', 145, 6.0, 12.0, 8.0, 200, ARRAY['dolma','do''lma'], true),
+('Qovoq oshi', 'Тыквенный плов', 'Pumpkin plov', 'main_dish', 155, 4.0, 22.0, 6.0, 350, ARRAY['qovoq osh'], true),
+('Beshbarmaq', 'Бешбармак', 'Beshbarmak', 'main_dish', 210, 12.0, 18.0, 10.0, 350, ARRAY['beshbarmaq'], true),
+('Hasip', 'Хасип', 'Hasip', 'main_dish', 280, 14.0, 5.0, 23.0, 150, ARRAY['hasip'], true),
+-- NON TURLARI
+('Non (oq)', 'Лепёшка белая', 'White bread', 'bread', 270, 8.5, 53.0, 2.5, 100, ARRAY['non','bread','lepyoshka'], true),
+('Non (patir)', 'Патир', 'Patir bread', 'bread', 310, 7.0, 48.0, 10.0, 120, ARRAY['patir','patir non'], true),
+('Non (tandirdan)', 'Тандырная лепёшка', 'Tandoor bread', 'bread', 260, 9.0, 50.0, 2.0, 100, ARRAY['tandir non'], true),
+('Non (bug''doy)', 'Пшеничный хлеб', 'Wheat bread', 'bread', 245, 9.0, 48.0, 2.0, 100, ARRAY['bugdoy non'], true),
+-- SUYUQLIKLAR
+('Choy (qora)', 'Чай чёрный', 'Black tea', 'drink', 1, 0.0, 0.2, 0.0, 250, ARRAY['tea','choy'], true),
+('Choy (ko''k)', 'Зелёный чай', 'Green tea', 'drink', 1, 0.0, 0.2, 0.0, 250, ARRAY['kok choy','green tea'], true),
+('Ayron', 'Айран', 'Ayran', 'drink', 40, 1.5, 2.5, 2.5, 250, ARRAY['ayran','ayron'], true),
+('Kompot', 'Компот', 'Compote', 'drink', 55, 0.1, 14.0, 0.0, 250, ARRAY['kompot'], true),
+('Qatiq', 'Катык', 'Katyk', 'dairy', 56, 2.8, 4.5, 3.0, 200, ARRAY['katyk','qatiq'], true),
+('Suzma', 'Сузма', 'Suzma', 'dairy', 95, 8.0, 5.0, 5.0, 100, ARRAY['suzma'], true),
+-- PROTEIN MANBALARI
+('Tuxum (qaynatilgan)', 'Яйцо варёное', 'Boiled egg', 'protein', 155, 13.0, 1.1, 11.0, 60, ARRAY['egg','tuxum'], true),
+('Tuxum (qovurilgan)', 'Яичница', 'Fried egg', 'protein', 196, 14.0, 1.0, 15.0, 60, ARRAY['fried egg','qovurilgan tuxum'], true),
+('Tovuq (qaynatilgan)', 'Курица варёная', 'Boiled chicken', 'protein', 165, 31.0, 0.0, 3.6, 150, ARRAY['chicken','tovuq'], true),
+('Tovuq (qovurilgan)', 'Курица жареная', 'Fried chicken', 'protein', 240, 27.0, 3.0, 13.0, 150, ARRAY['fried chicken'], true),
+('Mol go''sht (qaynat)', 'Говядина варёная', 'Boiled beef', 'protein', 218, 26.0, 0.0, 12.0, 150, ARRAY['beef','mol gosht'], true),
+('Qo''y go''sht', 'Баранина', 'Lamb', 'protein', 290, 24.0, 0.0, 21.0, 150, ARRAY['lamb','qoy gosht'], true),
+('Baliq (qovurilgan)', 'Рыба жареная', 'Fried fish', 'protein', 210, 20.0, 5.0, 12.0, 150, ARRAY['fish','baliq'], true),
+-- KRUPA VA GARNIR
+('Guruch (qaynatilgan)', 'Рис варёный', 'Cooked rice', 'grain', 130, 2.7, 28.0, 0.3, 200, ARRAY['rice','guruch'], true),
+('Makaron', 'Макароны', 'Pasta', 'grain', 158, 5.5, 31.0, 0.9, 200, ARRAY['pasta','makaron'], true),
+('Kartoshka (qaynat)', 'Картошка варёная', 'Boiled potato', 'vegetable', 86, 2.0, 20.0, 0.1, 200, ARRAY['potato','kartoshka'], true),
+('Kartoshka (qovurilgan)', 'Жареная картошка', 'Fried potato', 'vegetable', 192, 3.0, 24.0, 10.0, 200, ARRAY['fried potato'], true),
+('Grechixa', 'Гречка', 'Buckwheat', 'grain', 132, 4.5, 25.0, 2.3, 200, ARRAY['grechixa','buckwheat'], true),
+-- SABZAVOTLAR
+('Pomidor', 'Помидор', 'Tomato', 'vegetable', 18, 0.9, 3.9, 0.2, 150, ARRAY['tomato','pomidor'], true),
+('Bodring', 'Огурец', 'Cucumber', 'vegetable', 15, 0.7, 3.1, 0.1, 150, ARRAY['cucumber','bodring'], true),
+('Piyoz', 'Лук', 'Onion', 'vegetable', 40, 1.1, 9.3, 0.1, 100, ARRAY['onion','piyoz'], true),
+('Sabzi', 'Морковь', 'Carrot', 'vegetable', 41, 0.9, 9.6, 0.2, 100, ARRAY['carrot','sabzi'], true),
+('Karam', 'Капуста', 'Cabbage', 'vegetable', 27, 1.3, 6.0, 0.1, 150, ARRAY['cabbage','karam'], true),
+('Bolgar qalampiri', 'Перец болгарский', 'Bell pepper', 'vegetable', 26, 1.0, 5.0, 0.3, 100, ARRAY['pepper','qalampir'], true),
+('Baqlajon', 'Баклажан', 'Eggplant', 'vegetable', 24, 1.0, 5.7, 0.1, 150, ARRAY['eggplant','baqlajon'], true),
+-- MEVALAR
+('Olma', 'Яблоко', 'Apple', 'fruit', 52, 0.3, 14.0, 0.2, 150, ARRAY['apple','olma'], true),
+('Banan', 'Банан', 'Banana', 'fruit', 89, 1.1, 23.0, 0.3, 120, ARRAY['banana','banan'], true),
+('Uzum', 'Виноград', 'Grape', 'fruit', 67, 0.6, 17.0, 0.4, 150, ARRAY['grape','uzum'], true),
+('Qovun', 'Дыня', 'Melon', 'fruit', 34, 0.6, 8.2, 0.3, 300, ARRAY['melon','qovun'], true),
+('Tarvuz', 'Арбуз', 'Watermelon', 'fruit', 30, 0.6, 7.6, 0.2, 400, ARRAY['watermelon','tarvuz'], true),
+('Anor', 'Гранат', 'Pomegranate', 'fruit', 72, 0.7, 18.7, 0.6, 150, ARRAY['pomegranate','anor'], true),
+('Shaftoli', 'Персик', 'Peach', 'fruit', 39, 0.9, 9.5, 0.3, 150, ARRAY['peach','shaftoli'], true),
+('O''rik', 'Абрикос', 'Apricot', 'fruit', 44, 0.9, 11.0, 0.1, 100, ARRAY['apricot','orik'], true),
+('Nok', 'Груша', 'Pear', 'fruit', 57, 0.4, 15.0, 0.1, 150, ARRAY['pear','nok'], true),
+-- SUT MAHSULOTLARI
+('Sut', 'Молоко', 'Milk', 'dairy', 61, 3.2, 4.8, 3.3, 250, ARRAY['milk','sut'], true),
+('Tvorog', 'Творог', 'Cottage cheese', 'dairy', 121, 17.0, 3.0, 5.0, 150, ARRAY['tvorog','cottage cheese'], true),
+('Smetana', 'Сметана', 'Sour cream', 'dairy', 193, 2.5, 3.0, 20.0, 50, ARRAY['smetana','sour cream'], true),
+('Pishloq (brynza)', 'Брынза', 'Brynza cheese', 'dairy', 260, 18.0, 0.5, 20.5, 50, ARRAY['cheese','pishloq','brynza'], true),
+-- YONG'OQLAR VA QURITILGAN MEVALAR
+('Yong''oq', 'Грецкий орех', 'Walnut', 'nuts', 654, 15.0, 14.0, 65.0, 30, ARRAY['walnut','yongoq'], true),
+('Bodom', 'Миндаль', 'Almond', 'nuts', 579, 21.0, 22.0, 49.0, 30, ARRAY['almond','bodom'], true),
+('Mayiz', 'Изюм', 'Raisin', 'dried_fruit', 299, 3.1, 79.0, 0.5, 50, ARRAY['raisin','mayiz'], true),
+('Anjir (quruq)', 'Инжир сушёный', 'Dried fig', 'dried_fruit', 249, 3.3, 63.0, 0.9, 50, ARRAY['fig','anjir'], true),
+-- SHIRINLIKLAR
+('Halva', 'Халва', 'Halva', 'dessert', 516, 12.0, 54.0, 29.0, 50, ARRAY['halva','xalva'], true),
+('Novvot', 'Навват', 'Navvat', 'dessert', 387, 0.0, 97.0, 0.0, 30, ARRAY['navvat','novvot'], true),
+('Chak-chak', 'Чак-чак', 'Chak-chak', 'dessert', 440, 5.0, 52.0, 23.0, 80, ARRAY['chak chak'], true),
+-- FAST FOOD
+('Lavash (go''shtli)', 'Лаваш с мясом', 'Meat lavash', 'snack', 230, 10.0, 28.0, 9.0, 250, ARRAY['lavash','shawarma'], true),
+('Hot dog', 'Хот-дог', 'Hot dog', 'snack', 290, 11.0, 25.0, 17.0, 150, ARRAY['hotdog','hot dog'], true),
+('Gamburger', 'Гамбургер', 'Hamburger', 'snack', 295, 14.0, 30.0, 13.0, 200, ARRAY['hamburger','burger','gamburger'], true),
+-- QO'SHIMCHA TAOMLAR
+('Achichuk salat', 'Ачичук', 'Achichuk salad', 'salad', 35, 1.0, 5.0, 1.5, 150, ARRAY['achichuk','salat'], true),
+('Shakarob', 'Шакароб', 'Shakarob', 'salad', 25, 0.8, 4.0, 0.8, 150, ARRAY['shakarob'], true),
+('Suyuq osh', 'Шавля', 'Shavla', 'main_dish', 155, 5.0, 22.0, 5.5, 350, ARRAY['shavla','suyuq osh'], true),
+('Tukhum barak', 'Тухум барак', 'Egg dumplings', 'main_dish', 185, 9.0, 24.0, 6.0, 250, ARRAY['tukhum barak','tuxum barak'], true),
+('Quyrdoq', 'Куурдак', 'Kuurdak', 'main_dish', 250, 18.0, 3.0, 19.0, 200, ARRAY['quyrdoq','kuurdak'], true),
+('Narx (qaynatma go''sht)', 'Отварное мясо', 'Boiled meat platter', 'main_dish', 200, 25.0, 0.0, 11.0, 200, ARRAY['narx','qaynatma'], true),
+('Qazi (ot go''shti)', 'Казы', 'Horse meat sausage', 'main_dish', 350, 18.0, 0.0, 30.0, 100, ARRAY['qazi','kazi'], true)
+ON CONFLICT DO NOTHING;
