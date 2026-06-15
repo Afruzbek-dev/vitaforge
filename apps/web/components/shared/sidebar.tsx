@@ -5,25 +5,22 @@ import { useAuthStore } from "@/lib/store/auth";
 import { Button } from "@/components/ui/button";
 
 const memberLinks = [
-  { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/dashboard", label: "Dashboard", icon: "🏠" },
   { href: "/dashboard/today", label: "Bugun", icon: "✅" },
   { href: "/dashboard/plan", label: "Plan", icon: "📋" },
-  { href: "/dashboard/plan/tracker", label: "Tracker", icon: "📅" },
-  { href: "/dashboard/plan/instructions", label: "Ko'rsatma", icon: "📖" },
   { href: "/dashboard/food", label: "Ovqat", icon: "🥗" },
-  { href: "/dashboard/chat", label: "AI Chat", icon: "🤖" },
+  { href: "/dashboard/chat", label: "AI Coach", icon: "🤖" },
+  { href: "/dashboard/photos", label: "Progress", icon: "📸" },
   { href: "/dashboard/referral", label: "Taklif", icon: "🎁" },
   { href: "/dashboard/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
 const ownerLinks = [
-  { href: "/gym", label: "CRM", icon: "📊" },
-  { href: "/gym/attendance", label: "Davomat", icon: "📅" },
+  { href: "/gym", label: "Dashboard", icon: "📊" },
   { href: "/gym/members", label: "A'zolar", icon: "👥" },
+  { href: "/gym/attendance", label: "Davomat", icon: "📅" },
+  { href: "/gym/retention", label: "Retention", icon: "🎯" },
   { href: "/gym/invite", label: "Qo'shish", icon: "➕" },
-  { href: "/gym/groups", label: "Guruhlar", icon: "🎯" },
-  { href: "/gym/challenges", label: "Challenge", icon: "🏆" },
-  { href: "/gym/leaderboard", label: "Leaderboard", icon: "🥇" },
-  { href: "/gym/notify", label: "Xabar", icon: "📢" },
+  { href: "/gym/groups", label: "Guruhlar", icon: "🏋️" },
   { href: "/gym/analytics", label: "Analitika", icon: "📈" },
   { href: "/gym/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
