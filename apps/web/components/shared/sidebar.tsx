@@ -21,6 +21,7 @@ const ownerLinks = [
   { href: "/gym/retention", label: "Retention", icon: "🎯" },
   { href: "/gym/invite", label: "Qo'shish", icon: "➕" },
   { href: "/gym/groups", label: "Guruhlar", icon: "🏋️" },
+  { href: "/gym/leaderboard", label: "Reyting", icon: "🏆" },
   { href: "/gym/analytics", label: "Analitika", icon: "📈" },
   { href: "/gym/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
