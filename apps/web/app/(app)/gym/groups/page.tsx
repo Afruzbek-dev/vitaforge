@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
+import { ensureGym } from "@/lib/ensure-gym";
 
 const GOALS = [
   { value: "weight_loss", label: "Vazn yo'qotish", icon: "📉", color: "#ff5252" },
@@ -64,16 +65,7 @@ export default function GroupsPage() {
   const createGroup = useMutation({
     mutationFn: async () => {
       const user = await getUser();
-      const { data: me } = await sb.from("users").select("gym_id, full_name").eq("id", user!.id).single();
-      let gymId = me?.gym_id;
-
-      // Gym yo'q bo'lsa — yaratish
-      if (!gymId) {
-        const slug = (me?.full_name ?? "gym").toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-" + Date.now().toString(36).slice(-4);
-        const { data: gym } = await sb.from("gyms").insert({ name: `${me?.full_name ?? "My"} Gym`, slug, owner_id: user!.id }).select().single();
-        if (gym) { gymId = gym.id; await sb.from("users").update({ gym_id: gym.id }).eq("id", user!.id); }
-      }
-
+      const gymId = await ensureGym();
       const color = GOALS.find((g) => g.value === goal)?.color ?? "#e8ff47";
       await sb.from("groups").insert({ gym_id: gymId, name, goal, created_by: user!.id, color });
     },
