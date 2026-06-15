@@ -11,7 +11,7 @@ const memberLinks = [
   { href: "/dashboard/food", label: "Ovqat", icon: "🥗" },
   { href: "/dashboard/chat", label: "AI Coach", icon: "🤖" },
   { href: "/dashboard/photos", label: "Progress", icon: "📸" },
-  { href: "/dashboard/referral", label: "Taklif", icon: "🎁" },
+  { href: "/dashboard/invitations", label: "Takliflar", icon: "📩" },
   { href: "/dashboard/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
 const ownerLinks = [
