@@ -1,43 +1,41 @@
-// ═══ VitaForge Gamification System ═══
-// Birlik: Kuch ⚡
+// ═══ ZenFit Gamification — O'zbek Kuch Darajalari ═══
 
 export const UNIT = { name: "Kuch", emoji: "⚡" };
 
-// Kunlik harakatlar uchun kuch ballari
 export const POINTS = {
-  daily_workout: 10,      // Mashg'ulot bajarish
-  food_log: 5,            // Ovqat yozish
-  photo_upload: 20,       // Progress foto
-  streak_bonus_7: 50,     // 7 kunlik streak
-  streak_bonus_30: 200,   // 30 kunlik streak
-  streak_bonus_100: 1000, // 100 kunlik streak
-  attendance: 8,          // Gym ga kelish
-  chat_interaction: 2,    // AI bilan gaplashish
+  daily_workout: 10,
+  food_log: 5,
+  photo_upload: 20,
+  streak_bonus_7: 50,
+  streak_bonus_30: 200,
+  streak_bonus_100: 1000,
+  attendance: 8,
+  chat_interaction: 2,
 };
 
-// Level system — har bir level uchun kerakli kuch
 export const LEVELS = [
-  { name: "Shogird", emoji: "🥋", min: 0, color: "#52526a" },
-  { name: "Kurashchi", emoji: "⚔️", min: 100, color: "#5299ff" },
-  { name: "Polvon", emoji: "🦁", min: 500, color: "#4dffb4" },
-  { name: "Alp", emoji: "🏔️", min: 1500, color: "#e8ff47" },
-  { name: "Bahodir", emoji: "🛡️", min: 4000, color: "#ff9f43" },
-  { name: "Sohibqiron", emoji: "👑", min: 10000, color: "#ff5252" },
+  { name: "Navkar", emoji: "🗡️", min: 0, color: "#52526a", desc: "Yo'lning boshlanishi" },
+  { name: "Askar", emoji: "⚔️", min: 500, color: "#5299ff", desc: "Intizom shakllanmoqda" },
+  { name: "Bahodir", emoji: "🛡️", min: 1500, color: "#4dffb4", desc: "Kuch va iroda sinovdan o'tgan" },
+  { name: "Alp", emoji: "🏹", min: 3000, color: "#ff9f43", desc: "Eng kuchli jangchilar nomi" },
+  { name: "Qo'mondon", emoji: "🦅", min: 5000, color: "#e8ff47", desc: "Boshqalarni ilhomlantirasan" },
+  { name: "Manguberdi", emoji: "⚔️", min: 8000, color: "#ff5252", desc: "Matonat va jasorat timsoli" },
+  { name: "Sohibqiron", emoji: "👑", min: 12000, color: "#ffd700", desc: "Intizom va buyuklik cho'qqisi" },
+  { name: "Turon Afsonasi", emoji: "🦅", min: 20000, color: "#e8ff47", desc: "ZenFit elitasi. Juda kam yetadi." },
 ];
 
-// Badges — maxsus yutuqlar
 export const BADGES = [
-  { id: "temir_iroda", name: "Temir Iroda", emoji: "🔩", description: "7 kun ketma-ket mashq qilish", condition: "7_day_streak" },
-  { id: "tong_jangchisi", name: "Tong Jangchisi", emoji: "🌅", description: "5 marta erta (6:00 gacha) gym ga kelish", condition: "early_bird_5" },
-  { id: "100_kunlik_galaba", name: "100 Kunlik G'alaba", emoji: "💯", description: "100 kun streak", condition: "100_day_streak" },
-  { id: "afsona_polvon", name: "Afsona Polvon", emoji: "🏆", description: "10,000 kuch to'plash (Sohibqiron level)", condition: "level_sohibqiron" },
-  { id: "birinchi_qadam", name: "Birinchi Qadam", emoji: "👣", description: "Birinchi mashg'ulotni bajarish", condition: "first_workout" },
-  { id: "oziq_nazoratchi", name: "Oziq Nazoratchi", emoji: "🥗", description: "7 kun ketma-ket ovqat yozish", condition: "food_log_7" },
+  { id: "manguberdi_ruhi", name: "Manguberdi Ruhi", emoji: "⚔️", description: "30 kunlik streak", condition: "30_day_streak" },
+  { id: "temuriy_intizom", name: "Temuriy Intizom", emoji: "👑", description: "100 ta mashg'ulot bajarish", condition: "100_workouts" },
+  { id: "alp_jasorati", name: "Alp Jasorati", emoji: "🏹", description: "50 ta gym check-in", condition: "50_checkins" },
+  { id: "tomaris_matonati", name: "To'maris Matonati", emoji: "🛡️", description: "90 kunlik intizom", condition: "90_day_streak" },
+  { id: "ulugbek_donishmandligi", name: "Ulug'bek Donishmandligi", emoji: "⭐", description: "Nutrition maqsadini 30 kun bajarish", condition: "nutrition_30" },
+  { id: "temir_tana", name: "Temir Tana", emoji: "💪", description: "7 kunlik streak", condition: "7_day_streak" },
+  { id: "birinchi_qadam", name: "Birinchi Qadam", emoji: "👣", description: "Birinchi mashg'ulot", condition: "first_workout" },
   { id: "kuch_portlashi", name: "Kuch Portlashi", emoji: "💥", description: "1 kunda 50+ kuch olish", condition: "daily_50" },
-  { id: "guruh_yulduz", name: "Guruh Yulduzi", emoji: "⭐", description: "Guruh leaderboard da #1 bo'lish", condition: "group_leader" },
+  { id: "turon_afsonasi", name: "Turon Afsonasi", emoji: "🦅", description: "20000+ kuch (eng yuqori daraja)", condition: "level_turon" },
 ];
 
-// Helper: kuch asosida levelni aniqlash
 export function getLevel(points: number) {
   let current = LEVELS[0];
   for (const level of LEVELS) {
@@ -46,22 +44,19 @@ export function getLevel(points: number) {
   }
   const idx = LEVELS.indexOf(current);
   const next = LEVELS[idx + 1];
-  const progress = next ? Math.min(((points - current.min) / (next.min - current.min)) * 100, 100) : 100;
-  return { ...current, index: idx, next, progress: Math.round(progress) };
+  const progress = next ? Math.min(Math.round(((points - current.min) / (next.min - current.min)) * 100), 100) : 100;
+  return { ...current, index: idx, next, progress, pointsToNext: next ? next.min - points : 0 };
 }
 
-// Helper: earned badges
-export function getEarnedBadges(streak: number, totalPoints: number, badges: string[]): typeof BADGES {
-  return BADGES.filter((b) => badges.includes(b.id));
-}
-
-// Helper: check new badges
-export function checkNewBadges(streak: number, totalPoints: number, dailyPoints: number, existingBadges: string[]): string[] {
-  const newBadges: string[] = [];
-  if (streak >= 7 && !existingBadges.includes("temir_iroda")) newBadges.push("temir_iroda");
-  if (streak >= 100 && !existingBadges.includes("100_kunlik_galaba")) newBadges.push("100_kunlik_galaba");
-  if (totalPoints >= 10000 && !existingBadges.includes("afsona_polvon")) newBadges.push("afsona_polvon");
-  if (dailyPoints >= 50 && !existingBadges.includes("kuch_portlashi")) newBadges.push("kuch_portlashi");
-  if (totalPoints > 0 && !existingBadges.includes("birinchi_qadam")) newBadges.push("birinchi_qadam");
-  return newBadges;
+export function checkNewBadges(streak: number, totalPoints: number, dailyPoints: number, totalWorkouts: number, totalCheckins: number, existingBadges: string[]): string[] {
+  const n: string[] = [];
+  if (totalPoints > 0 && !existingBadges.includes("birinchi_qadam")) n.push("birinchi_qadam");
+  if (streak >= 7 && !existingBadges.includes("temir_tana")) n.push("temir_tana");
+  if (streak >= 30 && !existingBadges.includes("manguberdi_ruhi")) n.push("manguberdi_ruhi");
+  if (streak >= 90 && !existingBadges.includes("tomaris_matonati")) n.push("tomaris_matonati");
+  if (totalWorkouts >= 100 && !existingBadges.includes("temuriy_intizom")) n.push("temuriy_intizom");
+  if (totalCheckins >= 50 && !existingBadges.includes("alp_jasorati")) n.push("alp_jasorati");
+  if (dailyPoints >= 50 && !existingBadges.includes("kuch_portlashi")) n.push("kuch_portlashi");
+  if (totalPoints >= 20000 && !existingBadges.includes("turon_afsonasi")) n.push("turon_afsonasi");
+  return n;
 }
