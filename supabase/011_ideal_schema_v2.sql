@@ -34,6 +34,7 @@ ALTER TABLE food_logs ADD CONSTRAINT food_carbs_positive CHECK (carbs_g IS NULL 
 ALTER TABLE food_logs ADD CONSTRAINT food_fat_positive CHECK (fat_g IS NULL OR fat_g >= 0);
 
 -- ─── FIX #9: uzbek_foods unique name ─────────────────────
+DELETE FROM uzbek_foods a USING uzbek_foods b WHERE a.id > b.id AND a.name_uz = b.name_uz;
 ALTER TABLE uzbek_foods DROP CONSTRAINT IF EXISTS uzbek_foods_name_unique;
 ALTER TABLE uzbek_foods ADD CONSTRAINT uzbek_foods_name_unique UNIQUE (name_uz);
 
@@ -154,7 +155,9 @@ ALTER TABLE ai_usage_logs FORCE ROW LEVEL SECURITY;
 CREATE POLICY "sessions_own" ON workout_sessions FOR ALL USING (member_id = auth.uid()) WITH CHECK (member_id = auth.uid());
 CREATE POLICY "notes_trainer" ON trainer_notes FOR ALL USING (trainer_id = auth.uid() OR member_id = auth.uid()) WITH CHECK (trainer_id = auth.uid());
 CREATE POLICY "ai_own" ON ai_usage_logs FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "membership_own" ON memberships;
 CREATE POLICY "membership_own" ON memberships FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "membership_gym" ON memberships;
 CREATE POLICY "membership_gym" ON memberships FOR ALL USING (gym_id IN (SELECT id FROM gyms WHERE owner_id = auth.uid())) WITH CHECK (true);
 CREATE POLICY "audit_read" ON audit_logs FOR SELECT USING (actor_id = auth.uid());
 CREATE POLICY "audit_insert" ON audit_logs FOR INSERT WITH CHECK (true);
