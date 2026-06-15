@@ -1,6 +1,19 @@
-// ═══ ZenFit Gamification — O'zbek Kuch Darajalari ═══
+// ═══ ZenFit Gamification — O'zbek Kuch Darajalari + Maqsad Ligalari ═══
 
 export const UNIT = { name: "Kuch", emoji: "⚡" };
+
+// ─── Maqsad Ligalari ─────────────────────────────────────
+export const LEAGUES = [
+  { id: "weight_loss", name: "Ozish Ligasi", emoji: "🔥", color: "#ff5252", metrics: ["Yo'qotilgan yog'", "BMI progress", "Kaloriya intizomi", "Davomat"] },
+  { id: "muscle_gain", name: "Temir Liga", emoji: "💪", color: "#e8ff47", metrics: ["Mushak massasi", "Workout bajarilishi", "Protein intizomi", "Progress foto"] },
+  { id: "endurance", name: "Alp Ligasi", emoji: "🏹", color: "#5299ff", metrics: ["Kardio", "Qadamlar", "Chidamlilik", "Recovery"] },
+  { id: "health", name: "Hayot Ligasi", emoji: "🌿", color: "#4dffb4", metrics: ["Uyqu", "Suv", "Ovqat", "Umumiy faollik"] },
+  { id: "strength", name: "Bahodirlar Ligasi", emoji: "⚔️", color: "#ff9f43", metrics: ["Bench", "Squat", "Deadlift", "Consistency"] },
+];
+
+export function getLeague(goal: string) {
+  return LEAGUES.find((l) => l.id === goal) ?? LEAGUES[3]; // default: Hayot
+}
 
 export const POINTS = {
   daily_workout: 10,
