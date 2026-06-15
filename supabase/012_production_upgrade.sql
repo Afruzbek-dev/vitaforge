@@ -199,6 +199,9 @@ ALTER TABLE workout_sessions FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY "gm_own" ON gym_members FOR SELECT USING (user_id = auth.uid() OR gym_id IN (SELECT id FROM gyms WHERE owner_id = auth.uid()));
 CREATE POLICY "gm_manage" ON gym_members FOR ALL USING (gym_id IN (SELECT id FROM gyms WHERE owner_id = auth.uid())) WITH CHECK (true);
+DROP POLICY IF EXISTS "membership_own" ON memberships;
+DROP POLICY IF EXISTS "membership_manage" ON memberships;
+DROP POLICY IF EXISTS "membership_gym" ON memberships;
 CREATE POLICY "membership_own" ON memberships FOR SELECT USING (member_id = auth.uid());
 CREATE POLICY "membership_manage" ON memberships FOR ALL USING (gym_id IN (SELECT id FROM gyms WHERE owner_id = auth.uid())) WITH CHECK (true);
 CREATE POLICY "ws_own" ON workout_sessions FOR ALL USING (member_id = auth.uid()) WITH CHECK (member_id = auth.uid());
