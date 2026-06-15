@@ -195,13 +195,30 @@ ALTER TABLE workout_sessions FORCE ROW LEVEL SECURITY;
 
 -- =====================================================
 -- RLS POLICIES (yangi jadvallar uchun)
+-- DROP + CREATE pattern
 -- =====================================================
+
+DO $$ BEGIN DROP POLICY IF EXISTS "gm_own" ON gym_members; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "gm_manage" ON gym_members; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "membership_own" ON memberships; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "membership_manage" ON memberships; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "membership_gym" ON memberships; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "ws_own" ON workout_sessions; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "sessions_own" ON workout_sessions; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "tn_access" ON trainer_notes; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "notes_trainer" ON trainer_notes; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "bm_own" ON body_measurements; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "wl_own" ON water_logs; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "sl_own" ON sleep_logs; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "cs_own" ON chat_sessions; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "ai_own" ON ai_usage_logs; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "pay_gym" ON payments; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "audit_own" ON audit_logs; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "audit_read" ON audit_logs; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "audit_insert" ON audit_logs; EXCEPTION WHEN undefined_table THEN NULL; END $$;
 
 CREATE POLICY "gm_own" ON gym_members FOR SELECT USING (user_id = auth.uid() OR gym_id IN (SELECT id FROM gyms WHERE owner_id = auth.uid()));
 CREATE POLICY "gm_manage" ON gym_members FOR ALL USING (gym_id IN (SELECT id FROM gyms WHERE owner_id = auth.uid())) WITH CHECK (true);
-DROP POLICY IF EXISTS "membership_own" ON memberships;
-DROP POLICY IF EXISTS "membership_manage" ON memberships;
-DROP POLICY IF EXISTS "membership_gym" ON memberships;
 CREATE POLICY "membership_own" ON memberships FOR SELECT USING (member_id = auth.uid());
 CREATE POLICY "membership_manage" ON memberships FOR ALL USING (gym_id IN (SELECT id FROM gyms WHERE owner_id = auth.uid())) WITH CHECK (true);
 CREATE POLICY "ws_own" ON workout_sessions FOR ALL USING (member_id = auth.uid()) WITH CHECK (member_id = auth.uid());
@@ -212,5 +229,5 @@ CREATE POLICY "sl_own" ON sleep_logs FOR ALL USING (member_id = auth.uid()) WITH
 CREATE POLICY "cs_own" ON chat_sessions FOR ALL USING (member_id = auth.uid()) WITH CHECK (member_id = auth.uid());
 CREATE POLICY "ai_own" ON ai_usage_logs FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "pay_gym" ON payments FOR SELECT USING (gym_id IN (SELECT id FROM gyms WHERE owner_id = auth.uid()));
-CREATE POLICY "audit_own" ON audit_logs FOR SELECT USING (actor_id = auth.uid());
+CREATE POLICY "audit_read" ON audit_logs FOR SELECT USING (actor_id = auth.uid());
 CREATE POLICY "audit_insert" ON audit_logs FOR INSERT WITH CHECK (true);
