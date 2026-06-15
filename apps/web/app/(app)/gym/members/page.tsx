@@ -1,60 +1,123 @@
 "use client";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getSupabase } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
 import Link from "next/link";
+
+type Filter = "all" | "active" | "risk" | "lost";
 
 export default function MembersPage() {
   const [search, setSearch] = useState("");
-  const { data } = useQuery({ queryKey: ["gym", "members"], queryFn: api.gym.members });
-  const members = (data?.data ?? []).filter((m: any) => m.full_name?.toLowerCase().includes(search.toLowerCase()));
+  const [filter, setFilter] = useState<Filter>("all");
+  const sb = getSupabase();
+
+  const { data: members } = useQuery({
+    queryKey: ["gym-members-crm"],
+    queryFn: async () => {
+      const user = await getUser();
+      const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
+      if (!me?.gym_id) return [];
+      const { data } = await sb.from("users").select("id, full_name, phone, created_at").eq("gym_id", me.gym_id).eq("role", "member");
+      const { data: profiles } = await sb.from("member_profiles").select("user_id, goal").in("user_id", (data ?? []).map((m) => m.id));
+      const { data: streaks } = await sb.from("member_streaks").select("member_id, current_streak, total_points, last_activity").in("member_id", (data ?? []).map((m) => m.id));
+
+      const pMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p]));
+      const sMap = Object.fromEntries((streaks ?? []).map((s) => [s.member_id, s]));
+      const now = Date.now();
+
+      return (data ?? []).map((m) => {
+        const s = sMap[m.id];
+        const lastSeen = s?.last_activity ? new Date(s.last_activity).getTime() : 0;
+        const daysAgo = lastSeen ? Math.floor((now - lastSeen) / 86400000) : 999;
+        const risk = daysAgo >= 14 ? "lost" : daysAgo >= 5 ? "risk" : "active";
+        return { ...m, goal: pMap[m.id]?.goal, streak: s?.current_streak ?? 0, points: s?.total_points ?? 0, days_ago: daysAgo, risk };
+      }).sort((a, b) => b.points - a.points);
+    },
+  });
+
+  const filtered = (members ?? [])
+    .filter((m) => filter === "all" || m.risk === filter)
+    .filter((m) => !search || m.full_name?.toLowerCase().includes(search.toLowerCase()));
+
+  const FILTERS: { id: Filter; label: string; icon: string }[] = [
+    { id: "all", label: "Barchasi", icon: "👥" },
+    { id: "active", label: "Faol", icon: "✅" },
+    { id: "risk", label: "Xavfda", icon: "⚠️" },
+    { id: "lost", label: "Yo'qolgan", icon: "💔" },
+  ];
+
+  const riskColor = (r: string) => r === "lost" ? "text-vred" : r === "risk" ? "text-[#ff9f43]" : "text-vgreen";
+  const riskBg = (r: string) => r === "lost" ? "bg-vred/10" : r === "risk" ? "bg-[#ff9f43]/10" : "bg-vgreen/10";
 
   return (
-    <div className="max-w-4xl space-y-6 animate-fadeUp">
+    <div className="max-w-4xl space-y-5 animate-fadeUp">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="font-display font-bold text-2xl text-vtext">👥 A'zolar</h1>
-          <p className="text-muted text-sm font-mono mt-1">{members.length} TA A'ZO</p>
+          <p className="text-muted text-xs font-mono mt-0.5">{filtered.length} TA A'ZO</p>
         </div>
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Qidirish..." className="w-48" />
+        <Link href="/gym/invite"><Button size="sm">+ Qo'shish</Button></Link>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted text-xs font-mono uppercase">
-                <th className="text-left p-4">Ism</th>
-                <th className="text-left p-4">Telefon</th>
-                <th className="text-left p-4">Maqsad</th>
-                <th className="text-left p-4">Status</th>
-                <th className="p-4"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((m: any) => (
-                <tr key={m.id} className="border-b border-border/50 hover:bg-surface/50 transition-colors">
-                  <td className="p-4 font-medium text-vtext">{m.full_name}</td>
-                  <td className="p-4 text-muted">{m.phone ?? "—"}</td>
-                  <td className="p-4 text-muted">{m.goal ?? "—"}</td>
-                  <td className="p-4">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${m.onboarding_done ? "bg-vgreen/10 text-vgreen border border-vgreen/20" : "bg-accent/10 text-accent border border-accent-border"}`}>
-                      {m.onboarding_done ? "FAOL" : "KUTILMOQDA"}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <Link href={`/gym/members/${m.id}`}><Button variant="ghost" size="sm">Ko'rish →</Button></Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {members.length === 0 && <p className="text-muted text-sm text-center py-8">A'zo topilmadi</p>}
-        </CardContent>
-      </Card>
+      {/* Search + Filter */}
+      <div className="flex gap-2 flex-wrap">
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Qidirish..." className="w-40" />
+        {FILTERS.map((f) => (
+          <Button key={f.id} variant={filter === f.id ? "default" : "secondary"} size="sm" onClick={() => setFilter(f.id)} className="text-xs">
+            {f.icon} {f.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* Members cards */}
+      {filtered.length === 0 ? (
+        <Card><CardContent className="p-8 text-center">
+          <p className="text-muted text-sm">A'zo topilmadi</p>
+          <Link href="/gym/invite"><Button size="sm" className="mt-3">+ Birinchi a'zo</Button></Link>
+        </CardContent></Card>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((m: any) => (
+            <Link key={m.id} href={`/gym/members/${m.id}`}>
+              <Card className="hover:border-accent-border/40 transition-colors cursor-pointer">
+                <CardContent className="p-3 flex items-center gap-3">
+                  {/* Avatar + Risk indicator */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${riskBg(m.risk)} ${riskColor(m.risk)}`}>
+                    {m.full_name?.[0]}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-vtext truncate">{m.full_name}</p>
+                      <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full ${riskBg(m.risk)} ${riskColor(m.risk)}`}>
+                        {m.risk === "lost" ? "YO'Q" : m.risk === "risk" ? "XAVF" : "FAOL"}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted">{m.goal ?? "—"} · {m.days_ago < 999 ? `${m.days_ago}d oldin` : "hech qachon"}</p>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex gap-3 text-center shrink-0">
+                    <div>
+                      <p className="text-xs font-bold text-accent">{m.streak}</p>
+                      <p className="text-[8px] text-muted">🔥</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-vtext">{m.points}</p>
+                      <p className="text-[8px] text-muted">⚡</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
