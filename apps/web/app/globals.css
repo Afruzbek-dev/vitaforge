@@ -19,48 +19,62 @@
     --red: #ff5252;
     --green: #4dffb4;
     --blue: #5299ff;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-full: 9999px;
   }
-  
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body { 
-    background: var(--bg); 
-    color: var(--text); 
-    font-family: 'DM Sans', sans-serif; 
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
   }
-  
   h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
-  code, pre { font-family: 'JetBrains Mono', monospace; }
-  
-  ::-webkit-scrollbar { width: 3px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-thumb { background: var(--subtle); border-radius: 2px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* iOS safe areas */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    .safe-top { padding-top: env(safe-area-inset-top); }
+  }
 }
 
 @layer utilities {
   .font-display { font-family: 'Syne', sans-serif; }
   .font-mono { font-family: 'JetBrains Mono', monospace; }
-  
-  .animate-fadeUp {
-    animation: fadeUp 0.5s ease both;
-  }
-  
-  .animate-glow {
-    animation: glow 3s ease infinite;
-  }
-  
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(232, 255, 71, 0.3); }
-    50% { box-shadow: 0 0 40px rgba(232, 255, 71, 0.6); }
-  }
-  
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
+
+  /* Smooth page transitions */
+  .animate-fadeUp { animation: fadeUp 0.35s ease both; }
+  .animate-fadeIn { animation: fadeIn 0.25s ease both; }
+  .animate-slideUp { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .animate-scaleIn { animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  /* Touch feedback */
+  .press { transition: transform 0.1s; }
+  .press:active { transform: scale(0.97); }
+
+  /* Card hover */
+  .card-hover { transition: border-color 0.15s, transform 0.15s; }
+  .card-hover:hover { border-color: var(--accent-border); transform: translateY(-1px); }
+  .card-hover:active { transform: scale(0.98); }
+
+  /* Glass effect */
+  .glass { background: rgba(14, 14, 20, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+  /* Progress ring */
+  .progress-ring { transform: rotate(-90deg); }
+  .progress-ring circle { transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 }

@@ -106,14 +106,14 @@ function MobileNav({ role }: { role: string }) {
   ];
   const links = role === "member" ? memberLinks : ownerLinks;
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-xl border-t border-border">
-      <div className="flex justify-around py-1.5 px-1">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-border safe-bottom">
+      <div className="flex justify-around py-2 px-1">
         {links.map((l) => {
           const active = pathname === l.href || (l.href !== "/dashboard" && l.href !== "/gym" && pathname.startsWith(l.href));
           return (
-            <a key={l.href} href={l.href} className={`flex flex-col items-center py-1.5 px-2 rounded-lg ${active ? "text-accent" : "text-muted"}`}>
-              <span className="text-lg">{l.icon}</span>
-              <span className="text-[10px] mt-0.5">{l.label}</span>
+            <a key={l.href} href={l.href} className={`flex flex-col items-center py-1 px-3 rounded-xl press transition-colors ${active ? "text-accent" : "text-muted"}`}>
+              <span className="text-[18px]">{l.icon}</span>
+              <span className="text-[9px] mt-0.5 font-medium">{l.label}</span>
             </a>
           );
         })}
