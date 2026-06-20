@@ -32,19 +32,24 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
 
   return (
-    <div className="max-w-lg md:max-w-2xl mx-auto space-y-5 animate-fadeUp pb-20 md:pb-4">
+    <div className="max-w-lg md:max-w-4xl mx-auto space-y-5 animate-fadeUp pb-20 md:pb-4">
       {/* Header — greeting + level */}
       <div className="flex items-center justify-between pt-2">
         <div>
-          <p className="text-muted text-xs">{greeting} 👋</p>
-          <h1 className="font-display font-bold text-xl text-vtext">{user?.full_name?.split(" ")[0] ?? "A'zo"}</h1>
+          <p className="text-muted text-xs md:text-sm">{greeting} 👋</p>
+          <h1 className="font-display font-bold text-xl md:text-2xl text-vtext">{user?.full_name?.split(" ")[0] ?? "A'zo"}</h1>
         </div>
         <Link href="/dashboard/settings">
-          <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-sm press">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-sm md:text-base press">
             {user?.full_name?.[0] ?? "?"}
           </div>
         </Link>
       </div>
+
+      {/* Desktop: 2-column layout */}
+      <div className="md:grid md:grid-cols-3 md:gap-5 space-y-5 md:space-y-0">
+        {/* Left column — level + plan */}
+        <div className="md:col-span-2 space-y-5">
 
       {/* Level progress card */}
       <Card className="card-hover border-accent-border/20 overflow-hidden">
@@ -65,23 +70,6 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Today stats */}
-      <div className="grid grid-cols-3 gap-2.5">
-        {[
-          { label: "Ball", value: s?.total_points ?? 0, icon: UNIT.emoji },
-          { label: "Tashrif", value: s?.total_attendance ?? 0, icon: "📅" },
-          { label: "Liga", value: league.name.split(" ")[0], icon: league.emoji },
-        ].map((c) => (
-          <Card key={c.label} className="card-hover">
-            <CardContent className="p-3 text-center">
-              <p className="text-lg">{c.icon}</p>
-              <p className="font-display font-bold text-sm text-accent mt-0.5">{c.value}</p>
-              <p className="text-[9px] text-muted">{c.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Plan card */}
       <Link href="/dashboard/today">
         <Card className="card-hover border-accent-border/20 press">
@@ -100,6 +88,14 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </Link>
+
+        </div>{/* end left column */}
+
+        {/* Right column — stats + quick actions (desktop) */}
+        <div className="space-y-5">
+
+      {/* Today stats */}
+      <div className="grid grid-cols-3 md:grid-cols-1 gap-2.5">
 
       {/* Quick actions grid */}
       <div className="grid grid-cols-4 gap-2">
@@ -131,6 +127,10 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+        </div>{/* end right column */}
+      </div>{/* end grid */}
+    </div>
     </div>
   );
 }
