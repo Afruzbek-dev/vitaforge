@@ -17,12 +17,15 @@ const memberLinks = [
 const ownerLinks = [
   { href: "/gym", label: "Dashboard", icon: "📊" },
   { href: "/gym/members", label: "A'zolar", icon: "👥" },
+  { href: "/gym/finance", label: "Moliya", icon: "💰" },
+  { href: "/gym/analytics", label: "Analitika", icon: "📈" },
   { href: "/gym/attendance", label: "Davomat", icon: "📅" },
   { href: "/gym/retention", label: "Retention", icon: "🎯" },
-  { href: "/gym/invite", label: "Qo'shish", icon: "➕" },
-  { href: "/gym/groups", label: "Guruhlar", icon: "🏋️" },
   { href: "/gym/leaderboard", label: "Reyting", icon: "🏆" },
-  { href: "/gym/analytics", label: "Analitika", icon: "📈" },
+  { href: "/gym/inventory", label: "Inventar", icon: "📦" },
+  { href: "/gym/invite", label: "Qo'shish", icon: "➕" },
+  { href: "/gym/import", label: "Import", icon: "📥" },
+  { href: "/gym/groups", label: "Guruhlar", icon: "🏋️" },
   { href: "/gym/settings", label: "Sozlamalar", icon: "⚙️" },
 ];
 const trainerLinks = [
