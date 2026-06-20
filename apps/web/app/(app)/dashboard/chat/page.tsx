@@ -68,7 +68,7 @@ export default function ChatPage() {
   const newSession = () => { setSessionId(crypto.randomUUID()); setMessages([{ role: "assistant", content: "Yangi suhbat boshlandi! Nima so'raysiz? 💪" }]); };
 
   return (
-    <div className="max-w-2xl h-[calc(100vh-3rem)] md:h-[calc(100vh-3rem)] flex flex-col animate-fadeUp">
+    <div className="max-w-lg md:max-w-2xl mx-auto h-[calc(100vh-6rem)] md:h-[calc(100vh-3rem)] flex flex-col animate-fadeUp">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h1 className="font-display font-bold text-xl md:text-2xl text-vtext">🤖 AI Trener</h1>

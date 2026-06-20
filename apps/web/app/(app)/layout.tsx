@@ -84,7 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-bg">
       <div className="hidden md:block"><Sidebar role={user.role} /></div>
       <MobileNav role={user.role} />
-      <main className="flex-1 p-4 md:p-6 overflow-y-auto max-h-screen pb-20 md:pb-6">{children}</main>
+      <main className="flex-1 p-4 md:p-6 overflow-y-auto max-h-screen pb-24 md:pb-6">{children}</main>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default function PhotosPage() {
   const photos = data?.data ?? [];
 
   return (
-    <div className="max-w-4xl space-y-6 animate-fadeUp">
+    <div className="max-w-lg md:max-w-4xl mx-auto space-y-6 animate-fadeUp pb-20 md:pb-4">
       <div>
         <h1 className="font-display font-bold text-2xl text-vtext">📸 Progress Fotolar</h1>
         <p className="text-muted text-sm font-mono mt-1">AI TAHLILI BILAN</p>

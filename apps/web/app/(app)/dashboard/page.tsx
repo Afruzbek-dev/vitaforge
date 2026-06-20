@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
 
   return (
-    <div className="max-w-lg mx-auto space-y-5 animate-fadeUp pb-4">
+    <div className="max-w-lg md:max-w-2xl mx-auto space-y-5 animate-fadeUp pb-20 md:pb-4">
       {/* Header — greeting + level */}
       <div className="flex items-center justify-between pt-2">
         <div>
