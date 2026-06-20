@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
+import { getRetentionSuggestions } from "@/lib/retention-ai";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { getSupabase } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
 import Link from "next/link";
 
 const TABS = [
@@ -151,6 +157,40 @@ export default function MemberDetailPage() {
           )}
         </CardContent></Card>
       )}
+
+      {/* AI Retention Suggestions */}
+      {(() => {
+        const daysAgo = data?.streak?.last_activity ? Math.floor((Date.now() - new Date(data.streak.last_activity).getTime()) / 86400000) : 999;
+        const suggestions = getRetentionSuggestions({
+          full_name: data?.user?.full_name ?? "",
+          days_ago: daysAgo,
+          streak: data?.streak?.current_streak ?? 0,
+          points: data?.streak?.total_points ?? 0,
+          goal: data?.profile?.goal,
+        });
+        if (!suggestions.length) return null;
+        return (
+          <Card className="border-accent-border/20">
+            <CardContent className="p-4">
+              <p className="font-mono text-[9px] text-accent tracking-[1.5px] mb-3">🤖 AI TAVSIYALAR</p>
+              <div className="space-y-2">
+                {suggestions.map((s, i) => (
+                  <div key={i} className={`p-3 rounded-lg border ${s.priority === "high" ? "border-vred/30 bg-vred/5" : s.priority === "medium" ? "border-accent-border/30 bg-accent/5" : "border-border"}`}>
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-xs font-medium text-vtext">{s.title}</p>
+                      <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${s.priority === "high" ? "bg-vred/10 text-vred" : s.priority === "medium" ? "bg-accent/10 text-accent" : "bg-surface text-muted"}`}>{s.priority}</span>
+                    </div>
+                    <p className="text-[11px] text-muted mb-2">{s.reason}</p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="text-[10px] h-7" onClick={() => setMsg(s.message)}>📋 Nusxalash</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Send message */}
       <Card><CardContent className="p-3">
