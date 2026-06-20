@@ -9,7 +9,6 @@ import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import { getRetentionSuggestions } from "@/lib/retention-ai";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
