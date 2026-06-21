@@ -93,10 +93,11 @@ function MobileNav({ role }: { role: string }) {
   const pathname = usePathname();
   const [showMore, setShowMore] = useState(false);
   const memberLinks = [
-    { href: "/dashboard", icon: "🏠", label: "Asosiy" },
-    { href: "/dashboard/today", icon: "✅", label: "Bugun" },
+    { href: "/dashboard", icon: "🏠", label: "Bosh" },
+    { href: "/dashboard/today", icon: "💪", label: "Plan" },
+    { href: "/dashboard/food", icon: "🥗", label: "Ovqat" },
+    { href: "/dashboard/leaderboard", icon: "🏆", label: "Top" },
     { href: "/dashboard/chat", icon: "🤖", label: "AI" },
-    { href: "/dashboard/settings", icon: "👤", label: "Profil" },
   ];
   const ownerMain = [
     { href: "/gym", icon: "📊", label: "Asosiy" },
