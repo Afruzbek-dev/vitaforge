@@ -175,7 +175,12 @@ export default function MemberDetailPage() {
                       <p className="text-xs font-medium text-vtext">{s.title}</p>
                       <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${s.priority === "high" ? "bg-vred/10 text-vred" : s.priority === "medium" ? "bg-accent/10 text-accent" : "bg-surface text-muted"}`}>{s.priority}</span>
                     </div>
-                    <p className="text-[11px] text-muted mb-2">{s.reason}</p>
+                    <p className="text-[11px] text-muted mb-1">{s.reason}</p>
+                    <p className="text-[10px] text-[#9999ad] mb-1.5">{s.description}</p>
+                    <details className="mb-2">
+                      <summary className="text-[10px] text-vblue cursor-pointer">Qanday oldini olish?</summary>
+                      <p className="text-[10px] text-muted mt-1 pl-2 border-l border-border">{s.prevention}</p>
+                    </details>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" className="text-[10px] h-7" onClick={() => setMsg(s.message)}>📋 Nusxalash</Button>
                     </div>
