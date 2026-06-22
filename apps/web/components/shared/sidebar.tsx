@@ -2,52 +2,49 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { Button } from "@/components/ui/button";
+import { LayoutDashboard, Users, Wallet, BarChart3, Trophy, Megaphone, Package, Download, Settings, LogOut, Dumbbell, Utensils, Bot, Camera, Mail, CalendarCheck, Target } from "lucide-react";
 
 const memberLinks = [
   { group: "ASOSIY", items: [
-    { href: "/dashboard", label: "Dashboard", icon: "🏠" },
-    { href: "/dashboard/today", label: "Bugun", icon: "✅" },
-    { href: "/dashboard/plan", label: "Plan", icon: "📋" },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/today", label: "Bugun", icon: CalendarCheck },
+    { href: "/dashboard/plan", label: "Plan", icon: Dumbbell },
   ]},
   { group: "KUZATUV", items: [
-    { href: "/dashboard/food", label: "Ovqat", icon: "🥗" },
-    { href: "/dashboard/chat", label: "AI Coach", icon: "🤖" },
-    { href: "/dashboard/photos", label: "Progress", icon: "📸" },
+    { href: "/dashboard/food", label: "Ovqat", icon: Utensils },
+    { href: "/dashboard/chat", label: "AI Coach", icon: Bot },
+    { href: "/dashboard/photos", label: "Progress", icon: Camera },
   ]},
   { group: "BOSHQA", items: [
-    { href: "/dashboard/invitations", label: "Takliflar", icon: "📩" },
-    { href: "/dashboard/settings", label: "Sozlamalar", icon: "⚙️" },
+    { href: "/dashboard/invitations", label: "Takliflar", icon: Mail },
+    { href: "/dashboard/settings", label: "Sozlamalar", icon: Settings },
   ]},
 ];
 
 const ownerLinks = [
   { group: "KUNDALIK ISH", items: [
-    { href: "/gym", label: "Dashboard", icon: "▣" },
-    { href: "/gym/members", label: "A'zolar", icon: "◷", badge: "" },
-    { href: "/gym/finance", label: "Moliya", icon: "◈" },
+    { href: "/gym", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/gym/members", label: "A'zolar", icon: Users },
+    { href: "/gym/finance", label: "Moliya", icon: Wallet },
   ]},
   { group: "BOSHQARISH", items: [
-    { href: "/gym/analytics", label: "Analitika", icon: "◫" },
-    { href: "/gym/leaderboard", label: "Reyting", icon: "◎" },
-    { href: "/gym/retention", label: "Retention", icon: "◐" },
-    { href: "/gym/attendance", label: "Davomat", icon: "◷" },
+    { href: "/gym/analytics", label: "Analitika", icon: BarChart3 },
+    { href: "/gym/leaderboard", label: "Reyting", icon: Trophy },
+    { href: "/gym/challenges", label: "Challenge", icon: Target },
+    { href: "/gym/notify", label: "Xabar", icon: Megaphone },
   ]},
   { group: "SOZLASH", items: [
-    { href: "/gym/inventory", label: "Inventar", icon: "▤" },
-    { href: "/gym/import", label: "Import", icon: "↓" },
-    { href: "/gym/invite", label: "Qo'shish", icon: "+" },
-    { href: "/gym/groups", label: "Guruhlar", icon: "⊞" },
-    { href: "/gym/settings", label: "Sozlamalar", icon: "⚙" },
+    { href: "/gym/inventory", label: "Inventar", icon: Package },
+    { href: "/gym/import", label: "Import", icon: Download },
+    { href: "/gym/settings", label: "Sozlamalar", icon: Settings },
   ]},
 ];
 
 const trainerLinks = [
   { group: "ISH", items: [
-    { href: "/gym", label: "Dashboard", icon: "▣" },
-    { href: "/gym/trainer", label: "A'zolarim", icon: "◷" },
-    { href: "/gym/attendance", label: "Davomat", icon: "◷" },
-    { href: "/gym/leaderboard", label: "Reyting", icon: "◎" },
+    { href: "/gym", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/gym/trainer", label: "A'zolarim", icon: Users },
+    { href: "/gym/leaderboard", label: "Reyting", icon: Trophy },
   ]},
 ];
 
@@ -61,23 +58,22 @@ export default function Sidebar({ role }: { role: string }) {
 
   return (
     <aside className="w-[220px] bg-[#0a0a12] border-r border-border flex flex-col py-5 px-3 shrink-0 min-h-screen">
-      {/* Logo */}
       <div className="flex items-center gap-2.5 px-2.5 mb-4">
         <div className="w-7 h-7 rounded-[7px] bg-accent flex items-center justify-center font-display font-bold text-[13px] text-bg">Z</div>
         <span className="font-display font-bold text-[14px] text-vtext">ZenFit</span>
       </div>
 
-      {/* Nav groups */}
       <nav className="flex-1 space-y-1">
         {groups.map((g) => (
           <div key={g.group}>
             <p className="font-mono text-[9px] tracking-[2px] text-[#45455a] px-2.5 mt-4 mb-2">{g.group}</p>
             {g.items.map((l) => {
               const active = pathname === l.href;
+              const Icon = l.icon;
               return (
                 <Link key={l.href} href={l.href}
                   className={`flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg text-[13px] mb-[1px] transition-colors ${active ? "bg-accent/[0.09] text-accent font-medium" : "text-[#9999ad] hover:bg-[#13131c] hover:text-[#c8c8d8]"}`}>
-                  <span className="w-4 text-center text-[13px] shrink-0">{l.icon}</span>
+                  <Icon size={15} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" />
                   <span className="flex-1">{l.label}</span>
                 </Link>
               );
@@ -86,10 +82,9 @@ export default function Sidebar({ role }: { role: string }) {
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-[#1a1a26] pt-3 mt-2">
         <button onClick={logout} className="flex items-center gap-2.5 px-2.5 py-2 text-[12px] text-[#6a6a80] hover:text-vred transition-colors w-full">
-          <span>🚪</span> Chiqish
+          <LogOut size={14} /> Chiqish
         </button>
       </div>
     </aside>
