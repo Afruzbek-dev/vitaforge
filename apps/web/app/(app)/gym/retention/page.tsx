@@ -2,12 +2,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import Link from "next/link";
+import { useState, useMemo } from "react";
+
+type Risk = "active" | "recovering" | "at_risk" | "critical" | "lost";
+
+const RISK_CONFIG: Record<Risk, { label: string; icon: string; color: string; border: string; bg: string }> = {
+  active: { label: "Faol", icon: "✅", color: "text-emerald-300", border: "border-emerald-500/30", bg: "bg-emerald-500/10" },
+  recovering: { label: "Qaytayotgan", icon: "♻️", color: "text-sky-300", border: "border-sky-500/30", bg: "bg-sky-500/10" },
+  at_risk: { label: "Xavfda", icon: "⚠️", color: "text-amber-300", border: "border-amber-500/30", bg: "bg-amber-500/10" },
+  critical: { label: "Jiddiy", icon: "🛑", color: "text-orange-300", border: "border-orange-500/30", bg: "bg-orange-500/10" },
+  lost: { label: "Yo'qotilgan", icon: "💔", color: "text-rose-300", border: "border-rose-500/30", bg: "bg-rose-500/10" },
+};
+
+const computeRisk = (streak: { last_activity?: string | null; current_streak?: number } | null, now = Date.now()): Risk => {
+  if (!streak?.last_activity) return "critical";
+  const daysAgo = Math.floor((now - new Date(streak.last_activity).getTime()) / 86400000);
+  if (daysAgo >= 30) return "lost";
+  if (daysAgo >= 10) return "critical";
+  if (daysAgo >= 5) return "at_risk";
+  if (daysAgo <= 1 && (streak.current_streak ?? 0) >= 2) return "recovering";
+  return "active";
+};
 
 export default function RetentionPage() {
   const sb = getSupabase();
+  const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<Risk | "all">("all");
 
   const { data } = useQuery({
     queryKey: ["retention-center"],
@@ -15,84 +39,200 @@ export default function RetentionPage() {
       const user = await getUser();
       const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
       const gid = me?.gym_id;
-      if (!gid) return { atRisk: [], lost: [], returning: [] };
+      if (!gid) return { members: [] };
 
-      const { data: allMembers } = await sb.from("users").select("id, full_name, created_at").eq("gym_id", gid).eq("role", "member");
-      const { data: streaks } = await sb.from("member_streaks").select("member_id, current_streak, last_activity, total_points");
+      const { data: allMembers } = await sb
+        .from("users")
+        .select("id, full_name, created_at, telegram_id")
+        .eq("gym_id", gid)
+        .eq("role", "member");
+
+      const { data: streaks } = await sb
+        .from("member_streaks")
+        .select("member_id, current_streak, last_activity, total_points");
+
       const streakMap = Object.fromEntries((streaks ?? []).map((s) => [s.member_id, s]));
-
       const now = Date.now();
-      const atRisk: any[] = [];
-      const lost: any[] = [];
-      const returning: any[] = [];
 
-      for (const m of allMembers ?? []) {
-        const s = streakMap[m.id];
-        const lastSeen = s?.last_activity ? new Date(s.last_activity).getTime() : 0;
-        const daysAgo = Math.floor((now - lastSeen) / 86400000);
+      const members = (allMembers ?? []).map((m: any) => {
+        const streak = streakMap[m.id];
+        const risk = computeRisk(streak ?? null, now);
+        return {
+          id: m.id,
+          full_name: m.full_name,
+          telegram_id: m.telegram_id,
+          created_at: m.created_at,
+          days_ago: streak?.last_activity ? Math.floor((now - new Date(streak.last_activity).getTime()) / 86400000) : 9999,
+          streak,
+          risk,
+          score: Math.max(0, 100 - (streak?.current_streak ?? 0) * 5 - Math.max(0, (streak?.total_points ?? 0) / 10)),
+        };
+      });
 
-        if (daysAgo >= 14) {
-          lost.push({ ...m, days_ago: daysAgo, streak: s });
-        } else if (daysAgo >= 5) {
-          atRisk.push({ ...m, days_ago: daysAgo, streak: s });
-        } else if (s && s.current_streak >= 3 && daysAgo <= 2) {
-          // Was at risk but came back (streak growing)
-          const memberAge = Math.floor((now - new Date(m.created_at).getTime()) / 86400000);
-          if (memberAge > 14) returning.push({ ...m, streak: s });
-        }
-      }
-
-      return { atRisk, lost, returning };
+      return { members };
     },
   });
 
-  const Section = ({ title, icon, color, members, emptyText }: any) => (
-    <Card className={`border-${color}/20`}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <span>{icon}</span> {title} <span className="text-muted font-mono">({members?.length ?? 0})</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {(!members || members.length === 0) ? (
-          <p className="text-muted text-sm py-2">{emptyText}</p>
-        ) : (
-          <div className="space-y-2">
-            {members.map((m: any) => (
-              <div key={m.id} className="flex items-center justify-between p-2 rounded-lg border border-border/50">
-                <div className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-${color}/10 text-${color}`}>{m.full_name?.[0]}</div>
-                  <div>
-                    <p className="text-sm text-vtext">{m.full_name}</p>
-                    <p className="text-[10px] text-muted">{m.days_ago ? `${m.days_ago} kun oldin` : `${m.streak?.current_streak ?? 0} kun streak`}</p>
-                  </div>
-                </div>
-                <Link href={`/gym/members/${m.id}`}><Button variant="ghost" size="sm" className="text-xs">Ko'rish</Button></Link>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  const filtered = useMemo(() => {
+    const list = data?.members ?? [];
+    return list.filter((m: any) => {
+      const matchesQuery = (m.full_name ?? "").toLowerCase().includes(query.toLowerCase());
+      const matchesTab = tab === "all" || m.risk === tab;
+      return matchesQuery && matchesTab;
+    });
+  }, [data, query, tab]);
+
+  const counts = useMemo(() => {
+    const list = data?.members ?? [];
+    return list.reduce<Record<Risk | "all", number>>((acc, m: any) => {
+      acc[m.risk] = (acc[m.risk] || 0) + 1;
+      acc.all += 1;
+      return acc;
+    }, { active: 0, recovering: 0, at_risk: 0, critical: 0, lost: 0, all: 0 });
+  }, [data]);
+
+  const triggerNotification = async (member: any, msg: string) => {
+    if (!member.telegram_id) return;
+    const user = await getUser();
+    const { data: me } = await sb.from("users").select("gym_id, full_name").eq("id", user!.id).single();
+
+    try {
+      await sb.from("notifications").insert({
+        user_id: member.id,
+        gym_id: me?.gym_id,
+        type: "retention_alert",
+        title: `Retention: ${member.full_name}`,
+        body: msg,
+      });
+      await fetch(`/api/telegram`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: member.telegram_id,
+          text: `Hi, ${member.full_name}! 💪 Asalomu alaykum, biz sizni sog‘inishni boshladik. Bugun kelishga jur’at eting, kuch va motivatsiya bo‘ladi.`,
+        }),
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const bulkNotify = async () => {
+    const targets = ["critical", "at_risk", "lost"] as Risk[];
+    const list = (data?.members ?? []).filter((m: any) => targets.includes(m.risk));
+    if (!list.length) return;
+    const user = await getUser();
+    const { data: me } = await sb.from("users").select("gym_id, full_name").eq("id", user!.id).single();
+    const now = new Date().toLocaleString("uz-UZ", { timeZone: "Asia/Tashkent" });
+
+    for (const m of list) {
+      const msg = `Asalomu alaykum, ${m.full_name}! Biz sizni ko‘rishdan xursand bo‘lardik. Bugun 5 daqiqa vaqtingizni ajrating — kelishga ikkilanmang 💪`;
+      await triggerNotification(m, msg);
+    }
+    alert(`${list.length} ta a'zoga ogohantirish yuborildi. (${now})`);
+  };
 
   return (
     <div className="max-w-3xl space-y-6 animate-fadeUp">
       <div>
         <h1 className="font-display font-bold text-2xl text-vtext">🎯 Retention Center</h1>
-        <p className="text-muted text-xs font-mono mt-1">QAYSI A'ZOLAR XAVFDA?</p>
+        <p className="text-muted text-xs font-mono mt-1">A'ZOLARNING XAVF DARAJASI</p>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="border-l-2 border-l-[#ff9f43]"><CardContent className="p-3 text-center"><p className="font-display font-bold text-xl text-[#ff9f43]">{data?.atRisk.length ?? 0}</p><p className="text-[9px] text-muted font-mono">XAVFDA</p></CardContent></Card>
-        <Card className="border-l-2 border-l-vred"><CardContent className="p-3 text-center"><p className="font-display font-bold text-xl text-vred">{data?.lost.length ?? 0}</p><p className="text-[9px] text-muted font-mono">YO'QOTILGAN</p></CardContent></Card>
-        <Card className="border-l-2 border-l-vgreen"><CardContent className="p-3 text-center"><p className="font-display font-bold text-xl text-vgreen">{data?.returning.length ?? 0}</p><p className="text-[9px] text-muted font-mono">QAYTAYOTGAN</p></CardContent></Card>
+      <div className="grid grid-cols-3 gap-2">
+        {([
+          { k: "critical", label: "JIDDIY", color: "border-l-orange-400", text: "text-orange-300" },
+          { k: "at_risk", label: "XAVFDA", color: "border-l-amber-400", text: "text-amber-300" },
+          { k: "lost", label: "YO'QOTILGAN", color: "border-l-rose-400", text: "text-rose-300" },
+        ] as const).map((c) => (
+          <Card key={c.k as string} className={`border-l-2 ${c.color} card-hover`}>
+            <CardContent className="p-3 text-center">
+              <p className={`font-display font-bold text-xl ${c.text}`}>{counts[c.k as Risk] ?? 0}</p>
+              <p className="text-[9px] text-muted font-mono">{c.label}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <Section title="Xavfda (5-13 kun)" icon="⚠️" color="accent" members={data?.atRisk} emptyText="Yaxshi! Hech kim xavfda emas 🎉" />
-      <Section title="Yo'qotilgan (14+ kun)" icon="💔" color="vred" members={data?.lost} emptyText="Ajoyib! Hech kim yo'qolmagan" />
-      <Section title="Qaytayotgan" icon="🔄" color="vgreen" members={data?.returning} emptyText="Hali qaytayotganlar yo'q" />
+      <Card className="border-border">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center justify-between gap-2">
+            <span>A'zolar</span>
+            <div className="flex items-center gap-2">
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Qidirish..."
+                className="h-7 w-32 text-[11px] bg-surface border-border"
+              />
+              <Button size="sm" variant="secondary" onClick={bulkNotify} className="text-[11px] h-7">
+                ✉️ Bulk ogohlantirish
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-1 overflow-x-auto pb-2">
+            <button
+              onClick={() => setTab("all")}
+              className={`px-3 py-1 rounded-full text-[10px] font-mono border transition ${
+                tab === "all" ? "border-accent/40 bg-accent/10 text-accent" : "border-border text-muted"
+              }`}
+            >
+              Hammasi ({counts.all})
+            </button>
+            {(["at_risk", "critical", "recovering", "lost"] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setTab(r)}
+                className={`px-3 py-1 rounded-full text-[10px] font-mono border transition ${
+                  tab === r ? `${RISK_CONFIG[r].border} ${RISK_CONFIG[r].bg} ${RISK_CONFIG[r].color}` : "border-border text-muted"
+                }`}
+              >
+                {RISK_CONFIG[r].icon} {RISK_CONFIG[r].label} ({counts[r] ?? 0})
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-2 space-y-2">
+            {!filtered.length ? (
+              <p className="text-muted text-xs py-3 text-center">Mos keladigan a'zolar topilmadi.</p>
+            ) : (
+              filtered.map((m: any) => {
+                const cfg = RISK_CONFIG[m.risk] ?? RISK_CONFIG.active;
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex items-center justify-between p-2.5 rounded-lg border ${cfg.border} ${cfg.bg} transition`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${cfg.bg} ${cfg.color}`}>
+                        {m.full_name?.[0]}
+                      </div>
+                      <div>
+                        <p className="text-sm text-vtext">{m.full_name}</p>
+                        <p className="text-[10px] text-muted font-mono">
+                          {m.days_ago >= 1000 ? "Hech qachon faollashtmagan" : m.days_ago === 0 ? "Bugun" : `${m.days_ago} kun oldin`}
+                          {m.streak?.current_streak ? ` · ${m.streak.current_streak} kun streak` : ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${cfg.border} ${cfg.bg} ${cfg.color}`}>
+                        {cfg.label}
+                      </span>
+                      <Link href={`/gym/members/${m.id}`}>
+                        <Button variant="ghost" size="sm" className="text-[11px]">Batafsil</Button>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
