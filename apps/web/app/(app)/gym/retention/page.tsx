@@ -84,7 +84,7 @@ export default function RetentionPage() {
 
   const counts = useMemo(() => {
     const list = data?.members ?? [];
-    return list.reduce<Record<Risk | "all", number>>((acc, m: any) => {
+    return list.reduce((acc: any, m: any) => {
       acc[m.risk] = (acc[m.risk] || 0) + 1;
       acc.all += 1;
       return acc;
