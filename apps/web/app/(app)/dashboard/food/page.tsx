@@ -12,12 +12,12 @@ export default function FoodPage() {
   const [mealType, setMealType] = useState("lunch");
   const today = new Date().toISOString().split("T")[0];
 
-  const { data: logData } = useQuery({ queryKey: ["food", "log"], queryFn: () => api.food.getLog(today) });
+  const { data: logData, refetch: refetchLog } = useQuery({ queryKey: ["food", "log", today], queryFn: () => api.food.getLog(today) });
   const { data: summaryData } = useQuery({ queryKey: ["food", "summary"], queryFn: () => api.food.summary() });
   const parse = useMutation({ mutationFn: (text: string) => api.food.parse(text) });
   const logFood = useMutation({
     mutationFn: api.food.log,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["food"] }); setInput(""); parse.reset(); },
+    onSuccess: () => { refetchLog(); qc.invalidateQueries({ queryKey: ["food", "summary"] }); setInput(""); parse.reset(); },
     onError: (e: any) => alert("Saqlashda xato: " + (e?.message ?? "RLS policy tekshiring")),
   });
 
