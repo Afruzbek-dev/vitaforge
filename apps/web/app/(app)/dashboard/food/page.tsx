@@ -18,6 +18,7 @@ export default function FoodPage() {
   const logFood = useMutation({
     mutationFn: api.food.log,
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["food"] }); setInput(""); parse.reset(); },
+    onError: (e: any) => alert("Saqlashda xato: " + (e?.message ?? "RLS policy tekshiring")),
   });
 
   const logs = logData?.data ?? [];
