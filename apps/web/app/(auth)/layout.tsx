@@ -11,8 +11,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="w-full max-w-md p-8 rounded-2xl relative z-10" style={{ background: "#13131c", border: "1px solid #1e1e2c" }}>
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#e8ff47", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 16, color: "#07070a" }}>Z</div>
-            <span style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 20, color: "#efefeb" }}>ZenFit AI</span>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#e8ff47", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 16, color: "#07070a" }}>V</div>
+            <span style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 20, color: "#efefeb" }}>VitaForge AI</span>
           </div>
           <p style={{ color: "#52526a", fontSize: 13 }}>AI fitness platform</p>
         </div>

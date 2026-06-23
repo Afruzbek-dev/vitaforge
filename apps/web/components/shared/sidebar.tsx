@@ -59,20 +59,25 @@ export default function Sidebar({ role }: { role: string }) {
   return (
     <aside className="w-[220px] bg-[#0a0a12] border-r border-border flex flex-col py-5 px-3 shrink-0 min-h-screen">
       <div className="flex items-center gap-2.5 px-2.5 mb-4">
-        <div className="w-7 h-7 rounded-[7px] bg-accent flex items-center justify-center font-display font-bold text-[13px] text-bg">Z</div>
-        <span className="font-display font-bold text-[14px] text-vtext">ZenFit</span>
+        <div className="w-7 h-7 rounded-[7px] bg-accent flex items-center justify-center font-display font-bold text-[13px] text-bg">V</div>
+        <span className="font-display font-bold text-[14px] text-vtext">VitaForge</span>
       </div>
 
       <nav className="flex-1 space-y-1">
         {groups.map((g) => (
           <div key={g.group}>
-            <p className="font-mono text-[9px] tracking-[2px] text-[#45455a] px-2.5 mt-4 mb-2">{g.group}</p>
+            <p className="font-mono text-[9px] tracking-[2px] text-muted px-2.5 mt-4 mb-2">{g.group}</p>
             {g.items.map((l) => {
               const active = pathname === l.href;
               const Icon = l.icon;
               return (
                 <Link key={l.href} href={l.href}
-                  className={`flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg text-[13px] mb-[1px] transition-colors ${active ? "bg-accent/[0.09] text-accent font-medium" : "text-[#9999ad] hover:bg-[#13131c] hover:text-[#c8c8d8]"}`}>
+                  className={`flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg text-[13px] mb-[1px] transition-colors ${
+                    active
+                      ? "bg-accent/[0.09] text-accent font-medium"
+                      : "text-muted hover:bg-card hover:text-vtext"
+                  }`}
+                >
                   <Icon size={15} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" />
                   <span className="flex-1">{l.label}</span>
                 </Link>
@@ -82,8 +87,8 @@ export default function Sidebar({ role }: { role: string }) {
         ))}
       </nav>
 
-      <div className="border-t border-[#1a1a26] pt-3 mt-2">
-        <button onClick={logout} className="flex items-center gap-2.5 px-2.5 py-2 text-[12px] text-[#6a6a80] hover:text-vred transition-colors w-full">
+      <div className="border-t border-border pt-3 mt-2">
+        <button onClick={logout} className="flex items-center gap-2.5 px-2.5 py-2 text-[12px] text-muted hover:text-vred transition-colors w-full">
           <LogOut size={14} /> Chiqish
         </button>
       </div>

@@ -50,6 +50,10 @@
 @layer utilities {
   .font-display { font-family: 'Syne', sans-serif; }
   .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .text-vtext { color: var(--text); }
+  .text-vred { color: var(--red); }
+  .text-vgreen { color: var(--green); }
+  .text-vblue { color: var(--blue); }
 
   /* Smooth page transitions */
   .animate-fadeUp { animation: fadeUp 0.35s ease both; }

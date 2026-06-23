@@ -6,8 +6,8 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg/90 backdrop-blur-xl border-b border-border">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center font-display font-bold text-bg">Z</div>
-          <span className="font-display font-bold text-lg">ZenFit</span>
+          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center font-display font-bold text-bg">V</div>
+          <span className="font-display font-bold text-lg">VitaForge</span>
         </Link>
         <div className="hidden md:flex items-center gap-6 text-sm text-muted">
           <a href="#features" className="hover:text-vtext transition">Xizmatlar</a>
