@@ -199,7 +199,7 @@ export default function RetentionPage() {
               <p className="text-muted text-xs py-3 text-center">Mos keladigan a'zolar topilmadi.</p>
             ) : (
               filtered.map((m: any) => {
-                const cfg = RISK_CONFIG[m.risk] ?? RISK_CONFIG.active;
+                const cfg = (RISK_CONFIG as any)[m.risk] ?? RISK_CONFIG.active;
                 return (
                   <div
                     key={m.id}
