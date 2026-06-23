@@ -23,6 +23,8 @@ export default function MemberDetailPage() {
   const sb = getSupabase();
   const [tab, setTab] = useState("overview");
   const [msg, setMsg] = useState("");
+  const [sending, setSending] = useState(false);
+  const [msgSent, setMsgSent] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["crm-member", id],
@@ -196,8 +198,19 @@ export default function MemberDetailPage() {
       <Card><CardContent className="p-3">
         <div className="flex gap-2">
           <Input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Telegram xabar yuborish..." className="text-sm" />
-          <Button size="sm" disabled={!msg.trim()}>Yuborish</Button>
+          <Button size="sm" disabled={!msg.trim() || sending} onClick={async () => {
+            setSending(true);
+            try {
+              // Get telegram_id
+              const { data: session } = await sb.from("telegram_sessions").select("chat_id").eq("user_id", id).single();
+              if (session?.chat_id) {
+                await fetch("/api/telegram/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: session.chat_id, text: msg }) });
+                setMsg(""); setMsgSent(true); setTimeout(() => setMsgSent(false), 3000);
+              } else { alert("Bu a'zo Telegram ga ulanmagan"); }
+            } catch {} finally { setSending(false); }
+          }}>{sending ? "..." : "Yuborish"}</Button>
         </div>
+        {msgSent && <p className="text-vgreen text-[10px] mt-1.5">✅ Xabar yuborildi!</p>}
       </CardContent></Card>
     </div>
   );

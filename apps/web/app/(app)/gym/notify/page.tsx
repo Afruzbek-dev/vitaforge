@@ -22,36 +22,34 @@ export default function NotifyPage() {
     const user = await getUser();
     const { data: me } = await sb.from("users").select("gym_id, full_name").eq("id", user!.id).single();
 
-    // Get target members with telegram_id
-    let q = sb.from("users").select("id, telegram_id, full_name").eq("gym_id", me?.gym_id).eq("role", "member").not("telegram_id", "is", null);
+    // Get target members with telegram sessions
+    const { data: allMembers } = await sb.from("users").select("id, full_name").eq("gym_id", me?.gym_id).eq("role", "member");
+    const memberIds = (allMembers ?? []).map((m) => m.id);
+    if (!memberIds.length) { setResult("A'zo topilmadi"); setSending(false); return; }
 
+    // Get telegram sessions
+    const { data: sessions } = await sb.from("telegram_sessions").select("user_id, chat_id").in("user_id", memberIds);
+    if (!sessions?.length) { setResult("Telegram ulangan a'zo topilmadi"); setSending(false); return; }
+
+    // Filter by target
+    let targetSessions = sessions;
     if (target === "risk") {
       const { data: streaks } = await sb.from("member_streaks").select("member_id").lt("current_streak", 3);
-      const riskIds = (streaks ?? []).map((s) => s.member_id);
-      if (riskIds.length) q = q.in("id", riskIds);
-      else { setResult("Risk guruhida a'zo yo'q"); setSending(false); return; }
+      const riskIds = new Set((streaks ?? []).map((s) => s.member_id));
+      targetSessions = sessions.filter((s) => riskIds.has(s.user_id));
     }
 
-    const { data: members } = await q;
-    if (!members?.length) { setResult("Telegram ulangan a'zo topilmadi"); setSending(false); return; }
-
-    // Send via bot API
-    let sent = 0;
+    // Send via API
     const text = `📢 *${me?.full_name ?? "Gym"}:*\n\n${message}`;
-    for (const m of members) {
+    let sent = 0;
+    for (const sess of targetSessions) {
       try {
-        const res = await fetch(`/api/telegram`, { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: { chat: { id: m.telegram_id }, text: `/notify ${text}`, from: { id: 0 } } }) });
-        // Direct TG API call
-        await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_TG_BOT_TOKEN}/sendMessage`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: m.telegram_id, text, parse_mode: "Markdown" }),
-        });
+        await fetch("/api/telegram/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: sess.chat_id, text }) });
         sent++;
       } catch {}
     }
 
-    setResult(`✅ ${sent}/${members.length} ta a'zoga yuborildi`);
+    setResult(`✅ ${sent}/${targetSessions.length} ta a'zoga yuborildi`);
     setSending(false);
   };
 
