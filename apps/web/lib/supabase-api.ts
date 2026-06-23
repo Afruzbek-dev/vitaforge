@@ -85,7 +85,8 @@ export const supabaseApi = {
   food: {
     log: async (body: any) => {
       const user = await getUser();
-      const { data, error } = await sb().from("food_logs").insert({ ...body, member_id: user!.id, logged_at: new Date().toISOString() }).select().single();
+      const { confidence, ...cleanBody } = body; // confidence food_logs da yo'q
+      const { data, error } = await sb().from("food_logs").insert({ ...cleanBody, member_id: user!.id, logged_at: new Date().toISOString() }).select().single();
       if (error) throw new Error(error.message);
       return { data };
     },
