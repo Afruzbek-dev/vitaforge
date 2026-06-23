@@ -16,6 +16,7 @@ const memberLinks = [
     { href: "/dashboard/photos", label: "Progress", icon: Camera },
   ]},
   { group: "BOSHQA", items: [
+    { href: "/dashboard/challenges", label: "Challenge", icon: Target },
     { href: "/dashboard/invitations", label: "Takliflar", icon: Mail },
     { href: "/dashboard/settings", label: "Sozlamalar", icon: Settings },
   ]},
