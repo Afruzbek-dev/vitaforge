@@ -29,7 +29,7 @@ const ownerLinks = [
     { href: "/gym/members", label: "A'zolar (CRM)", icon: Users },
     { href: "/gym/payments", label: "To'lovlar", icon: Wallet },
     { href: "/gym/analytics", label: "Analitika", icon: BarChart3 },
-    { href: "/gym/trainer", label: "Trenerlar", icon: UserCog },
+    { href: "/gym/trainers", label: "Trenerlar", icon: UserCog },
     { href: "/gym/groups", label: "Guruhlar", icon: UsersRound },
   ]},
   { group: "ALOQA", items: [

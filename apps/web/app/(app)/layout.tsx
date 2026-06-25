@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (user) {
       if (user.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
-      else if ((user.role === "gym_owner" || user.role === "trainer") && pathname.startsWith("/dashboard")) router.replace("/gym");
+      else if ((user.role === "gym_owner" || user.role === "trainer" || user.role === "admin") && pathname.startsWith("/dashboard")) router.replace("/gym");
       return;
     }
     (async () => {
@@ -63,7 +63,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           } catch {}
         }
         if (userData.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
-        else if ((userData.role === "gym_owner" || userData.role === "trainer") && pathname.startsWith("/dashboard")) router.replace("/gym");
+        else if ((userData.role === "gym_owner" || userData.role === "trainer" || userData.role === "admin") && pathname.startsWith("/dashboard")) router.replace("/gym");
       } catch { clearAuth(); localStorage.removeItem("zenfit_user"); router.push("/login"); }
     })();
   }, [pathname]);
