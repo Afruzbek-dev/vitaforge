@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { LayoutDashboard, Users, Wallet, BarChart3, Trophy, Settings, LogOut, Dumbbell, Utensils, Bot, Camera, CalendarCheck, Target, Sun, Moon, MessageCircle, UserCog, Building2, ShieldCheck, UsersRound, User } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, BarChart3, Trophy, Settings, LogOut, Dumbbell, Utensils, Bot, Camera, CalendarCheck, Target, Sun, Moon, MessageCircle, UserCog, Building2, ShieldCheck, UsersRound, User, UserPlus } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 
 const memberLinks = [
@@ -51,12 +51,15 @@ const trainerLinks = [
 ];
 
 const adminLinks = [
-  { group: "ADMIN", items: [
+  { group: "BOSHQARUV", items: [
     { href: "/gym", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/gym/members", label: "Gymlar", icon: Building2 },
-    { href: "/gym/import", label: "Userlar", icon: Users },
-    { href: "/gym/payments", label: "To'lovlar", icon: Wallet },
-    { href: "/gym/challenges", label: "Reyting/Challenge", icon: ShieldCheck },
+    { href: "/gym/all", label: "Gymlar", icon: Building2 },
+    { href: "/gym/contracts", label: "Kontraktlar", icon: Wallet },
+    { href: "/gym/users", label: "Userlar", icon: Users },
+  ]},
+  { group: "TAHLIL", items: [
+    { href: "/gym/analytics", label: "Analitika", icon: BarChart3 },
+    { href: "/gym/create", label: "Gym yaratish", icon: UserPlus },
     { href: "/gym/settings", label: "Sozlamalar", icon: Settings },
   ]},
 ];

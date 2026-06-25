@@ -9,9 +9,13 @@ import { Users, TrendingUp, TrendingDown, CalendarCheck, DollarSign, UserPlus, B
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import Link from "next/link";
 
+import AdminDashboard from "./admin-dashboard";
+
 export default function GymDashboard() {
   const sb = getSupabase();
   const user = useAuthStore((s) => s.user);
+
+  if (user?.role === "admin") return <AdminDashboard />;
 
   const { data: d } = useQuery({
     queryKey: ["gym-dash"],
