@@ -76,7 +76,7 @@ export default function DashboardPage() {
   if (proteinPct < 40) recommendations.push({ text: "Protein kam — tuxum yoki go'sht yeying", action: "Qo'shish", href: "/dashboard/food" });
 
   return (
-    <div className="max-w-lg mx-auto space-y-4 animate-fadeUp pb-24 md:pb-4">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 animate-fadeUp pb-24 md:pb-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -112,38 +112,38 @@ export default function DashboardPage() {
       )}
 
       {/* Main stats — streak, calories, protein */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         <Card className="card-hover">
-          <CardContent className="p-3 flex flex-col items-center">
-            <Flame size={18} className="text-accent mb-1.5" />
-            <p className="font-display font-bold text-xl text-accent">{s?.current_streak ?? 0}</p>
-            <p className="text-[9px] text-muted">kun streak</p>
+          <CardContent className="p-4 flex flex-col items-center">
+            <Flame size={20} className="text-accent mb-2" />
+            <p className="font-display font-bold text-2xl text-accent">{s?.current_streak ?? 0}</p>
+            <p className="text-[10px] text-muted">kun streak</p>
           </CardContent>
         </Card>
 
         <Card className="card-hover">
-          <CardContent className="p-3 flex flex-col items-center">
-            <div className="relative mb-1">
-              <Ring progress={calPct} size={42} stroke={3} />
+          <CardContent className="p-4 flex flex-col items-center">
+            <div className="relative mb-1.5">
+              <Ring progress={calPct} size={48} stroke={3.5} />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Utensils size={12} className="text-accent" />
+                <Utensils size={14} className="text-accent" />
               </div>
             </div>
-            <p className="font-display font-bold text-sm text-vtext">{todayCal?.cal ?? 0}</p>
-            <p className="text-[9px] text-muted">/ {targetCal} kkal</p>
+            <p className="font-display font-bold text-base text-vtext">{todayCal?.cal ?? 0}</p>
+            <p className="text-[10px] text-muted">/ {targetCal} kkal</p>
           </CardContent>
         </Card>
 
         <Card className="card-hover">
-          <CardContent className="p-3 flex flex-col items-center">
-            <div className="relative mb-1">
-              <Ring progress={proteinPct} size={42} stroke={3} />
+          <CardContent className="p-4 flex flex-col items-center">
+            <div className="relative mb-1.5">
+              <Ring progress={proteinPct} size={48} stroke={3.5} />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Zap size={12} className="text-vgreen" />
+                <Zap size={14} className="text-vgreen" />
               </div>
             </div>
-            <p className="font-display font-bold text-sm text-vtext">{todayCal?.protein ?? 0}g</p>
-            <p className="text-[9px] text-muted">/ {targetProtein}g protein</p>
+            <p className="font-display font-bold text-base text-vtext">{todayCal?.protein ?? 0}g</p>
+            <p className="text-[10px] text-muted">/ {targetProtein}g protein</p>
           </CardContent>
         </Card>
       </div>
@@ -166,45 +166,48 @@ export default function DashboardPage() {
         </Link>
       )}
 
-      {/* AI Recommendations */}
-      {recommendations.length > 0 && (
-        <Card className="border-accent/10">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-1.5 mb-3">
-              <Sparkles size={14} className="text-accent" />
-              <p className="text-[10px] font-mono text-accent tracking-wider">AI TAVSIYALAR</p>
-            </div>
-            <div className="space-y-2">
-              {recommendations.slice(0, 3).map((r, i) => (
-                <Link key={i} href={r.href === "#checkin" ? "#" : r.href} onClick={r.href === "#checkin" ? () => checkin.mutate() : undefined}>
-                  <div className="flex items-center justify-between py-2 border-b border-border/30 last:border-0 press">
-                    <p className="text-xs text-vtext">{r.text}</p>
-                    <span className="text-[9px] font-mono text-accent bg-accent/10 px-2 py-0.5 rounded">{r.action}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* AI Recommendations + Quick actions — side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* AI Recommendations */}
+        {recommendations.length > 0 && (
+          <Card className="border-accent/10">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-1.5 mb-3">
+                <Sparkles size={14} className="text-accent" />
+                <p className="text-[10px] font-mono text-accent tracking-wider">AI TAVSIYALAR</p>
+              </div>
+              <div className="space-y-2">
+                {recommendations.slice(0, 3).map((r, i) => (
+                  <Link key={i} href={r.href === "#checkin" ? "#" : r.href} onClick={r.href === "#checkin" ? () => checkin.mutate() : undefined}>
+                    <div className="flex items-center justify-between py-2 border-b border-border/30 last:border-0 press">
+                      <p className="text-xs text-vtext">{r.text}</p>
+                      <span className="text-[9px] font-mono text-accent bg-accent/10 px-2 py-0.5 rounded">{r.action}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-2">
-        {[
-          { href: "/dashboard/food", icon: Utensils, label: "Ovqat qo'shish", color: "text-vgreen" },
-          { href: "/dashboard/photos", icon: Camera, label: "Progress foto", color: "text-vblue" },
-          { href: "/dashboard/plan", icon: Target, label: "AI Plan", color: "text-accent" },
-          { href: "/dashboard/chat", icon: Bot, label: "AI Coach", color: "text-[#ffa726]" },
-        ].map((a) => (
-          <Link key={a.href} href={a.href}>
-            <Card className="press card-hover h-full">
-              <CardContent className="p-3 flex items-center gap-2.5">
-                <a.icon size={16} className={a.color} />
-                <p className="text-[11px] font-medium text-vtext">{a.label}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        {/* Quick actions */}
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { href: "/dashboard/food", icon: Utensils, label: "Ovqat qo'shish", color: "text-vgreen" },
+            { href: "/dashboard/photos", icon: Camera, label: "Progress foto", color: "text-vblue" },
+            { href: "/dashboard/plan", icon: Target, label: "AI Plan", color: "text-accent" },
+            { href: "/dashboard/chat", icon: Bot, label: "AI Coach", color: "text-[#ffa726]" },
+          ].map((a) => (
+            <Link key={a.href} href={a.href}>
+              <Card className="press card-hover h-full">
+                <CardContent className="p-3 flex items-center gap-2.5">
+                  <a.icon size={16} className={a.color} />
+                  <p className="text-[11px] font-medium text-vtext">{a.label}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Level progress */}
