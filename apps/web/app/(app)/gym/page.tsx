@@ -74,10 +74,10 @@ export default function GymDashboard() {
   return (
     <div className="max-w-6xl space-y-6 animate-fadeUp">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
           <p className="text-[11px] text-muted font-mono">{greeting}</p>
-          <h1 className="font-display font-bold text-2xl text-vtext">{user?.full_name?.split(" ")[0] ?? "Owner"}</h1>
+          <h1 className="font-display font-bold text-xl sm:text-2xl text-vtext">{user?.full_name?.split(" ")[0] ?? "Owner"}</h1>
         </div>
         <div className="flex gap-2">
           <Link href="/gym/notify"><Button variant="outline" size="sm" className="gap-1.5"><Bell size={14} /> Xabar</Button></Link>
@@ -133,7 +133,7 @@ export default function GymDashboard() {
       </div>
 
       {/* Chart + Risk panel */}
-      <div className="grid lg:grid-cols-[2fr_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
         {/* Weekly Chart */}
         <Card>
           <CardContent className="p-5">
@@ -150,13 +150,13 @@ export default function GymDashboard() {
                   <AreaChart data={d.weekChart} margin={{ top: 5, right: 5, bottom: 0, left: 5 }}>
                     <defs>
                       <linearGradient id="accGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#e8ff47" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#e8ff47" stopOpacity={0} />
+                        <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#52526a" }} />
-                    <Tooltip contentStyle={{ background: "#13131c", border: "1px solid #1e1e2c", borderRadius: 10, fontSize: 12 }} labelStyle={{ color: "#52526a" }} />
-                    <Area type="monotone" dataKey="count" stroke="#e8ff47" strokeWidth={2} fill="url(#accGrad)" />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--chart-tick)" }} />
+                    <Tooltip contentStyle={{ background: "var(--chart-tooltip-bg)", border: "1px solid var(--chart-tooltip-border)", borderRadius: 10, fontSize: 12, color: "var(--text)" }} labelStyle={{ color: "var(--muted)" }} />
+                    <Area type="monotone" dataKey="count" stroke="var(--accent)" strokeWidth={2} fill="url(#accGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
               )}

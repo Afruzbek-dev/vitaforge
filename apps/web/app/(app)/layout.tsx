@@ -18,6 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (user) {
       if (user.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
       else if ((user.role === "gym_owner" || user.role === "trainer" || user.role === "admin") && pathname.startsWith("/dashboard")) router.replace("/gym");
+      else if (user.role === "gym_owner" && !user.gym_id && !pathname.startsWith("/gym-onboarding")) router.replace("/gym-onboarding");
       return;
     }
     (async () => {
@@ -61,6 +62,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             const os = await api.onboarding.status();
             if (!os?.data?.onboarding_done) { router.replace("/onboarding"); return; }
           } catch {}
+        }
+        if (userData.role === "gym_owner" && !userData.gym_id && !pathname.startsWith("/gym-onboarding")) {
+          router.replace("/gym-onboarding"); return;
         }
         if (userData.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
         else if ((userData.role === "gym_owner" || userData.role === "trainer" || userData.role === "admin") && pathname.startsWith("/dashboard")) router.replace("/gym");

@@ -74,7 +74,7 @@ export default function Sidebar({ role }: { role: string }) {
   const logout = () => { localStorage.removeItem("access_token"); localStorage.removeItem("zenfit_user"); clearAuth(); router.push("/login"); };
 
   return (
-    <aside className="w-[220px] bg-sidebar border-r border-border flex flex-col py-5 px-3 shrink-0 min-h-screen transition-colors">
+    <aside className="w-56 bg-sidebar border-r border-border flex flex-col py-5 px-3 shrink-0 min-h-screen transition-colors">
       <div className="flex items-center gap-2.5 px-2.5 mb-4">
         <div className="w-7 h-7 rounded-[7px] bg-accent flex items-center justify-center font-display font-bold text-[13px] text-bg">Z</div>
         <span className="font-display font-bold text-[14px] text-vtext">ZenFit</span>

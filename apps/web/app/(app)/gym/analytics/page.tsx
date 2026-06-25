@@ -116,7 +116,7 @@ export default function AnalyticsPage() {
 
   if (!data) return <div className="text-muted animate-pulse p-4">Yuklanmoqda...</div>;
 
-  const chartTooltipStyle = { background: "#13131c", border: "1px solid #1e1e2c", borderRadius: 10, fontSize: 11 };
+  const chartTooltipStyle = { background: "var(--chart-tooltip-bg)", border: "1px solid var(--chart-tooltip-border)", borderRadius: 10, fontSize: 11, color: "var(--text)" };
   const riskColor = (r: string) => r === "high" ? "text-vred" : r === "medium" ? "text-[#ffa726]" : "text-vgreen";
   const riskBg = (r: string) => r === "high" ? "bg-vred/10" : r === "medium" ? "bg-[#ffa726]/10" : "bg-vgreen/10";
 
@@ -130,7 +130,7 @@ export default function AnalyticsPage() {
         </div>
         <div className="flex gap-1.5 bg-card border border-border rounded-lg p-0.5">
           {(["week", "month"] as Period[]).map((p) => (
-            <button key={p} onClick={() => setPeriod(p)} className={`text-[11px] font-mono px-3 py-1.5 rounded-md transition-colors ${period === p ? "bg-accent text-[#07070a] font-bold" : "text-muted hover:text-vtext"}`}>
+            <button key={p} onClick={() => setPeriod(p)} className={`text-[11px] font-mono px-3 py-1.5 rounded-md transition-colors ${period === p ? "bg-accent text-bg font-bold" : "text-muted hover:text-vtext"}`}>
               {p === "week" ? "Hafta" : "Oy"}
             </button>
           ))}
@@ -178,18 +178,18 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts row 1: Churn + Revenue */}
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-5">
             <p className="text-[10px] font-mono text-muted tracking-wider mb-4">CHURN RATE DINAMIKASI</p>
             <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.churnChart}>
-                  <CartesianGrid stroke="#1e1e2c" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} unit="%" />
+                  <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--chart-tick)" }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--chart-tick)" }} unit="%" />
                   <Tooltip contentStyle={chartTooltipStyle} />
-                  <Line type="monotone" dataKey="rate" stroke="#ff5252" strokeWidth={2} dot={false} name="Churn %" />
+                  <Line type="monotone" dataKey="rate" stroke="var(--red)" strokeWidth={2} dot={false} name="Churn %" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -202,10 +202,10 @@ export default function AnalyticsPage() {
             <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.attChart}>
-                  <CartesianGrid stroke="#1e1e2c" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} />
+                  <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--chart-tick)" }} />
                   <Tooltip contentStyle={chartTooltipStyle} />
-                  <Bar dataKey="revenue" fill="#5299ff" radius={[4, 4, 0, 0]} name="Daromad" />
+                  <Bar dataKey="revenue" fill="var(--blue)" radius={[4, 4, 0, 0]} name="Daromad" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -214,7 +214,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts row 2: Retention curve + Member growth */}
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-5">
             <p className="text-[10px] font-mono text-muted tracking-wider mb-4">RETENTION CURVE</p>
@@ -223,15 +223,15 @@ export default function AnalyticsPage() {
                 <AreaChart data={data.retentionCurve}>
                   <defs>
                     <linearGradient id="retGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#4dffb4" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#4dffb4" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--green)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="var(--green)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#1e1e2c" strokeDasharray="3 3" />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} unit="%" />
+                  <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--chart-tick)" }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--chart-tick)" }} unit="%" />
                   <Tooltip contentStyle={chartTooltipStyle} />
-                  <Area type="monotone" dataKey="pct" stroke="#4dffb4" strokeWidth={2} fill="url(#retGrad)" name="Retention %" />
+                  <Area type="monotone" dataKey="pct" stroke="var(--green)" strokeWidth={2} fill="url(#retGrad)" name="Retention %" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -246,14 +246,14 @@ export default function AnalyticsPage() {
                 <AreaChart data={data.growthChart}>
                   <defs>
                     <linearGradient id="growGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#e8ff47" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#e8ff47" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#1e1e2c" strokeDasharray="3 3" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} />
+                  <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "var(--chart-tick)" }} />
                   <Tooltip contentStyle={chartTooltipStyle} />
-                  <Area type="monotone" dataKey="cumulative" stroke="#e8ff47" strokeWidth={2} fill="url(#growGrad)" name="Jami yangi" />
+                  <Area type="monotone" dataKey="cumulative" stroke="var(--accent)" strokeWidth={2} fill="url(#growGrad)" name="Jami yangi" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -262,7 +262,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Active/Passive members with AI analysis */}
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Passive — churn risk */}
         <Card className="border-[var(--red)]/15">
           <CardContent className="p-5">

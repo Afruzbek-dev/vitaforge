@@ -21,9 +21,14 @@
     --red: #ff5252;
     --green: #4dffb4;
     --blue: #5299ff;
+    --warning: #ffa726;
     --radius: 14px;
     --radius-sm: 10px;
     --radius-full: 9999px;
+    --chart-tooltip-bg: #13131c;
+    --chart-tooltip-border: #1e1e2c;
+    --chart-grid: #1e1e2c;
+    --chart-tick: #52526a;
   }
 
   [data-theme="light"] {
@@ -41,13 +46,19 @@
     --red: #dc2626;
     --green: #059669;
     --blue: #2563eb;
+    --warning: #d97706;
     --radius: 14px;
     --radius-sm: 10px;
     --radius-full: 9999px;
+    --chart-tooltip-bg: #ffffff;
+    --chart-tooltip-border: #d1d5db;
+    --chart-grid: #e5e7eb;
+    --chart-tick: #6b7280;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; font-size: 14px; }
+  @media (min-width: 1024px) { html { font-size: 15px; } }
   body {
     background-color: var(--bg);
     color: var(--text);
@@ -55,6 +66,20 @@
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
     transition: background-color 0.2s, color 0.2s;
+  }
+
+  /* Light mode input/select/textarea contrast */
+  [data-theme="light"] input,
+  [data-theme="light"] select,
+  [data-theme="light"] textarea {
+    background-color: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  [data-theme="light"] input:focus,
+  [data-theme="light"] select:focus,
+  [data-theme="light"] textarea:focus {
+    border-color: var(--accent);
   }
   h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
 
@@ -67,6 +92,28 @@
   @supports (padding: env(safe-area-inset-bottom)) {
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     .safe-top { padding-top: env(safe-area-inset-top); }
+  }
+}
+
+@layer components {
+  /* Responsive card padding */
+  .card-responsive { @apply p-3 sm:p-4 lg:p-5; }
+
+  /* Responsive grid */
+  .grid-responsive { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3; }
+  .grid-responsive-4 { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4; }
+
+  /* Mobile-friendly buttons */
+  @media (max-width: 640px) {
+    button, [role="button"], a[class*="btn"] { min-height: 44px; }
+  }
+
+  /* Responsive table → card on mobile */
+  .table-responsive-cards {
+    @apply block sm:hidden;
+  }
+  .table-responsive-desktop {
+    @apply hidden sm:block;
   }
 }
 

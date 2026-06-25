@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
-import { Wallet, Plus } from "lucide-react";
+import { Wallet, Plus, Receipt } from "lucide-react";
 
 export default function ContractsPage() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [gyms, setGyms] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [sending, setSending] = useState<string | null>(null);
   const [form, setForm] = useState({ gym_id: "", plan: "standard", price_monthly: "", starts_at: new Date().toISOString().split("T")[0], notes: "" });
 
   useEffect(() => { load(); }, []);
@@ -29,6 +30,13 @@ export default function ContractsPage() {
     load();
   };
 
+  const sendInvoice = async (contractId: string, gymId: string) => {
+    setSending(contractId);
+    await getSupabase().from("notifications").insert({ gym_id: gymId, type: "invoice", title: "To'lov talab qilinmoqda", message: "Admin to'lov so'radi. Iltimos, to'lovni amalga oshiring.", contract_id: contractId });
+    setSending(null);
+    alert("Invoice yuborildi!");
+  };
+
   return (
     <div className="max-w-4xl animate-fadeUp space-y-5">
       <div className="flex items-center justify-between">
@@ -44,7 +52,7 @@ export default function ContractsPage() {
             <option value="">Gym tanlang</option>
             {gyms.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <select value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value })} className="px-3 py-2 rounded-[var(--radius-sm)] bg-surface border border-border text-sm">
               <option value="starter">Starter</option>
               <option value="standard">Standard</option>
@@ -67,7 +75,12 @@ export default function ContractsPage() {
                 <p className="text-[11px] text-muted">{c.plan} · {Number(c.price_monthly).toLocaleString()} so'm/oy · {c.starts_at}</p>
               </div>
             </div>
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.status === "active" ? "bg-vgreen/20 text-vgreen" : "bg-muted/20 text-muted"}`}>{c.status}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={() => sendInvoice(c.id, c.gym_id)} disabled={sending === c.id} className="px-2 py-1 rounded-md bg-accent/10 text-accent text-[10px] font-medium hover:bg-accent/20 press disabled:opacity-50" title="Invoice yuborish">
+                <Receipt size={13} className="inline mr-1" />To'lov talab
+              </button>
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.status === "active" ? "bg-vgreen/20 text-vgreen" : "bg-muted/20 text-muted"}`}>{c.status}</span>
+            </div>
           </div>
         ))}
         {contracts.length === 0 && <p className="text-center text-muted text-sm py-8">Kontraktlar yo'q</p>}

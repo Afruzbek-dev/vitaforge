@@ -105,7 +105,7 @@ export default function MembersPage() {
   return (
     <div className="max-w-6xl space-y-5 animate-fadeUp">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
         <div>
           <h1 className="font-display font-bold text-xl text-vtext">A'zolar</h1>
           <p className="text-[11px] text-muted">{data?.members.length ?? 0} ta a'zo{riskCount > 0 && <span className="text-vred"> · {riskCount} xavf ostida</span>}</p>
@@ -119,7 +119,7 @@ export default function MembersPage() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ism yoki telefon..." className="pl-9" />
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
           {([
             { id: "all" as FilterType, label: "Barchasi", icon: Users },
             { id: "risk" as FilterType, label: `Xavf (${riskCount})`, icon: AlertTriangle },
@@ -135,94 +135,119 @@ export default function MembersPage() {
 
       {/* Table */}
       <Card>
-        <CardContent className="p-0 overflow-x-auto">
+        <CardContent className="p-0">
           {members.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-muted text-sm">A'zo topilmadi</p>
             </div>
           ) : (
-            <table className="w-full text-[12px] min-w-[700px]">
-              <thead>
-                <tr className="text-[9px] font-mono text-muted tracking-wider border-b border-border">
-                  <th className="text-left py-3 px-4">A'ZO</th>
-                  <th className="text-left py-3 px-3">TELEFON</th>
-                  <th className="text-left py-3 px-3">TARIF</th>
-                  <th className="text-left py-3 px-3">TO'LOV</th>
-                  <th className="text-left py-3 px-3">OXIRGI TASHRIF</th>
-                  <th className="text-left py-3 px-3">XAVF</th>
-                  <th className="py-3 px-4 text-right">AMALLAR</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* Mobile card view */}
+              <div className="block sm:hidden divide-y divide-border/30">
                 {members.map((m: any) => {
                   const initials = m.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "?";
                   return (
-                    <tr key={m.id} className="border-b border-border/30 hover:bg-[var(--subtle)] transition-colors">
-                      <td className="py-3 px-4">
-                        <Link href={`/gym/members/${m.id}`} className="flex items-center gap-2.5 press">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${m.risk === "high" ? "bg-vred/15 text-vred" : m.risk === "medium" ? "bg-[#ffa726]/15 text-[#ffa726]" : "bg-accent/10 text-accent"}`}>{initials}</div>
-                          <span className="text-vtext font-medium">{m.full_name}</span>
-                        </Link>
-                      </td>
-                      <td className="py-3 px-3 text-muted font-mono">{m.phone ?? "—"}</td>
-                      <td className="py-3 px-3 text-vtext">{m.tariff}</td>
-                      <td className="py-3 px-3">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${payBadge(m.paymentStatus)}`}>
-                          {m.paymentStatus === "active" ? "Faol" : m.paymentStatus === "expired" ? "Tugagan" : "—"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-muted">
-                        {m.daysAgo === 0 ? "Bugun" : m.daysAgo < 999 ? `${m.daysAgo} kun oldin` : "—"}
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${riskIndicator(m.risk)}`} />
-                          <span className={`text-[10px] font-mono ${m.risk === "high" ? "text-vred" : m.risk === "medium" ? "text-[#ffa726]" : "text-vgreen"}`}>
-                            {m.risk === "high" ? "Yuqori" : m.risk === "medium" ? "O'rta" : "Past"}
-                          </span>
+                    <div key={m.id} className="p-3 flex items-center gap-3">
+                      <Link href={`/gym/members/${m.id}`} className="flex items-center gap-3 flex-1 min-w-0 press">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 ${m.risk === "high" ? "bg-vred/15 text-vred" : m.risk === "medium" ? "bg-[#ffa726]/15 text-[#ffa726]" : "bg-accent/10 text-accent"}`}>{initials}</div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-vtext truncate">{m.full_name}</p>
+                          <p className="text-[10px] text-muted">{m.tariff} · {m.daysAgo === 0 ? "Bugun" : m.daysAgo < 999 ? `${m.daysAgo}k oldin` : "—"}</p>
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => sendNotification.mutate({ memberId: m.id, message: "Sizni gym'da kutmoqdamiz!" })}
-                            className="w-7 h-7 rounded-lg bg-vblue/10 flex items-center justify-center press hover:bg-vblue/20 transition-colors"
-                            title="Xabar yuborish"
-                          >
-                            <Send size={12} className="text-vblue" />
-                          </button>
-                          <button
-                            onClick={() => sendNotification.mutate({ memberId: m.id, message: "To'lov muddati yaqinlashmoqda. Iltimos, to'lovni amalga oshiring." })}
-                            className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center press hover:bg-accent/20 transition-colors"
-                            title="To'lov so'rash"
-                          >
-                            <CreditCard size={12} className="text-accent" />
-                          </button>
-                          <button
-                            onClick={() => setAssigningTrainer(assigningTrainer === m.id ? null : m.id)}
-                            className="w-7 h-7 rounded-lg bg-vgreen/10 flex items-center justify-center press hover:bg-vgreen/20 transition-colors"
-                            title="Trener biriktirish"
-                          >
-                            <UserCheck size={12} className="text-vgreen" />
-                          </button>
-                        </div>
-                        {/* Trainer assign dropdown */}
-                        {assigningTrainer === m.id && (data?.trainers?.length ?? 0) > 0 && (
-                          <div className="absolute right-4 mt-1 bg-card border border-border rounded-xl p-2 shadow-xl z-10 animate-scaleIn">
-                            <p className="text-[9px] font-mono text-muted mb-1.5">TRENER TANLANG</p>
-                            {data!.trainers.map((t: any) => (
-                              <button key={t.id} onClick={() => assignTrainer.mutate({ memberId: m.id, trainerId: t.id })} className="w-full text-left text-xs text-vtext px-2 py-1.5 rounded hover:bg-accent/10 transition-colors press">
-                                {t.full_name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                    </tr>
+                      </Link>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className={`w-2 h-2 rounded-full ${riskIndicator(m.risk)}`} />
+                        <button onClick={() => sendNotification.mutate({ memberId: m.id, message: "Sizni gym'da kutmoqdamiz!" })} className="w-8 h-8 rounded-lg bg-vblue/10 flex items-center justify-center press"><Send size={12} className="text-vblue" /></button>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-[12px] min-w-[700px]">
+                  <thead>
+                    <tr className="text-[9px] font-mono text-muted tracking-wider border-b border-border">
+                      <th className="text-left py-3 px-4">A'ZO</th>
+                      <th className="text-left py-3 px-3">TELEFON</th>
+                      <th className="text-left py-3 px-3">TARIF</th>
+                      <th className="text-left py-3 px-3">TO'LOV</th>
+                      <th className="text-left py-3 px-3">OXIRGI TASHRIF</th>
+                      <th className="text-left py-3 px-3">XAVF</th>
+                      <th className="py-3 px-4 text-right">AMALLAR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {members.map((m: any) => {
+                      const initials = m.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "?";
+                      return (
+                        <tr key={m.id} className="border-b border-border/30 hover:bg-[var(--subtle)] transition-colors">
+                          <td className="py-3 px-4">
+                            <Link href={`/gym/members/${m.id}`} className="flex items-center gap-2.5 press">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${m.risk === "high" ? "bg-vred/15 text-vred" : m.risk === "medium" ? "bg-[#ffa726]/15 text-[#ffa726]" : "bg-accent/10 text-accent"}`}>{initials}</div>
+                              <span className="text-vtext font-medium">{m.full_name}</span>
+                            </Link>
+                          </td>
+                          <td className="py-3 px-3 text-muted font-mono">{m.phone ?? "—"}</td>
+                          <td className="py-3 px-3 text-vtext">{m.tariff}</td>
+                          <td className="py-3 px-3">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${payBadge(m.paymentStatus)}`}>
+                              {m.paymentStatus === "active" ? "Faol" : m.paymentStatus === "expired" ? "Tugagan" : "—"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-muted">
+                            {m.daysAgo === 0 ? "Bugun" : m.daysAgo < 999 ? `${m.daysAgo} kun oldin` : "—"}
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`w-2 h-2 rounded-full ${riskIndicator(m.risk)}`} />
+                              <span className={`text-[10px] font-mono ${m.risk === "high" ? "text-vred" : m.risk === "medium" ? "text-[#ffa726]" : "text-vgreen"}`}>
+                                {m.risk === "high" ? "Yuqori" : m.risk === "medium" ? "O'rta" : "Past"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => sendNotification.mutate({ memberId: m.id, message: "Sizni gym'da kutmoqdamiz!" })}
+                                className="w-7 h-7 rounded-lg bg-vblue/10 flex items-center justify-center press hover:bg-vblue/20 transition-colors"
+                                title="Xabar yuborish"
+                              >
+                                <Send size={12} className="text-vblue" />
+                              </button>
+                              <button
+                                onClick={() => sendNotification.mutate({ memberId: m.id, message: "To'lov muddati yaqinlashmoqda. Iltimos, to'lovni amalga oshiring." })}
+                                className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center press hover:bg-accent/20 transition-colors"
+                                title="To'lov so'rash"
+                              >
+                                <CreditCard size={12} className="text-accent" />
+                              </button>
+                              <button
+                                onClick={() => setAssigningTrainer(assigningTrainer === m.id ? null : m.id)}
+                                className="w-7 h-7 rounded-lg bg-vgreen/10 flex items-center justify-center press hover:bg-vgreen/20 transition-colors"
+                                title="Trener biriktirish"
+                              >
+                                <UserCheck size={12} className="text-vgreen" />
+                              </button>
+                            </div>
+                            {assigningTrainer === m.id && (data?.trainers?.length ?? 0) > 0 && (
+                              <div className="absolute right-4 mt-1 bg-card border border-border rounded-xl p-2 shadow-xl z-10 animate-scaleIn">
+                                <p className="text-[9px] font-mono text-muted mb-1.5">TRENER TANLANG</p>
+                                {data!.trainers.map((t: any) => (
+                                  <button key={t.id} onClick={() => assignTrainer.mutate({ memberId: m.id, trainerId: t.id })} className="w-full text-left text-xs text-vtext px-2 py-1.5 rounded hover:bg-accent/10 transition-colors press">
+                                    {t.full_name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
