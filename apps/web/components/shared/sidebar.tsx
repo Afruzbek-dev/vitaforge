@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { LayoutDashboard, Users, Wallet, BarChart3, Trophy, Megaphone, Package, Download, Settings, LogOut, Dumbbell, Utensils, Bot, Camera, Mail, CalendarCheck, Target } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, BarChart3, Trophy, Megaphone, Package, Download, Settings, LogOut, Dumbbell, Utensils, Bot, Camera, Mail, CalendarCheck, Target, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 
 const memberLinks = [
   { group: "ASOSIY", items: [
@@ -53,6 +54,7 @@ export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const { theme, toggle } = useTheme();
   const groups = role === "member" ? memberLinks : role === "trainer" ? trainerLinks : ownerLinks;
 
   const logout = () => { localStorage.removeItem("access_token"); localStorage.removeItem("zenfit_user"); clearAuth(); router.push("/login"); };
@@ -89,6 +91,10 @@ export default function Sidebar({ role }: { role: string }) {
       </nav>
 
       <div className="border-t border-border pt-3 mt-2">
+        <button onClick={toggle} className="flex items-center gap-2.5 px-2.5 py-2 text-[12px] text-muted hover:text-accent transition-colors w-full mb-1">
+          {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+          {theme === "dark" ? "Light mode" : "Dark mode"}
+        </button>
         <button onClick={logout} className="flex items-center gap-2.5 px-2.5 py-2 text-[12px] text-muted hover:text-vred transition-colors w-full">
           <LogOut size={14} /> Chiqish
         </button>
