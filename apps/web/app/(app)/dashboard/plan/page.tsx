@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { generatePlan } from "@/lib/ai";
@@ -10,190 +10,201 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// ─── Savollar (dietolog_sport_trener asosida) ────────────────
+// ─── Progress Ring Component ─────────────────────────────
+function ProgressRing({ value, max, size = 120, color = "var(--accent)", label }: { value: number; max: number; size?: number; color?: string; label: string }) {
+  const pct = Math.min(value / max, 1);
+  const r = (size - 12) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - pct);
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={size} height={size} className="progress-ring">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border)" strokeWidth="8" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} />
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center" style={{ width: size, height: size }}>
+        <span className="font-display font-bold text-lg text-vtext">{value}</span>
+        <span className="text-[10px] text-muted">/{max}</span>
+      </div>
+      <p className="text-xs text-muted mt-1">{label}</p>
+    </div>
+  );
+}
+
+// ─── Macro Bar ───────────────────────────────────────────
+function MacroBar({ label, value, max, color, unit = "g" }: { label: string; value: number; max: number; color: string; unit?: string }) {
+  const pct = Math.min((value / max) * 100, 100);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className="text-muted">{label}</span>
+        <span className="text-vtext font-mono">{value}/{max}{unit}</span>
+      </div>
+      <div className="h-2 bg-border rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Questions (same as before, abbreviated) ─────────────
 const QUESTIONS = [
-  {
-    id: "basics",
-    title: "👤 Shaxsiy ma'lumotlar",
-    fields: [
-      { key: "age", label: "Yosh", type: "number", placeholder: "25" },
-      { key: "gender", label: "Jins", type: "select", options: [{ v: "male", l: "Erkak" }, { v: "female", l: "Ayol" }] },
-      { key: "height_cm", label: "Bo'y (cm)", type: "number", placeholder: "178" },
-      { key: "weight_kg", label: "Vazn (kg)", type: "number", placeholder: "82" },
-      { key: "job_type", label: "Kasbi", type: "select", options: [{ v: "office", l: "O'troq (ofis)" }, { v: "moderate", l: "O'rtacha (yurish-turish)" }, { v: "physical", l: "Jismoniy mehnat" }] },
-      { key: "sleep_hours", label: "Uyqu (soat/kecha)", type: "number", placeholder: "7" },
-    ],
-  },
-  {
-    id: "goal",
-    title: "🎯 Maqsad va motivatsiya",
-    fields: [
-      { key: "goal", label: "Asosiy maqsad", type: "select", options: [{ v: "weight_loss", l: "Vazn yo'qotish" }, { v: "muscle_gain", l: "Mushak olish" }, { v: "endurance", l: "Chidamlilik" }, { v: "health", l: "Sog'lom turmush" }, { v: "cutting", l: "Kesish (cutting)" }] },
-      { key: "deadline", label: "Qachongacha erishmoqchi?", type: "select", options: [{ v: "1month", l: "1 oy" }, { v: "3months", l: "3 oy" }, { v: "6months", l: "6 oy" }, { v: "1year", l: "1 yil" }] },
-      { key: "experience", label: "Sport tajribasi", type: "select", options: [{ v: "beginner", l: "Boshlang'ich (0-6 oy)" }, { v: "intermediate", l: "O'rtacha (6 oy - 2 yil)" }, { v: "advanced", l: "Tajribali (2+ yil)" }] },
-      { key: "motivation", label: "Nima sababdan boshlayapsiz?", type: "text", placeholder: "Sog'liq uchun, ko'rinish uchun..." },
-    ],
-  },
-  {
-    id: "health",
-    title: "❤️ Sog'liq holati",
-    fields: [
-      { key: "diseases", label: "Surunkali kasalliklar", type: "text", placeholder: "Yo'q / diabet / qon bosimi..." },
-      { key: "allergies", label: "Allergiya / toqatsizlik", type: "text", placeholder: "Yo'q / laktoza / gluten..." },
-      { key: "injuries", label: "Shikastlanish / operatsiya", type: "text", placeholder: "Yo'q / tizza shikast..." },
-      { key: "medications", label: "Dori qabul qilyapsizmi?", type: "text", placeholder: "Yo'q / ..." },
-    ],
-  },
-  {
-    id: "nutrition",
-    title: "🥗 Ovqatlanish odatlari",
-    fields: [
-      { key: "meals_per_day", label: "Kuniga necha marta ovqatlanasiz?", type: "select", options: [{ v: "2", l: "2 marta" }, { v: "3", l: "3 marta" }, { v: "4", l: "4 marta" }, { v: "5", l: "5+ marta" }] },
-      { key: "disliked_foods", label: "Yoqtirmaydigan / yeya olmaydigan taomlar", type: "text", placeholder: "Baliq, sut..." },
-      { key: "water_intake", label: "Suv iste'moli (litr/kun)", type: "number", placeholder: "2" },
-      { key: "appetite_time", label: "Eng ko'p ishtaha vaqti", type: "select", options: [{ v: "morning", l: "Ertalab" }, { v: "afternoon", l: "Tushda" }, { v: "evening", l: "Kechqurun" }] },
-    ],
-  },
-  {
-    id: "workout",
-    title: "💪 Sport va mashg'ulot",
-    fields: [
-      { key: "activity_level", label: "Faollik darajasi", type: "select", options: [{ v: "sedentary", l: "Kam harakatli" }, { v: "light", l: "1-3 kun/hafta" }, { v: "moderate", l: "3-5 kun/hafta" }, { v: "active", l: "6-7 kun/hafta" }, { v: "very_active", l: "Juda faol (sportchi)" }] },
-      { key: "workout_days", label: "Haftada necha kun mashq qila olasiz?", type: "select", options: [{ v: "2", l: "2 kun" }, { v: "3", l: "3 kun" }, { v: "4", l: "4 kun" }, { v: "5", l: "5 kun" }, { v: "6", l: "6 kun" }] },
-      { key: "session_minutes", label: "Bir seans necha daqiqa?", type: "select", options: [{ v: "30", l: "30 daqiqa" }, { v: "45", l: "45 daqiqa" }, { v: "60", l: "60 daqiqa" }, { v: "90", l: "90 daqiqa" }] },
-      { key: "location", label: "Qayerda mashq qilasiz?", type: "select", options: [{ v: "gym", l: "Sport zali" }, { v: "home", l: "Uyda" }, { v: "outdoor", l: "Tashqarida" }] },
-    ],
-  },
-  {
-    id: "psychology",
-    title: "🧠 Psixologik holat",
-    fields: [
-      { key: "stress_level", label: "Stress darajasi", type: "select", options: [{ v: "low", l: "Past" }, { v: "moderate", l: "O'rtacha" }, { v: "high", l: "Yuqori" }] },
-      { key: "emotional_eating", label: "Hissiy ovqatlanish bo'ladimi?", type: "select", options: [{ v: "no", l: "Yo'q" }, { v: "sometimes", l: "Ba'zan" }, { v: "often", l: "Tez-tez" }] },
-      { key: "willpower", label: "Iroda kuchi", type: "select", options: [{ v: "low", l: "Past" }, { v: "moderate", l: "O'rtacha" }, { v: "high", l: "Yuqori" }] },
-    ],
-  },
+  { id: "basics", title: "👤 Shaxsiy", fields: [
+    { key: "age", label: "Yosh", type: "number", placeholder: "25" },
+    { key: "gender", label: "Jins", type: "select", options: [{ v: "male", l: "Erkak" }, { v: "female", l: "Ayol" }] },
+    { key: "height_cm", label: "Bo'y (cm)", type: "number", placeholder: "178" },
+    { key: "weight_kg", label: "Vazn (kg)", type: "number", placeholder: "82" },
+    { key: "job_type", label: "Kasbi", type: "select", options: [{ v: "office", l: "O'troq" }, { v: "moderate", l: "O'rtacha" }, { v: "physical", l: "Jismoniy" }] },
+  ]},
+  { id: "goal", title: "🎯 Maqsad", fields: [
+    { key: "goal", label: "Maqsad", type: "select", options: [{ v: "weight_loss", l: "Ozish" }, { v: "muscle_gain", l: "Mushak" }, { v: "endurance", l: "Chidamlilik" }, { v: "health", l: "Sog'lom" }] },
+    { key: "experience", label: "Tajriba", type: "select", options: [{ v: "beginner", l: "Boshlang'ich" }, { v: "intermediate", l: "O'rtacha" }, { v: "advanced", l: "Tajribali" }] },
+    { key: "workout_days", label: "Hafta/kun", type: "select", options: [{ v: "3", l: "3" }, { v: "4", l: "4" }, { v: "5", l: "5" }, { v: "6", l: "6" }] },
+  ]},
+  { id: "nutrition", title: "🥗 Ovqat", fields: [
+    { key: "meals_per_day", label: "Ovqat/kun", type: "select", options: [{ v: "3", l: "3" }, { v: "4", l: "4" }, { v: "5", l: "5+" }] },
+    { key: "activity_level", label: "Faollik", type: "select", options: [{ v: "sedentary", l: "Kam" }, { v: "light", l: "Engil" }, { v: "moderate", l: "O'rtacha" }, { v: "active", l: "Faol" }] },
+    { key: "allergies", label: "Allergiya", type: "text", placeholder: "Yo'q / laktoza..." },
+  ]},
 ];
 
 export default function PlanPage() {
   const qc = useQueryClient();
   const sb = getSupabase();
-  const [mode, setMode] = useState<"view" | "questions" | "generating" | "result">("view");
+  const [mode, setMode] = useState<"view" | "questions" | "generating" | "addFood">("view");
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [analysis, setAnalysis] = useState<string>("");
+  const [todayFood, setTodayFood] = useState<any[]>([]);
+  const [foodInput, setFoodInput] = useState("");
+  const [addingFood, setAddingFood] = useState(false);
+  const [weekProgress, setWeekProgress] = useState<number[]>([]);
 
   const { data, isLoading } = useQuery({ queryKey: ["plan"], queryFn: api.plans.current, retry: false });
   const plan = data?.data ?? data;
 
-  const updateField = (key: string, value: string) => setAnswers((p) => ({ ...p, [key]: value }));
-  const pct = ((step + 1) / QUESTIONS.length) * 100;
-  const currentQ = QUESTIONS[step];
+  // Load today's food logs
+  useEffect(() => {
+    (async () => {
+      const u = await getUser();
+      if (!u) return;
+      const today = new Date().toISOString().split("T")[0];
+      const { data: logs } = await sb.from("food_logs").select("*").eq("member_id", u.id).gte("created_at", today + "T00:00:00").order("created_at", { ascending: false });
+      setTodayFood(logs ?? []);
+      // Week progress (last 7 days calorie totals)
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+      const { data: weekLogs } = await sb.from("food_logs").select("calories, created_at").eq("member_id", u.id).gte("created_at", weekAgo + "T00:00:00");
+      if (weekLogs) {
+        const daily: Record<string, number> = {};
+        weekLogs.forEach((l: any) => { const d = l.created_at.split("T")[0]; daily[d] = (daily[d] ?? 0) + (l.calories ?? 0); });
+        const last7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(Date.now() - (6 - i) * 86400000).toISOString().split("T")[0]; return daily[d] ?? 0; });
+        setWeekProgress(last7);
+      }
+    })();
+  }, [mode]);
 
-  const canNext = () => {
-    const required = currentQ.fields.filter((f) => f.type !== "text");
-    return required.every((f) => answers[f.key]);
+  const todayCal = todayFood.reduce((s, f) => s + (f.calories ?? 0), 0);
+  const todayProtein = todayFood.reduce((s, f) => s + (f.protein ?? 0), 0);
+  const todayCarbs = todayFood.reduce((s, f) => s + (f.carbs ?? 0), 0);
+  const todayFat = todayFood.reduce((s, f) => s + (f.fat ?? 0), 0);
+  const targetCal = plan?.nutrition?.daily_calories ?? 2200;
+  const targetProtein = plan?.nutrition?.protein_g ?? 150;
+  const targetCarbs = plan?.nutrition?.carbs_g ?? 250;
+  const targetFat = plan?.nutrition?.fat_g ?? 70;
+
+  const addFood = async () => {
+    if (!foodInput.trim()) return;
+    setAddingFood(true);
+    const u = await getUser();
+    if (!u) { setAddingFood(false); return; }
+    // Simple AI food estimation via edge — fallback to manual
+    let cal = 300, pro = 20, carb = 40, fat = 10;
+    try {
+      const res = await fetch("/api/telegram", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "estimate_food", food: foodInput }) });
+      const d = await res.json();
+      if (d.calories) { cal = d.calories; pro = d.protein ?? 20; carb = d.carbs ?? 40; fat = d.fat ?? 10; }
+    } catch {}
+    await sb.from("food_logs").insert({ member_id: u.id, food_name: foodInput, calories: cal, protein: pro, carbs: carb, fat: fat });
+    setTodayFood((p) => [{ food_name: foodInput, calories: cal, protein: pro, carbs: carb, fat: fat }, ...p]);
+    setFoodInput("");
+    setAddingFood(false);
+    setMode("view");
   };
+
+  const updateField = (key: string, value: string) => setAnswers((p) => ({ ...p, [key]: value }));
+  const currentQ = QUESTIONS[step];
 
   const generate = async () => {
     setMode("generating");
     try {
       const user = await getUser();
-      const result = await generatePlan({
-        age: +(answers.age || 25),
-        gender: answers.gender || "male",
-        height_cm: +(answers.height_cm || 175),
-        weight_kg: +(answers.weight_kg || 80),
-        goal: answers.goal || "muscle_gain",
-        activity_level: answers.activity_level || "moderate",
-        ...answers, // pass all answers for richer AI context
-      } as any);
-
+      const result = await generatePlan({ age: +(answers.age || 25), gender: answers.gender || "male", height_cm: +(answers.height_cm || 175), weight_kg: +(answers.weight_kg || 80), goal: answers.goal || "muscle_gain", activity_level: answers.activity_level || "moderate", ...answers } as any);
       if (!result) { alert("AI javob bermadi"); setMode("questions"); return; }
-
       const now = new Date();
       const week = Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000);
       await sb.from("fitness_plans").update({ is_active: false }).eq("member_id", user!.id).eq("is_active", true);
-      await sb.from("fitness_plans").insert({
-        member_id: user!.id, generated_by: "ai", week_number: week,
-        starts_at: now.toISOString().split("T")[0],
-        ends_at: new Date(now.getTime() + 6 * 86400000).toISOString().split("T")[0],
-        workouts: result.workouts ?? [], nutrition: result.nutrition ?? {},
-        ai_model: "llama-3.3-70b-versatile", ai_prompt_version: "v2.0", is_active: true,
-        notes: JSON.stringify(answers),
-      });
-
-      setAnalysis(result.summary || "");
+      await sb.from("fitness_plans").insert({ member_id: user!.id, generated_by: "ai", week_number: week, starts_at: now.toISOString().split("T")[0], ends_at: new Date(now.getTime() + 6 * 86400000).toISOString().split("T")[0], workouts: result.workouts ?? [], nutrition: result.nutrition ?? {}, ai_model: "llama-3.3-70b-versatile", ai_prompt_version: "v2.0", is_active: true, notes: JSON.stringify(answers) });
       qc.invalidateQueries({ queryKey: ["plan"] });
       setMode("view");
     } catch (e) { alert("Xatolik: " + (e as any)?.message); setMode("questions"); }
   };
 
-  // ─── QUESTIONS MODE ────────────────────────────────────
+  // ─── QUESTIONS ─────────────────────────────────────────
   if (mode === "questions") return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fadeUp">
-      {/* Progress */}
-      <div>
-        <div className="flex justify-between text-xs text-muted font-mono mb-2">
-          <span>{step + 1}/{QUESTIONS.length}</span>
-          <span>{currentQ.title}</span>
-        </div>
-        <div className="h-1.5 bg-border rounded-full overflow-hidden">
-          <div className="h-full bg-accent rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
-        </div>
+      <div className="flex justify-between text-xs text-muted font-mono mb-2">
+        <span>{step + 1}/{QUESTIONS.length}</span>
+        <span>{currentQ.title}</span>
       </div>
-
+      <div className="h-1.5 bg-border rounded-full overflow-hidden">
+        <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${((step + 1) / QUESTIONS.length) * 100}%` }} />
+      </div>
       <Card className="border-accent-border/30">
-        <CardHeader>
-          <CardTitle className="text-lg">{currentQ.title}</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-lg">{currentQ.title}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           {currentQ.fields.map((f) => (
             <div key={f.key} className="space-y-2">
               <Label>{f.label}</Label>
-              {f.type === "number" && (
-                <Input type="number" value={answers[f.key] ?? ""} onChange={(e) => updateField(f.key, e.target.value)} placeholder={f.placeholder} />
-              )}
-              {f.type === "text" && (
-                <Input value={answers[f.key] ?? ""} onChange={(e) => updateField(f.key, e.target.value)} placeholder={f.placeholder} />
-              )}
+              {(f.type === "number" || f.type === "text") && <Input type={f.type === "number" ? "number" : "text"} value={answers[f.key] ?? ""} onChange={(e) => updateField(f.key, e.target.value)} placeholder={f.placeholder} className="min-h-[44px]" />}
               {f.type === "select" && (
                 <div className="grid grid-cols-2 gap-2">
                   {f.options!.map((opt) => (
-                    <button key={opt.v} onClick={() => updateField(f.key, opt.v)}
-                      className={`p-2.5 rounded-lg border text-sm text-left transition-colors ${answers[f.key] === opt.v ? "border-accent bg-accent/5 text-accent font-medium" : "border-border text-muted hover:border-accent-border"}`}>
-                      {opt.l}
-                    </button>
+                    <button key={opt.v} onClick={() => updateField(f.key, opt.v)} className={`p-2.5 rounded-lg border text-sm min-h-[44px] press ${answers[f.key] === opt.v ? "border-accent bg-accent/5 text-accent" : "border-border text-muted"}`}>{opt.l}</button>
                   ))}
                 </div>
               )}
             </div>
           ))}
-
           <div className="flex gap-2 pt-2">
-            {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)} className="flex-1">← Orqaga</Button>}
-            {step < QUESTIONS.length - 1 ? (
-              <Button onClick={() => setStep(step + 1)} disabled={!canNext()} className="flex-1">Keyingi →</Button>
-            ) : (
-              <Button onClick={generate} className="flex-1">🤖 AI Plan yaratish</Button>
-            )}
+            {step > 0 && <Button variant="secondary" onClick={() => setStep(step - 1)} className="flex-1 min-h-[44px]">← Orqaga</Button>}
+            {step < QUESTIONS.length - 1 ? <Button onClick={() => setStep(step + 1)} className="flex-1 min-h-[44px]">Keyingi →</Button> : <Button onClick={generate} className="flex-1 min-h-[44px]">🤖 AI Plan</Button>}
           </div>
         </CardContent>
       </Card>
-
-      <Button variant="ghost" onClick={() => setMode("view")} className="w-full text-muted">Bekor qilish</Button>
+      <Button variant="ghost" onClick={() => setMode("view")} className="w-full min-h-[44px] text-muted">Bekor</Button>
     </div>
   );
 
-  // ─── GENERATING MODE ───────────────────────────────────
   if (mode === "generating") return (
     <div className="max-w-md mx-auto text-center py-20 animate-fadeUp">
       <div className="flex justify-center gap-2 mb-6">
         {[0, 1, 2, 3].map((i) => <div key={i} className="w-3 h-3 rounded-full bg-accent animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />)}
       </div>
       <h2 className="font-display font-bold text-xl text-vtext mb-2">AI plan yaratmoqda...</h2>
-      <p className="text-muted text-sm">Javoblaringiz tahlil qilinmoqda</p>
-      <p className="text-accent text-xs font-mono mt-4">BMR → TDEE → Makro → Mashq → Ratsion</p>
+      <p className="text-muted text-sm">BMR → TDEE → Makro → Mashq → Ratsion</p>
+    </div>
+  );
+
+  // ─── ADD FOOD ──────────────────────────────────────────
+  if (mode === "addFood") return (
+    <div className="max-w-md mx-auto space-y-4 animate-fadeUp">
+      <h2 className="font-display font-bold text-xl text-vtext">🍽️ Ovqat qo'shish</h2>
+      <p className="text-muted text-xs">AI ovqatni tanib, kaloriya/makro hisoblaydi</p>
+      <Input value={foodInput} onChange={(e) => setFoodInput(e.target.value)} placeholder="Masalan: osh 1 porsiya, non, salat..." className="min-h-[44px]" />
+      <div className="flex gap-2">
+        <Button onClick={addFood} disabled={addingFood || !foodInput.trim()} className="flex-1 min-h-[44px]">{addingFood ? "⏳ Hisoblanmoqda..." : "➕ Qo'shish"}</Button>
+        <Button variant="secondary" onClick={() => setMode("view")} className="min-h-[44px]">Bekor</Button>
+      </div>
     </div>
   );
 
@@ -201,107 +212,108 @@ export default function PlanPage() {
   if (isLoading) return <div className="text-muted animate-pulse p-4">Yuklanmoqda...</div>;
 
   return (
-    <div className="max-w-3xl space-y-6 animate-fadeUp">
+    <div className="max-w-3xl space-y-6 animate-fadeUp pb-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="font-display font-bold text-2xl text-vtext">📋 Haftalik Plan</h1>
-          <p className="text-muted text-sm font-mono mt-1">AI DIETOLOG + TRENER</p>
+          <h1 className="font-display font-bold text-2xl text-vtext">📋 Plan & Kaloriya</h1>
+          <p className="text-muted text-sm font-mono mt-1">KUNLIK TRACKER</p>
         </div>
-        <Button onClick={() => { setStep(0); setMode("questions"); }}>🤖 Yangi plan</Button>
+        <Button onClick={() => { setStep(0); setMode("questions"); }} className="min-h-[44px]">🤖 Yangi plan</Button>
       </div>
 
-      {!plan ? (
+      {/* Calorie Progress Ring + Macros */}
+      <Card className="border-accent-border/30">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-center gap-8 flex-wrap">
+            <div className="relative">
+              <ProgressRing value={todayCal} max={targetCal} size={130} label="kkal" />
+            </div>
+            <div className="flex-1 min-w-[180px] space-y-3">
+              <MacroBar label="🥩 Protein" value={todayProtein} max={targetProtein} color="var(--blue)" />
+              <MacroBar label="🍚 Karbohidrat" value={todayCarbs} max={targetCarbs} color="var(--accent)" />
+              <MacroBar label="🥑 Yog'" value={todayFat} max={targetFat} color="var(--green)" />
+            </div>
+          </div>
+          <Button onClick={() => setMode("addFood")} className="w-full mt-4 min-h-[44px]">🍽️ Ovqat qo'shish (AI)</Button>
+        </CardContent>
+      </Card>
+
+      {/* Today's food log */}
+      {todayFood.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">📝 Bugungi ovqatlar</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {todayFood.slice(0, 5).map((f, i) => (
+              <div key={i} className="flex justify-between items-center bg-bg rounded-lg p-3 text-sm">
+                <span className="text-vtext">{f.food_name}</span>
+                <span className="text-muted font-mono text-xs">{f.calories} kkal</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Weekly progress chart (simple bar) */}
+      {weekProgress.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">📊 Haftalik kaloriya</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-1 h-24">
+              {weekProgress.map((v, i) => {
+                const h = targetCal > 0 ? Math.min((v / targetCal) * 100, 100) : 0;
+                const day = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"][(new Date(Date.now() - (6 - i) * 86400000).getDay() + 6) % 7];
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full rounded-t" style={{ height: `${h}%`, background: v >= targetCal * 0.8 ? "var(--accent)" : "var(--border)", minHeight: v > 0 ? "4px" : "0" }} />
+                    <span className="text-[9px] text-muted">{day}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-between text-[10px] text-muted mt-2">
+              <span>Maqsad: {targetCal} kkal/kun</span>
+              <span className="text-accent">{weekProgress.filter((v) => v >= targetCal * 0.8).length}/7 kun ✓</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Weekly Workout Plan */}
+      {plan?.workouts?.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">💪 Haftalik mashg'ulot</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {plan.workouts.map((w: any, i: number) => (
+              <div key={i} className="border border-border rounded-lg p-3 card-hover">
+                <div className="flex justify-between items-center">
+                  <span className="font-display font-bold text-sm text-vtext">{w.day}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${w.type === "rest" ? "bg-surface text-muted" : "bg-accent/10 text-accent border border-accent-border"}`}>
+                    {w.type}{w.duration_min > 0 ? ` · ${w.duration_min}'` : ""}
+                  </span>
+                </div>
+                {w.exercises?.length > 0 && (
+                  <ul className="mt-2 text-sm text-muted space-y-1">
+                    {w.exercises.slice(0, 4).map((e: any, j: number) => (
+                      <li key={j} className="flex justify-between"><span>• {e.name}</span><span className="text-accent font-mono text-xs">{e.sets}×{e.reps}</span></li>
+                    ))}
+                    {w.exercises.length > 4 && <li className="text-xs text-muted">+{w.exercises.length - 4} ta mashq</li>}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No plan state */}
+      {!plan && (
         <Card>
           <CardContent className="p-8 text-center">
             <p className="text-3xl mb-3">📋</p>
-            <p className="text-muted text-sm mb-2">AI sizga shaxsiy plan yaratadi</p>
-            <p className="text-muted text-xs mb-4">6 ta savol → Tahlil → Plan</p>
-            <Button onClick={() => { setStep(0); setMode("questions"); }}>Boshlash →</Button>
+            <p className="text-muted text-sm mb-4">AI sizga shaxsiy plan yaratadi — 3 ta savol, 30 soniya</p>
+            <Button onClick={() => { setStep(0); setMode("questions"); }} className="min-h-[44px]">Boshlash →</Button>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-4">
-          {/* Nutrition */}
-          <Card className="border-accent-border/30">
-            <CardHeader><CardTitle className="text-base">🥗 Kunlik Nutrition</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {[
-                  { l: "Kaloriya", v: plan.nutrition?.daily_calories, u: "kkal" },
-                  { l: "Protein", v: plan.nutrition?.protein_g, u: "g" },
-                  { l: "Karbohidrat", v: plan.nutrition?.carbs_g, u: "g" },
-                  { l: "Yog'", v: plan.nutrition?.fat_g, u: "g" },
-                ].map((n) => (
-                  <div key={n.l} className="bg-bg rounded-lg p-3 text-center">
-                    <p className="font-display font-bold text-xl text-accent">{n.v ?? "—"}</p>
-                    <p className="text-muted text-xs">{n.l} ({n.u})</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Meal plan */}
-              {plan.nutrition?.meal_plan && (
-                <div className="space-y-2 border-t border-border pt-3 mb-3">
-                  <p className="text-xs font-mono text-muted uppercase">Ovqatlanish jadvali</p>
-                  {Object.entries(plan.nutrition.meal_plan).map(([key, val]) => (
-                    <div key={key} className="flex gap-2 text-sm">
-                      <span className="text-accent font-mono text-xs w-24 shrink-0">
-                        {key === "breakfast" ? "🌅 07-09" : key === "lunch" ? "☀️ 12-14" : key === "dinner" ? "🌙 18-20" : key === "pre_workout" ? "⚡ Oldin" : "💪 Keyin"}
-                      </span>
-                      <span className="text-muted">{val as string}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {plan.nutrition?.uzbek_foods_suggested?.length > 0 && (
-                <p className="text-sm text-muted">💡 {plan.nutrition.uzbek_foods_suggested.join(", ")}</p>
-              )}
-              {plan.nutrition?.avoid?.length > 0 && (
-                <p className="text-sm text-vred/70 mt-1">🚫 {plan.nutrition.avoid.join(", ")}</p>
-              )}
-              {plan.nutrition?.water_liters && (
-                <p className="text-sm text-vblue mt-1">💧 Suv: {plan.nutrition.water_liters} litr/kun</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Workouts */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">💪 Mashg'ulotlar</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {plan.workouts?.map((w: any, i: number) => (
-                <div key={i} className="border border-border rounded-lg p-4 hover:border-accent-border/40 transition-colors">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-display font-bold text-sm">{w.day}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${w.type === "rest" ? "bg-surface text-muted" : "bg-accent/10 text-accent border border-accent-border"}`}>
-                      {w.type} {w.duration_min > 0 ? `· ${w.duration_min}'` : ""}
-                    </span>
-                  </div>
-                  {w.exercises?.length > 0 && (
-                    <ul className="text-sm text-muted space-y-1">
-                      {w.exercises.map((e: any, j: number) => (
-                        <li key={j} className="flex justify-between">
-                          <span>• {e.name} {e.notes ? <span className="text-xs text-muted/60">({e.notes})</span> : ""}</span>
-                          <span className="text-accent font-mono text-xs">{e.sets}×{e.reps}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Motivation */}
-          {(plan as any)?.motivation && (
-            <Card className="border-accent-border/20 bg-accent/5">
-              <CardContent className="p-4 text-center">
-                <p className="text-sm text-accent">💬 {(plan as any).motivation}</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
       )}
     </div>
   );

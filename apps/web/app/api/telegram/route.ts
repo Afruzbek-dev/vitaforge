@@ -5,7 +5,7 @@ const GROQ_KEY = process.env.NEXT_PUBLIC_AI_API_KEY ?? process.env.NEXT_PUBLIC_G
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY ?? "";
 const TG = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const APP_URL = process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "https://vitaforge-pi.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "https://zenfit.vercel.app";
 
 async function sendMsg(chatId: number, text: string, markup?: any) {
   await fetch(`${TG}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" },

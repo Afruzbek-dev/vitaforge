@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ClipboardList, Salad, BarChart3, Zap, Bot, Smartphone, TrendingUp, CheckCircle } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -7,7 +8,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg/90 backdrop-blur-xl border-b border-border">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center font-display font-bold text-bg">V</div>
-          <span className="font-display font-bold text-lg">VitaForge</span>
+          <span className="font-display font-bold text-lg">ZenFit</span>
         </Link>
         <div className="hidden md:flex items-center gap-6 text-sm text-muted">
           <a href="#features" className="hover:text-vtext transition">Xizmatlar</a>
@@ -63,16 +64,16 @@ export default function LandingPage() {
         </div>
         <div className="grid md:grid-cols-3 gap-4">
           {[
-            { icon: "📋", title: "AI Shaxsiy Plan", items: ["Maqsadga asoslangan haftalik plan", "Mashq + Ovqat ratsion", "Kunlik tracker"] },
-            { icon: "🥗", title: "O'zbek Ovqat Tracker", items: ["200+ mahalliy ovqat DB", "AI bilan kaloriya hisoblash", "Haftalik nutrition hisobot"] },
-            { icon: "📊", title: "Smart Analytics", items: ["Gym retention dashboard", "Churn prediction AI", "Real-time member faollik"] },
+            { icon: ClipboardList, title: "AI Shaxsiy Plan", items: ["Maqsadga asoslangan haftalik plan", "Mashq + Ovqat ratsion", "Kunlik tracker"] },
+            { icon: Salad, title: "O'zbek Ovqat Tracker", items: ["200+ mahalliy ovqat DB", "AI bilan kaloriya hisoblash", "Haftalik nutrition hisobot"] },
+            { icon: BarChart3, title: "Smart Analytics", items: ["Gym retention dashboard", "Churn prediction AI", "Real-time member faollik"] },
           ].map((s) => (
             <div key={s.title} className="bg-card border border-border rounded-2xl p-6 hover:border-accent/30 transition group">
-              <span className="text-3xl">{s.icon}</span>
+              <s.icon size={28} className="text-accent" />
               <h3 className="font-display font-bold text-base mt-4 mb-3 group-hover:text-accent transition">{s.title}</h3>
               <ul className="space-y-2">
                 {s.items.map((item) => (
-                  <li key={item} className="text-muted text-sm flex gap-2"><span className="text-accent">✓</span>{item}</li>
+                  <li key={item} className="text-muted text-sm flex gap-2"><CheckCircle size={14} className="text-accent mt-0.5 shrink-0" />{item}</li>
                 ))}
               </ul>
             </div>
@@ -88,13 +89,16 @@ export default function LandingPage() {
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           {[
-            { title: "⚡ Kuch System", desc: "Gamification: balllar, levellar (Shogird → Sohibqiron), badge'lar. A'zolar raqobat qiladi." },
-            { title: "🤖 AI 24/7", desc: "Real AI trener. Ovqat parse, plan yaratish, motivatsiya — bir soniyada javob beradi." },
-            { title: "📱 Mobile-first", desc: "Telegram Mini App yoki web — istalgan qurilmada ishlaydi. Tez va qulay." },
-            { title: "📈 Gym Owner Panel", desc: "Retention, churn prediction, a'zolar boshqaruvi — bitta dashboard da." },
+            { icon: Zap, title: "Kuch System", desc: "Gamification: balllar, levellar (Shogird → Sohibqiron), badge'lar. A'zolar raqobat qiladi." },
+            { icon: Bot, title: "AI 24/7", desc: "Real AI trener. Ovqat parse, plan yaratish, motivatsiya — bir soniyada javob beradi." },
+            { icon: Smartphone, title: "Mobile-first", desc: "Telegram Mini App yoki web — istalgan qurilmada ishlaydi. Tez va qulay." },
+            { icon: TrendingUp, title: "Gym Owner Panel", desc: "Retention, churn prediction, a'zolar boshqaruvi — bitta dashboard da." },
           ].map((w) => (
             <div key={w.title} className="bg-card border border-border rounded-2xl p-6">
-              <h3 className="font-display font-bold text-base mb-2">{w.title}</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <w.icon size={18} className="text-accent" />
+                <h3 className="font-display font-bold text-base">{w.title}</h3>
+              </div>
               <p className="text-muted text-sm leading-relaxed">{w.desc}</p>
             </div>
           ))}
@@ -125,7 +129,7 @@ export default function LandingPage() {
               <div className="h-px bg-border mb-4" />
               <ul className="space-y-2 mb-6">
                 {p.features.map((f) => (
-                  <li key={f} className="text-xs text-muted flex gap-2"><span className="text-vgreen">✓</span>{f}</li>
+                  <li key={f} className="text-xs text-muted flex gap-2"><CheckCircle size={12} className="text-vgreen mt-0.5 shrink-0" />{f}</li>
                 ))}
               </ul>
               <Link href="/register" className={`block text-center py-2.5 rounded-lg text-xs font-bold transition ${p.featured ? "bg-accent text-bg" : "border border-border text-vtext hover:border-accent/40"}`}>
@@ -134,7 +138,7 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
-        <p className="text-center text-muted text-xs mt-6">💡 Barcha tariflar 3 oy bepul pilot bilan. Kredit karta kerak emas.</p>
+        <p className="text-center text-muted text-xs mt-6">Barcha tariflar 3 oy bepul pilot bilan. Kredit karta kerak emas.</p>
       </section>
 
       {/* FAQ */}
@@ -173,7 +177,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border px-6 py-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-3">
-          <div className="w-6 h-6 rounded bg-accent flex items-center justify-center font-bold text-bg text-xs">Z</div>
+          <div className="w-6 h-6 rounded bg-accent flex items-center justify-center font-bold text-bg text-xs">V</div>
           <span className="font-display font-bold text-sm">ZenFit</span>
         </div>
         <p className="text-muted text-xs">© 2025 ZenFit. Barcha huquqlar himoyalangan.</p>

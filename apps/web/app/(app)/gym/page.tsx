@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import { useAuthStore } from "@/lib/store/auth";
+import { Users, TrendingUp, TrendingDown, CalendarCheck, DollarSign, UserPlus, Bell, Send, BarChart3, UserMinus, ArrowRight } from "lucide-react";
+import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import Link from "next/link";
 
 export default function GymDashboard() {
@@ -18,122 +20,200 @@ export default function GymDashboard() {
       const { data: me } = await sb.from("users").select("gym_id").eq("id", u!.id).single();
       const gid = me?.gym_id;
       if (!gid) return null;
-      const { count: total } = await sb.from("users").select("*", { count: "exact", head: true }).eq("gym_id", gid).eq("role", "member");
-      const ago30 = new Date(Date.now() - 30 * 86400000).toISOString();
-      const ago7 = new Date(Date.now() - 7 * 86400000).toISOString();
+
       const today = new Date().toISOString().split("T")[0];
-      const { data: att30 } = await sb.from("attendance").select("member_id").eq("gym_id", gid).gte("checked_in_at", ago30);
+      const ago7 = new Date(Date.now() - 7 * 86400000).toISOString();
+      const ago30 = new Date(Date.now() - 30 * 86400000).toISOString();
+
+      // Total members
+      const { count: total } = await sb.from("users").select("*", { count: "exact", head: true }).eq("gym_id", gid).eq("role", "member");
+
+      // Today attendance
+      const { count: todayAtt } = await sb.from("attendance").select("*", { count: "exact", head: true }).eq("gym_id", gid).gte("checked_in_at", `${today}T00:00:00`);
+
+      // New today
+      const { data: allM } = await sb.from("users").select("id, full_name, created_at").eq("gym_id", gid).eq("role", "member");
+      const newToday = (allM ?? []).filter((m) => m.created_at?.split("T")[0] === today).length;
+
+      // Active 30d & churn
+      const { data: att30 } = await sb.from("attendance").select("member_id, checked_in_at").eq("gym_id", gid).gte("checked_in_at", ago30);
       const active30 = new Set(att30?.map((a) => a.member_id)).size;
-      const retention = (total ?? 0) > 0 ? Math.round((active30 / (total ?? 1)) * 100) : 0;
-      const { count: todayCount } = await sb.from("attendance").select("*", { count: "exact", head: true }).eq("gym_id", gid).gte("checked_in_at", `${today}T00:00:00`);
+      const churnRate = (total ?? 0) > 0 ? Math.round(((total! - active30) / total!) * 100) : 0;
+
+      // 7-day active set for risk
       const { data: att7 } = await sb.from("attendance").select("member_id").eq("gym_id", gid).gte("checked_in_at", ago7);
       const active7 = new Set(att7?.map((a) => a.member_id));
-      const { data: allM } = await sb.from("users").select("id, full_name, created_at").eq("gym_id", gid).eq("role", "member");
       const atRisk = (allM ?? []).filter((m) => !active7.has(m.id));
-      const newToday = (allM ?? []).filter((m) => new Date(m.created_at).toISOString().split("T")[0] === today).length;
-      return { total: total ?? 0, retention, todayCount: todayCount ?? 0, dau: (total ?? 0) > 0 ? Math.round(((todayCount ?? 0) / (total ?? 1)) * 100) : 0, atRisk, newToday };
+
+      // Revenue (payments this month)
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+      const { data: payments } = await sb.from("payments").select("amount").eq("gym_id", gid).gte("created_at", monthStart).eq("status", "confirmed");
+      const revenue = (payments ?? []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+
+      // Weekly chart data (last 7 days attendance count per day)
+      const weekChart: { day: string; count: number }[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000);
+        const dayStr = d.toISOString().split("T")[0];
+        const dayLabel = ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"][d.getDay()];
+        const count = (att30 ?? []).filter((a) => a.checked_in_at?.split("T")[0] === dayStr).length;
+        weekChart.push({ day: dayLabel, count });
+      }
+
+      return { total: total ?? 0, todayAtt: todayAtt ?? 0, newToday, churnRate, revenue, atRisk, weekChart };
     },
   });
 
-  const days = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
-  const dayName = days[new Date().getDay()];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
 
   return (
-    <div className="max-w-5xl space-y-5 animate-fadeUp">
+    <div className="max-w-6xl space-y-6 animate-fadeUp">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="font-display font-bold text-[21px] text-vtext">Xush kelibsiz, {user?.full_name?.split(" ")[0]} 👋</h1>
-          <p className="text-[12px] text-muted mt-0.5">{dayName} · Bugun {d?.todayCount ?? 0} ta a'zo kutilmoqda</p>
+          <p className="text-[11px] text-muted font-mono">{greeting}</p>
+          <h1 className="font-display font-bold text-2xl text-vtext">{user?.full_name?.split(" ")[0] ?? "Owner"}</h1>
         </div>
-        <Link href="/gym/invite"><Button size="sm">+ Tezkor amal</Button></Link>
-      </div>
-
-      {/* Priority strip */}
-      <div className="flex gap-2.5 overflow-x-auto pb-1">
-        {d && d.atRisk.length > 0 && (
-          <Link href="/gym/retention" className="shrink-0">
-            <div className="min-w-[220px] bg-[#0d0d16] border border-[#e24b4a35] rounded-xl p-3.5 flex items-center gap-3 press card-hover" style={{ background: "rgba(226,75,74,0.04)" }}>
-              <span className="text-xl">⚠️</span>
-              <div><p className="font-display font-bold text-[17px]">{d.atRisk.length}</p><p className="text-[10px] text-[#8888a0]">A'zo risk ostida — bugun ko'ring</p></div>
-            </div>
-          </Link>
-        )}
-        {d && d.newToday > 0 && (
-          <div className="shrink-0 min-w-[220px] bg-[#0d0d16] border border-[#1d9e7530] rounded-xl p-3.5 flex items-center gap-3" style={{ background: "rgba(29,158,117,0.04)" }}>
-            <span className="text-xl">🎉</span>
-            <div><p className="font-display font-bold text-[17px]">{d.newToday}</p><p className="text-[10px] text-[#8888a0]">Yangi a'zo bugun qo'shildi</p></div>
-          </div>
-        )}
-        <div className="shrink-0 min-w-[220px] bg-[#0d0d16] border border-border rounded-xl p-3.5 flex items-center gap-3">
-          <span className="text-xl">💰</span>
-          <div><p className="font-display font-bold text-[17px]">—</p><p className="text-[10px] text-[#8888a0]">To'lov muddati bugun tugaydi</p></div>
+        <div className="flex gap-2">
+          <Link href="/gym/notify"><Button variant="outline" size="sm" className="gap-1.5"><Bell size={14} /> Xabar</Button></Link>
+          <Link href="/gym/invite"><Button size="sm" className="gap-1.5"><UserPlus size={14} /> Yangi a'zo</Button></Link>
         </div>
       </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "RETENTION (30 KUN)", value: `${d?.retention ?? 0}%`, delta: "↑ yaxshi", accent: true },
-          { label: "JAMI A'ZOLAR", value: d?.total ?? 0, delta: "+yangi", accent: false },
-          { label: "BU OY SOF FOYDA", value: "—", delta: "so'm", accent: false },
-          { label: "FAOL BUGUN", value: d?.todayCount ?? 0, delta: `${d?.dau ?? 0}% DAU`, accent: false },
-        ].map((k) => (
-          <Card key={k.label} className={k.accent ? "border-l-2 border-l-accent" : "border-l-2 border-l-[#2a2a3a]"}>
-            <CardContent className="p-4">
-              <p className="font-mono text-[9px] text-muted tracking-[1px]">{k.label}</p>
-              <p className="font-display font-bold text-[20px] text-vtext mt-1.5">{k.value}</p>
-              <p className="text-[10px] text-vgreen font-mono mt-0.5">{k.delta}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Feed + Risk — 2 column */}
-      <div className="grid md:grid-cols-[1.5fr_1fr] gap-3.5">
-        {/* Activity feed */}
-        <Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="card-hover border-l-2 border-l-[var(--accent)]">
           <CardContent className="p-4">
-            <div className="flex justify-between mb-3">
-              <p className="font-mono text-[9px] text-muted tracking-[1.5px]">SO'NGGI FAOLLIK</p>
-              <Link href="/gym/members" className="text-[10px] text-vblue">Hammasi →</Link>
+            <div className="flex items-center justify-between mb-2">
+              <UserPlus size={16} className="text-accent" />
+              {d && d.newToday > 0 && <span className="text-[9px] font-mono text-vgreen bg-vgreen/10 px-1.5 py-0.5 rounded">+{d.newToday}</span>}
             </div>
-            <div className="space-y-0.5">
-              {[
-                { time: "Hozir", text: `<b>${d?.todayCount ?? 0} ta</b> a'zo bugun checkin qildi` },
-                { time: "—", text: `Jami <b>${d?.total ?? 0}</b> a'zo ro'yxatda` },
-                ...(d?.atRisk?.slice(0, 2).map((m: any) => ({ time: "⚠️", text: `<b>${m.full_name}</b> 7+ kun kelmadi` })) ?? []),
-              ].map((f, i) => (
-                <div key={i} className="flex gap-2.5 py-2 border-b border-[#15151f] last:border-0 text-[12px] items-start">
-                  <span className="text-[10px] text-[#45455a] font-mono w-10 shrink-0">{f.time}</span>
-                  <span className="text-[#b8b8c8]" dangerouslySetInnerHTML={{ __html: f.text }} />
-                </div>
-              ))}
+            <p className="font-display font-bold text-2xl text-vtext">{d?.newToday ?? 0}</p>
+            <p className="text-[10px] font-mono text-muted mt-0.5">YANGI A'ZOLAR BUGUN</p>
+          </CardContent>
+        </Card>
+
+        <Card className="card-hover border-l-2 border-l-[var(--green)]">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <CalendarCheck size={16} className="text-vgreen" />
+              <span className="text-[9px] font-mono text-muted">{d && d.total > 0 ? Math.round((d.todayAtt / d.total) * 100) : 0}%</span>
+            </div>
+            <p className="font-display font-bold text-2xl text-vtext">{d?.todayAtt ?? 0}</p>
+            <p className="text-[10px] font-mono text-muted mt-0.5">BUGUNGI DAVOMAT</p>
+          </CardContent>
+        </Card>
+
+        <Card className="card-hover border-l-2 border-l-[var(--blue)]">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <DollarSign size={16} className="text-vblue" />
+              <TrendingUp size={12} className="text-vgreen" />
+            </div>
+            <p className="font-display font-bold text-2xl text-vtext">{d?.revenue ? `${(d.revenue / 1000).toFixed(0)}k` : "0"}</p>
+            <p className="text-[10px] font-mono text-muted mt-0.5">BU OY DAROMAD (SO'M)</p>
+          </CardContent>
+        </Card>
+
+        <Card className={`card-hover border-l-2 ${(d?.churnRate ?? 0) > 20 ? "border-l-[var(--red)]" : "border-l-[var(--green)]"}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <UserMinus size={16} className={(d?.churnRate ?? 0) > 20 ? "text-vred" : "text-vgreen"} />
+              {(d?.churnRate ?? 0) > 20 ? <TrendingDown size={12} className="text-vred" /> : <TrendingUp size={12} className="text-vgreen" />}
+            </div>
+            <p className="font-display font-bold text-2xl text-vtext">{d?.churnRate ?? 0}%</p>
+            <p className="text-[10px] font-mono text-muted mt-0.5">CHURN RATE (30 KUN)</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Chart + Risk panel */}
+      <div className="grid lg:grid-cols-[2fr_1fr] gap-4">
+        {/* Weekly Chart */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-[10px] font-mono text-muted tracking-wider">HAFTALIK DAVOMAT</p>
+                <p className="text-vtext text-sm font-medium mt-0.5">{d?.total ?? 0} jami a'zo</p>
+              </div>
+              <Link href="/gym/analytics" className="text-[10px] text-vblue font-mono flex items-center gap-1">Batafsil <ArrowRight size={10} /></Link>
+            </div>
+            <div className="h-40">
+              {d?.weekChart && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={d.weekChart} margin={{ top: 5, right: 5, bottom: 0, left: 5 }}>
+                    <defs>
+                      <linearGradient id="accGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#e8ff47" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#e8ff47" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#52526a" }} />
+                    <Tooltip contentStyle={{ background: "#13131c", border: "1px solid #1e1e2c", borderRadius: 10, fontSize: 12 }} labelStyle={{ color: "#52526a" }} />
+                    <Area type="monotone" dataKey="count" stroke="#e8ff47" strokeWidth={2} fill="url(#accGrad)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Risk panel */}
-        <Card>
+        {/* At risk */}
+        <Card className="border-[var(--red)]/15">
           <CardContent className="p-4">
-            <p className="font-mono text-[9px] text-muted tracking-[1.5px] mb-3">⚠️ DIQQAT TALAB QILADI</p>
-            {(!d || d.atRisk.length === 0) ? <p className="text-muted text-xs">Hamma yaxshi ✅</p> : (
-              <div className="space-y-0.5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-mono text-vred tracking-wider">CHURN XAVFI</p>
+              <span className="text-[10px] font-mono text-vred bg-vred/10 px-1.5 py-0.5 rounded">{d?.atRisk?.length ?? 0}</span>
+            </div>
+            {(!d || d.atRisk.length === 0) ? (
+              <p className="text-muted text-xs">Hamma faol</p>
+            ) : (
+              <div className="space-y-2">
                 {d.atRisk.slice(0, 5).map((m: any) => (
-                  <div key={m.id} className="flex items-center justify-between py-2 border-b border-[#15151f] last:border-0 text-[12px]">
+                  <Link key={m.id} href={`/gym/members/${m.id}`} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0 press">
                     <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-vred" />
-                      <span className="text-vtext">{m.full_name?.split(" ").map((n: string) => n.slice(0, 1)).join("") === m.full_name ? m.full_name : m.full_name?.split(" ")[0] + " " + (m.full_name?.split(" ")[1]?.[0] ?? "") + "."}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)]" />
+                      <span className="text-xs text-vtext">{m.full_name}</span>
                     </div>
-                    <Link href={`/gym/members/${m.id}`}>
-                      <span className="font-mono text-[10px] text-vblue border border-vblue/30 px-2 py-0.5 rounded-md">Xabar →</span>
-                    </Link>
-                  </div>
+                    <Send size={12} className="text-muted" />
+                  </Link>
                 ))}
+                {d.atRisk.length > 5 && (
+                  <Link href="/gym/retention" className="text-[10px] text-vblue font-mono">+{d.atRisk.length - 5} boshqa</Link>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div>
+        <p className="text-[10px] font-mono text-muted tracking-wider mb-3">TEZ HARAKATLAR</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            { href: "/gym/members", icon: Users, label: "A'zolar", desc: `${d?.total ?? 0} ta` },
+            { href: "/gym/analytics", icon: BarChart3, label: "Analitika", desc: "Batafsil" },
+            { href: "/gym/finance", icon: DollarSign, label: "Moliya", desc: "Hisobot" },
+            { href: "/gym/notify", icon: Bell, label: "Xabarnoma", desc: "Yuborish" },
+          ].map((a) => (
+            <Link key={a.href} href={a.href}>
+              <Card className="press card-hover h-full">
+                <CardContent className="p-3.5 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <a.icon size={16} className="text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-vtext">{a.label}</p>
+                    <p className="text-[9px] text-muted">{a.desc}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

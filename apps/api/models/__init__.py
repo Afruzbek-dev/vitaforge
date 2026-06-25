@@ -9,6 +9,7 @@ from .notification     import Notification
 from .notification_pref import NotificationPref
 from .challenge        import Challenge, ChallengeParticipant
 from .referral         import Referral
+from .ops              import ImportJob, FinanceTransaction, InventoryItem
 
 __all__ = [
     "User", "Gym", "MemberProfile",
@@ -22,4 +23,5 @@ __all__ = [
     "NotificationPref",
     "Challenge", "ChallengeParticipant",
     "Referral",
+    "ImportJob", "FinanceTransaction", "InventoryItem",
 ]

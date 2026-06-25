@@ -1,191 +1,321 @@
 "use client";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
+import { AreaChart, Area, LineChart, Line, BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
+import { TrendingDown, TrendingUp, Users, AlertTriangle, Activity, DollarSign } from "lucide-react";
 import Link from "next/link";
 
-const DAYS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+type Period = "week" | "month";
 
 export default function AnalyticsPage() {
+  const [period, setPeriod] = useState<Period>("week");
   const sb = getSupabase();
 
   const { data } = useQuery({
-    queryKey: ["gym-analytics-full"],
+    queryKey: ["gym-analytics", period],
     queryFn: async () => {
       const user = await getUser();
       const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
       const gid = me?.gym_id;
       if (!gid) return null;
 
-      const { count: total } = await sb.from("users").select("*", { count: "exact", head: true }).eq("gym_id", gid).eq("role", "member");
-      const ago30 = new Date(Date.now() - 30 * 86400000).toISOString();
-      const ago7 = new Date(Date.now() - 7 * 86400000).toISOString();
-      const today = new Date().toISOString().split("T")[0];
+      const days = period === "week" ? 7 : 30;
+      const ago = new Date(Date.now() - days * 86400000).toISOString();
 
-      // Active 30d
-      const { data: att30 } = await sb.from("attendance").select("member_id").eq("gym_id", gid).gte("checked_in_at", ago30);
-      const active30 = new Set(att30?.map((a) => a.member_id)).size;
-      const retention = (total ?? 0) > 0 ? Math.round((active30 / (total ?? 1)) * 100) : 0;
+      // All members
+      const { data: allM } = await sb.from("users").select("id, full_name, phone, created_at").eq("gym_id", gid).eq("role", "member");
+      const total = allM?.length ?? 0;
 
-      // Today
-      const { count: todayCount } = await sb.from("attendance").select("*", { count: "exact", head: true }).eq("gym_id", gid).gte("checked_in_at", `${today}T00:00:00`);
-      const dau = (total ?? 0) > 0 ? Math.round(((todayCount ?? 0) / (total ?? 1)) * 100) : 0;
+      // Attendance in period
+      const { data: attData } = await sb.from("attendance").select("member_id, checked_in_at").eq("gym_id", gid).gte("checked_in_at", ago);
 
-      // Churn risk (7+ days no show)
-      const { data: att7 } = await sb.from("attendance").select("member_id").eq("gym_id", gid).gte("checked_in_at", ago7);
-      const active7 = new Set(att7?.map((a) => a.member_id));
-      const { data: allMembers } = await sb.from("users").select("id, full_name, created_at").eq("gym_id", gid).eq("role", "member");
-      const { data: streaks } = await sb.from("member_streaks").select("member_id, current_streak, total_points, last_activity").in("member_id", (allMembers ?? []).map((m) => m.id));
-      const streakMap = Object.fromEntries((streaks ?? []).map((s) => [s.member_id, s]));
+      // Streaks
+      const ids = (allM ?? []).map((m) => m.id);
+      const { data: streaks } = await sb.from("member_streaks").select("member_id, current_streak, total_points, last_activity").in("member_id", ids.length ? ids : ["_"]);
+      const sMap = Object.fromEntries((streaks ?? []).map((s) => [s.member_id, s]));
 
-      const atRisk = (allMembers ?? []).filter((m) => !active7.has(m.id)).map((m) => {
-        const s = streakMap[m.id];
-        const daysAgo = s?.last_activity ? Math.floor((Date.now() - new Date(s.last_activity).getTime()) / 86400000) : 99;
-        return { ...m, days_ago: daysAgo };
-      }).sort((a, b) => b.days_ago - a.days_ago).slice(0, 5);
+      // Payments
+      const { data: payments } = await sb.from("payments").select("amount, created_at").eq("gym_id", gid).gte("created_at", ago).eq("status", "confirmed");
 
-      // Weekly activity (7 days)
-      const weekAgo = new Date(Date.now() - 7 * 86400000);
-      const { data: weekAtt } = await sb.from("attendance").select("checked_in_at").eq("gym_id", gid).gte("checked_in_at", weekAgo.toISOString());
-      const weekCounts = [0, 0, 0, 0, 0, 0, 0];
-      for (const a of weekAtt ?? []) {
-        const d = new Date(a.checked_in_at).getDay();
-        weekCounts[d === 0 ? 6 : d - 1]++;
+      // --- Build charts ---
+
+      // Daily attendance chart
+      const attChart: { day: string; count: number; revenue: number }[] = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000);
+        const dayStr = d.toISOString().split("T")[0];
+        const label = days <= 7 ? ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"][d.getDay()] : `${d.getDate()}/${d.getMonth() + 1}`;
+        const count = (attData ?? []).filter((a) => a.checked_in_at?.split("T")[0] === dayStr).length;
+        const rev = (payments ?? []).filter((p) => p.created_at?.split("T")[0] === dayStr).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        attChart.push({ day: label, count, revenue: rev });
       }
-      const maxWeek = Math.max(...weekCounts, 1);
 
-      // Top members
-      const top = (allMembers ?? []).map((m) => ({ ...m, ...(streakMap[m.id] ?? { current_streak: 0, total_points: 0 }) }))
-        .sort((a, b) => (b.total_points ?? 0) - (a.total_points ?? 0)).slice(0, 4);
+      // Retention curve — what % of members were active in each bucket
+      const now = Date.now();
+      const retentionCurve = [7, 14, 21, 30, 60, 90].map((d) => {
+        const cutoff = new Date(now - d * 86400000).toISOString();
+        const activeInPeriod = new Set((attData ?? []).filter((a) => a.checked_in_at >= cutoff).map((a) => a.member_id)).size;
+        return { label: `${d}d`, pct: total > 0 ? Math.round((activeInPeriod / total) * 100) : 0 };
+      });
 
-      // New this month
-      const newThisMonth = (allMembers ?? []).filter((m) => new Date(m.created_at).getTime() > Date.now() - 30 * 86400000).length;
+      // Churn rate over time (per day, what % of members haven't been active 7+ days)
+      const churnChart: { day: string; rate: number }[] = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now - i * 86400000);
+        const dayStr = d.toISOString().split("T")[0];
+        const label = days <= 7 ? ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"][d.getDay()] : `${d.getDate()}`;
+        const sevenBefore = new Date(d.getTime() - 7 * 86400000).toISOString();
+        const activeSet = new Set((attData ?? []).filter((a) => a.checked_in_at >= sevenBefore && a.checked_in_at <= d.toISOString()).map((a) => a.member_id));
+        const churned = total - activeSet.size;
+        churnChart.push({ day: label, rate: total > 0 ? Math.round((churned / total) * 100) : 0 });
+      }
 
-      return { total: total ?? 0, retention, todayCount: todayCount ?? 0, dau, churnCount: atRisk.length, atRisk, weekCounts, maxWeek, top, newThisMonth, allMembers: allMembers ?? [], streakMap };
+      // Member growth (new members per day)
+      const growthChart: { day: string; newMembers: number; cumulative: number }[] = [];
+      let cum = 0;
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now - i * 86400000);
+        const dayStr = d.toISOString().split("T")[0];
+        const label = days <= 7 ? ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"][d.getDay()] : `${d.getDate()}`;
+        const newCount = (allM ?? []).filter((m) => m.created_at?.split("T")[0] === dayStr).length;
+        cum += newCount;
+        growthChart.push({ day: label, newMembers: newCount, cumulative: cum });
+      }
+
+      // Revenue total
+      const totalRevenue = (payments ?? []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+
+      // Active/Passive users with AI reasons
+      const memberAnalysis = (allM ?? []).map((m) => {
+        const s = sMap[m.id];
+        const lastAct = s?.last_activity ? new Date(s.last_activity) : null;
+        const daysAgo = lastAct ? Math.floor((now - lastAct.getTime()) / 86400000) : 999;
+        const visits = (attData ?? []).filter((a) => a.member_id === m.id).length;
+
+        let risk: "low" | "medium" | "high" = "low";
+        let reason = "Faol a'zo";
+        if (daysAgo >= 14) { risk = "high"; reason = `${daysAgo} kun kelmadi`; }
+        else if (daysAgo >= 7) { risk = "medium"; reason = `${daysAgo} kun kelmadi`; }
+        else if (visits <= 1 && daysAgo >= 3) { risk = "medium"; reason = "Kam tashrif buyuradi"; }
+
+        return { ...m, daysAgo, visits, risk, reason, streak: s?.current_streak ?? 0, points: s?.total_points ?? 0 };
+      }).sort((a, b) => b.daysAgo - a.daysAgo);
+
+      const activeMembers = memberAnalysis.filter((m) => m.risk === "low").sort((a, b) => b.visits - a.visits).slice(0, 5);
+      const passiveMembers = memberAnalysis.filter((m) => m.risk !== "low").slice(0, 8);
+
+      const currentChurn = total > 0 ? Math.round(((total - new Set((attData ?? []).map((a) => a.member_id)).size) / total) * 100) : 0;
+
+      return { total, attChart, retentionCurve, churnChart, growthChart, totalRevenue, activeMembers, passiveMembers, currentChurn, memberAnalysis };
     },
   });
 
   if (!data) return <div className="text-muted animate-pulse p-4">Yuklanmoqda...</div>;
 
+  const chartTooltipStyle = { background: "#13131c", border: "1px solid #1e1e2c", borderRadius: 10, fontSize: 11 };
+  const riskColor = (r: string) => r === "high" ? "text-vred" : r === "medium" ? "text-[#ffa726]" : "text-vgreen";
+  const riskBg = (r: string) => r === "high" ? "bg-vred/10" : r === "medium" ? "bg-[#ffa726]/10" : "bg-vgreen/10";
+
   return (
-    <div className="max-w-5xl space-y-5 animate-fadeUp">
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "RETENTION (30 KUN)", value: `${data.retention}%`, sub: data.retention > 60 ? "↑ yaxshi" : "↓ yaxshilash kerak", color: data.retention > 60 ? "border-vgreen/40" : "border-vred/40" },
-          { label: "JAMI A'ZOLAR", value: data.total, sub: `+${data.newThisMonth} yangi`, color: "border-accent/40" },
-          { label: "CHURN RISK", value: data.churnCount, sub: "↓ kuzatuv kerak", color: data.churnCount > 3 ? "border-vred/40" : "border-border" },
-          { label: "FAOL BUGUN", value: data.todayCount, sub: `${data.dau}% DAU`, color: "border-accent/40" },
-        ].map((k) => (
-          <Card key={k.label} className={`${k.color} border-l-2`}>
-            <CardContent className="p-4">
-              <p className="text-[9px] font-mono text-muted tracking-wider">{k.label}</p>
-              <p className="font-display font-bold text-3xl text-vtext mt-1">{k.value}</p>
-              <p className="text-[10px] text-muted mt-0.5">{k.sub}</p>
-            </CardContent>
-          </Card>
-        ))}
+    <div className="max-w-6xl space-y-6 animate-fadeUp">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display font-bold text-xl text-vtext">Analitika</h1>
+          <p className="text-[11px] text-muted">{data.total} a'zo asosida tahlil</p>
+        </div>
+        <div className="flex gap-1.5 bg-card border border-border rounded-lg p-0.5">
+          {(["week", "month"] as Period[]).map((p) => (
+            <button key={p} onClick={() => setPeriod(p)} className={`text-[11px] font-mono px-3 py-1.5 rounded-md transition-colors ${period === p ? "bg-accent text-[#07070a] font-bold" : "text-muted hover:text-vtext"}`}>
+              {p === "week" ? "Hafta" : "Oy"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        {/* Weekly chart */}
-        <div className="md:col-span-2">
-          <Card>
-            <CardContent className="p-5">
-              <p className="text-[10px] font-mono text-muted tracking-wider mb-4">HAFTALIK FAOLLIK</p>
-              <div className="flex items-end gap-2 h-32">
-                {data.weekCounts.map((v, i) => {
-                  const isToday = i === (new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                      <div className="w-full rounded-sm transition-all" style={{ height: `${(v / data.maxWeek) * 100}%`, minHeight: v > 0 ? 8 : 4, background: isToday ? "#e8ff47" : "#1e1e2c" }} />
-                      <span className="text-[9px] font-mono text-muted">{DAYS[i]}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+      {/* Top KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="card-hover">
+          <CardContent className="p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-vred/10 flex items-center justify-center"><TrendingDown size={16} className="text-vred" /></div>
+            <div>
+              <p className="font-display font-bold text-xl text-vtext">{data.currentChurn}%</p>
+              <p className="text-[9px] font-mono text-muted">CHURN RATE</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-vgreen/10 flex items-center justify-center"><Activity size={16} className="text-vgreen" /></div>
+            <div>
+              <p className="font-display font-bold text-xl text-vtext">{data.retentionCurve[0]?.pct ?? 0}%</p>
+              <p className="text-[9px] font-mono text-muted">RETENTION 7D</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-vblue/10 flex items-center justify-center"><Users size={16} className="text-vblue" /></div>
+            <div>
+              <p className="font-display font-bold text-xl text-vtext">{data.total}</p>
+              <p className="text-[9px] font-mono text-muted">JAMI A'ZOLAR</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center"><DollarSign size={16} className="text-accent" /></div>
+            <div>
+              <p className="font-display font-bold text-xl text-vtext">{data.totalRevenue ? `${(data.totalRevenue / 1000).toFixed(0)}k` : "0"}</p>
+              <p className="text-[9px] font-mono text-muted">DAROMAD</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Members table */}
-          <Card className="mt-4">
-            <CardContent className="p-5">
-              <p className="text-[10px] font-mono text-muted tracking-wider mb-3">SO'NGGI A'ZOLAR</p>
-              <table className="w-full text-sm">
-                <thead><tr className="text-[9px] text-muted font-mono">
-                  <th className="text-left py-1">A'ZO</th><th className="text-left">STREAK</th><th className="text-left">BALL</th><th className="text-left">HOLAT</th>
-                </tr></thead>
-                <tbody>
-                  {data.allMembers.slice(0, 6).map((m: any) => {
-                    const s = data.streakMap[m.id];
-                    const streak = s?.current_streak ?? 0;
-                    const points = s?.total_points ?? 0;
-                    const daysAgo = s?.last_activity ? Math.floor((Date.now() - new Date(s.last_activity).getTime()) / 86400000) : 99;
-                    const status = daysAgo < 3 ? "Faol" : daysAgo < 7 ? "Yangi" : "Risk";
-                    const statusColor = status === "Faol" ? "bg-vgreen/10 text-vgreen" : status === "Risk" ? "bg-vred/10 text-vred" : "bg-accent/10 text-accent";
-                    const initials = m.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "?";
-                    return (
-                      <tr key={m.id} className="border-t border-border/30">
-                        <td className="py-2.5 flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center text-[10px] font-bold text-accent">{initials}</div>
-                          <span className="text-vtext text-xs">{m.full_name}</span>
-                        </td>
-                        <td className="text-xs text-muted">🔥 {streak} kun</td>
-                        <td className="text-xs text-vtext font-mono">{points.toLocaleString()}</td>
-                        <td><span className={`text-[9px] px-1.5 py-0.5 rounded ${statusColor}`}>{status}</span></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Charts row 1: Churn + Revenue */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-[10px] font-mono text-muted tracking-wider mb-4">CHURN RATE DINAMIKASI</p>
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.churnChart}>
+                  <CartesianGrid stroke="#1e1e2c" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} unit="%" />
+                  <Tooltip contentStyle={chartTooltipStyle} />
+                  <Line type="monotone" dataKey="rate" stroke="#ff5252" strokeWidth={2} dot={false} name="Churn %" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Right sidebar */}
-        <div className="space-y-4">
-          {/* Churn alert */}
-          <Card className="border-vred/20">
-            <CardContent className="p-4">
-              <p className="text-[10px] font-mono text-vred tracking-wider mb-3">⚠ CHURN OGOHLANTIRISH</p>
-              {data.atRisk.length === 0 ? <p className="text-muted text-xs">Xavfda hech kim yo'q ✅</p> : (
-                <div className="space-y-2.5">
-                  {data.atRisk.map((m: any) => (
-                    <div key={m.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-vred" />
-                        <span className="text-xs text-vtext">{m.full_name?.split(" ").map((n: string) => n[0] + n.slice(1, 2)).join(". ") + "."}</span>
-                      </div>
-                      <span className="text-[10px] text-vred font-mono">{m.days_ago} kun yo'q</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-[10px] font-mono text-muted tracking-wider mb-4">DAROMAD TRENDI</p>
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.attChart}>
+                  <CartesianGrid stroke="#1e1e2c" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} />
+                  <Tooltip contentStyle={chartTooltipStyle} />
+                  <Bar dataKey="revenue" fill="#5299ff" radius={[4, 4, 0, 0]} name="Daromad" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Top leaderboard */}
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-[10px] font-mono text-muted tracking-wider mb-3">🏆 HAFTALIK TOP</p>
+      {/* Charts row 2: Retention curve + Member growth */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-[10px] font-mono text-muted tracking-wider mb-4">RETENTION CURVE</p>
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.retentionCurve}>
+                  <defs>
+                    <linearGradient id="retGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#4dffb4" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#4dffb4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#1e1e2c" strokeDasharray="3 3" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} unit="%" />
+                  <Tooltip contentStyle={chartTooltipStyle} />
+                  <Area type="monotone" dataKey="pct" stroke="#4dffb4" strokeWidth={2} fill="url(#retGrad)" name="Retention %" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-[10px] font-mono text-muted tracking-wider mb-4">A'ZOLAR O'SISHI</p>
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.growthChart}>
+                  <defs>
+                    <linearGradient id="growGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#e8ff47" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#e8ff47" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#1e1e2c" strokeDasharray="3 3" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: "#52526a" }} />
+                  <Tooltip contentStyle={chartTooltipStyle} />
+                  <Area type="monotone" dataKey="cumulative" stroke="#e8ff47" strokeWidth={2} fill="url(#growGrad)" name="Jami yangi" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Active/Passive members with AI analysis */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* Passive — churn risk */}
+        <Card className="border-[var(--red)]/15">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle size={14} className="text-vred" />
+              <p className="text-[10px] font-mono text-vred tracking-wider">PASSIV A'ZOLAR — AI TAHLIL</p>
+            </div>
+            {data.passiveMembers.length === 0 ? <p className="text-muted text-xs">Hamma faol</p> : (
               <div className="space-y-2.5">
-                {data.top.map((m: any, i: number) => {
-                  const medals = ["🥇", "🥈", "🥉"];
-                  return (
-                    <div key={m.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{i < 3 ? medals[i] : `${i + 1}.`}</span>
-                        <span className="text-xs text-vtext">{m.full_name?.split(" ")[0] + " " + (m.full_name?.split(" ")[1]?.[0] ?? "") + "."}</span>
+                {data.passiveMembers.map((m: any) => (
+                  <Link key={m.id} href={`/gym/members/${m.id}`} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0 press">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2 h-2 rounded-full ${m.risk === "high" ? "bg-[var(--red)]" : "bg-[#ffa726]"}`} />
+                      <div>
+                        <p className="text-xs text-vtext">{m.full_name}</p>
+                        <p className={`text-[9px] font-mono ${riskColor(m.risk)}`}>{m.reason}</p>
                       </div>
-                      <span className="text-xs text-accent font-mono font-bold">{(m.total_points ?? 0).toLocaleString()}</span>
                     </div>
-                  );
-                })}
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${riskBg(m.risk)} ${riskColor(m.risk)}`}>
+                      {m.risk === "high" ? "Yuqori" : "O'rta"}
+                    </span>
+                  </Link>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Active users */}
+        <Card className="border-[var(--green)]/15">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp size={14} className="text-vgreen" />
+              <p className="text-[10px] font-mono text-vgreen tracking-wider">ENG FAOL A'ZOLAR</p>
+            </div>
+            {data.activeMembers.length === 0 ? <p className="text-muted text-xs">Ma'lumot yo'q</p> : (
+              <div className="space-y-2.5">
+                {data.activeMembers.map((m: any, i: number) => (
+                  <Link key={m.id} href={`/gym/members/${m.id}`} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0 press">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-[10px] font-mono text-muted w-4">{i + 1}.</span>
+                      <div>
+                        <p className="text-xs text-vtext">{m.full_name}</p>
+                        <p className="text-[9px] font-mono text-vgreen">{m.visits} tashrif · {m.streak} kun streak</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono text-accent">{m.points?.toLocaleString()} ball</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

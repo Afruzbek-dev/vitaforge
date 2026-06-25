@@ -47,11 +47,12 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   body {
-    background: var(--bg);
+    background-color: var(--bg);
     color: var(--text);
     font-family: 'DM Sans', -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
+    transition: background-color 0.2s, color 0.2s;
   }
   h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
 
@@ -74,6 +75,11 @@
   .text-vred { color: var(--red); }
   .text-vgreen { color: var(--green); }
   .text-vblue { color: var(--blue); }
+  .bg-bg { background-color: var(--bg); }
+  .bg-card { background-color: var(--card); }
+  .bg-surface { background-color: var(--surface); }
+  .border-border { border-color: var(--border); }
+  .text-muted { color: var(--muted); }
 
   /* Smooth page transitions */
   .animate-fadeUp { animation: fadeUp 0.35s ease both; }
@@ -102,4 +108,10 @@
   /* Progress ring */
   .progress-ring { transform: rotate(-90deg); }
   .progress-ring circle { transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* Touch-friendly */
+  .touch-target { min-height: 44px; min-width: 44px; }
+  .swipe-container { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .swipe-container::-webkit-scrollbar { display: none; }
+  .swipe-item { scroll-snap-align: start; flex-shrink: 0; }
 }

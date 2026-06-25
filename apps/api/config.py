@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     # Firebase
     FCM_SERVER_KEY: str = ""
 
+    # Telegram
+    TELEGRAM_BOT_TOKEN: str = ""
+
     # Security
     JWT_SECRET: str = "change-me-in-production-min-32-chars"
 
