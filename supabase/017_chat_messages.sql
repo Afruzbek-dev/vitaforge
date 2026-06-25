@@ -4,7 +4,7 @@
 create table if not exists chat_rooms (
   id uuid default gen_random_uuid() primary key,
   name text not null,
-  gym_id bigint references gyms(id) on delete cascade,
+  gym_id uuid references gyms(id) on delete cascade,
   type text not null default 'group' check (type in ('group', 'direct')),
   created_at timestamptz default now()
 );
