@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth";
 import { api, SUPABASE_MODE } from "@/lib/api";
 import { getSession } from "@/lib/auth";
@@ -126,10 +127,10 @@ function MobileNav({ role }: { role: string }) {
               {ownerMore.map((l) => {
                 const Icon = l.icon;
                 return (
-                  <a key={l.href} href={l.href} onClick={() => setShowMore(false)} className="flex flex-col items-center gap-1 py-2 press">
+                  <Link key={l.href} href={l.href} onClick={() => setShowMore(false)} className="flex flex-col items-center gap-1 py-2 press">
                     <Icon size={20} className="text-muted" />
                     <span className="text-[9px] text-muted">{l.label}</span>
-                  </a>
+                  </Link>
                 );
               })}
             </div>
@@ -141,7 +142,7 @@ function MobileNav({ role }: { role: string }) {
           {links.map((l) => {
             const active = pathname === l.href;
             const Icon = l.icon;
-            return (<a key={l.href} href={l.href} className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-xl press ${active ? "text-accent" : "text-muted"}`}><Icon size={20} /><span className="text-[9px] mt-0.5 font-medium">{l.label}</span></a>);
+            return (<Link key={l.href} href={l.href} className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-xl press ${active ? "text-accent" : "text-muted"}`}><Icon size={20} /><span className="text-[9px] mt-0.5 font-medium">{l.label}</span></Link>);
           })}
           {role !== "member" && (
             <button onClick={() => setShowMore(!showMore)} className={`flex flex-col items-center py-1 px-3 rounded-xl press ${showMore ? "text-accent" : "text-muted"}`}><MoreHorizontal size={18} /><span className="text-[9px] mt-0.5 font-medium">Ko&apos;proq</span></button>

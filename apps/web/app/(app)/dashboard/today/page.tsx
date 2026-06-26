@@ -7,12 +7,15 @@ import { api } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import { POINTS } from "@/lib/gamification";
+import { Sparkles, Trophy, Flame, Check } from "lucide-react";
 
 export default function TodayPage() {
   const qc = useQueryClient();
   const sb = getSupabase();
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [foodDone, setFoodDone] = useState(false);
+  const [showPointsModal, setShowPointsModal] = useState(false);
+  const [awardedPoints, setAwardedPoints] = useState(0);
 
   const { data: planData } = useQuery({ queryKey: ["plan"], queryFn: api.plans.current, retry: false });
   const plan = planData?.data ?? planData;
@@ -48,7 +51,12 @@ export default function TodayPage() {
         });
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["stats"] }); alert("✅ Bugungi mashg'ulot saqlandi! +" + (POINTS.daily_workout + (foodDone ? POINTS.food_log : 0)) + " ⚡ Kuch"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["stats"] });
+      const pts = POINTS.daily_workout + (foodDone ? POINTS.food_log : 0);
+      setAwardedPoints(pts);
+      setShowPointsModal(true);
+    },
   });
 
   const toggleExercise = (idx: number) => {
@@ -126,6 +134,27 @@ export default function TodayPage() {
             {saveProgress.isPending ? "Saqlanmoqda..." : `✓ Bugungi natijani saqlash (+${POINTS.daily_workout + (foodDone ? POINTS.food_log : 0)} ⚡)`}
           </Button>
         </>
+      )}
+      {showPointsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#07070a]/80 backdrop-blur-md" onClick={() => setShowPointsModal(false)} />
+          <div className="relative bg-[#13131c] border border-[#e8ff47]/20 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl animate-scaleIn">
+            <div className="w-16 h-16 rounded-full bg-[#e8ff47]/10 border border-[#e8ff47]/30 flex items-center justify-center text-[#e8ff47] mx-auto mb-4 animate-bounce">
+              <Trophy size={32} />
+            </div>
+            <h3 className="font-display font-bold text-xl text-white mb-2">Ajoyib natija!</h3>
+            <p className="text-sm text-[#6b6b80] mb-6">Bugungi mashg'ulot muvaffaqiyatli saqlandi va sizga quvvat ballari taqdim etildi.</p>
+            
+            <div className="bg-[#07070a] border border-[#1e1e2c] rounded-xl p-4 mb-6 flex items-center justify-center gap-2">
+              <span className="font-mono text-2xl font-black text-[#e8ff47]">+{awardedPoints}</span>
+              <span className="text-[#e8ff47] font-semibold text-sm">⚡ KUCH</span>
+            </div>
+
+            <Button onClick={() => setShowPointsModal(false)} className="w-full bg-[#e8ff47] text-[#07070a] hover:bg-[#d6eb3b] font-bold">
+              Davom etish
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

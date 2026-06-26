@@ -78,6 +78,7 @@ export default function PlanPage() {
   const [foodInput, setFoodInput] = useState("");
   const [addingFood, setAddingFood] = useState(false);
   const [weekProgress, setWeekProgress] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({ queryKey: ["plan"], queryFn: api.plans.current, retry: false });
   const plan = data?.data ?? data;
@@ -136,17 +137,18 @@ export default function PlanPage() {
 
   const generate = async () => {
     setMode("generating");
+    setError(null);
     try {
       const user = await getUser();
       const result = await generatePlan({ age: +(answers.age || 25), gender: answers.gender || "male", height_cm: +(answers.height_cm || 175), weight_kg: +(answers.weight_kg || 80), goal: answers.goal || "muscle_gain", activity_level: answers.activity_level || "moderate", ...answers } as any);
-      if (!result) { alert("AI javob bermadi"); setMode("questions"); return; }
+      if (!result) { setError("AI javob bermadi"); setMode("questions"); return; }
       const now = new Date();
       const week = Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000);
       await sb.from("fitness_plans").update({ is_active: false }).eq("member_id", user!.id).eq("is_active", true);
       await sb.from("fitness_plans").insert({ member_id: user!.id, generated_by: "ai", week_number: week, starts_at: now.toISOString().split("T")[0], ends_at: new Date(now.getTime() + 6 * 86400000).toISOString().split("T")[0], workouts: result.workouts ?? [], nutrition: result.nutrition ?? {}, ai_model: "llama-3.3-70b-versatile", ai_prompt_version: "v2.0", is_active: true, notes: JSON.stringify(answers) });
       qc.invalidateQueries({ queryKey: ["plan"] });
       setMode("view");
-    } catch (e) { alert("Xatolik: " + (e as any)?.message); setMode("questions"); }
+    } catch (e) { setError("Xatolik: " + (e as any)?.message); setMode("questions"); }
   };
 
   // ─── QUESTIONS ─────────────────────────────────────────
@@ -159,6 +161,11 @@ export default function PlanPage() {
       <div className="h-1.5 bg-border rounded-full overflow-hidden">
         <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${((step + 1) / QUESTIONS.length) * 100}%` }} />
       </div>
+      {error && (
+        <div className="bg-vred/10 border border-vred/20 text-vred rounded-xl p-4 text-xs font-semibold">
+          ⚠️ {error}
+        </div>
+      )}
       <Card className="border-accent-border/30">
         <CardHeader><CardTitle className="text-lg">{currentQ.title}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
@@ -218,7 +225,7 @@ export default function PlanPage() {
           <h1 className="font-display font-bold text-2xl text-vtext">📋 Plan & Kaloriya</h1>
           <p className="text-muted text-sm font-mono mt-1">KUNLIK TRACKER</p>
         </div>
-        <Button onClick={() => { setStep(0); setMode("questions"); }} className="min-h-[44px]">🤖 Yangi plan</Button>
+        <Button onClick={() => { setStep(0); setError(null); setMode("questions"); }} className="min-h-[44px]">🤖 Yangi plan</Button>
       </div>
 
       {/* Calorie Progress Ring + Macros */}
@@ -311,7 +318,7 @@ export default function PlanPage() {
           <CardContent className="p-8 text-center">
             <p className="text-3xl mb-3">📋</p>
             <p className="text-muted text-sm mb-4">AI sizga shaxsiy plan yaratadi — 3 ta savol, 30 soniya</p>
-            <Button onClick={() => { setStep(0); setMode("questions"); }} className="min-h-[44px]">Boshlash →</Button>
+            <Button onClick={() => { setStep(0); setError(null); setMode("questions"); }} className="min-h-[44px]">Boshlash →</Button>
           </CardContent>
         </Card>
       )}
