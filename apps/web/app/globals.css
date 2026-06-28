@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,9 +12,9 @@
     --card: #13131c;
     --sidebar: #0a0a12;
     --border: #1e1e2c;
-    --accent: #e8ff47;
-    --accent-dim: #e8ff4712;
-    --accent-border: #e8ff4735;
+    --accent: #d5ff45;
+    --accent-dim: #d5ff4512;
+    --accent-border: #d5ff4535;
     --text: #efefeb;
     --muted: #6b6b80;
     --subtle: #1a1a26;
@@ -81,7 +81,7 @@
   [data-theme="light"] textarea:focus {
     border-color: var(--accent);
   }
-  h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
+  h1, h2, h3, h4, h5, h6 { font-family: 'Host Grotesk', sans-serif; letter-spacing: -0.03em; }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 3px; height: 3px; }
@@ -118,7 +118,7 @@
 }
 
 @layer utilities {
-  .font-display { font-family: 'Syne', sans-serif; }
+  .font-display { font-family: 'Host Grotesk', sans-serif; letter-spacing: -0.03em; }
   .font-mono { font-family: 'JetBrains Mono', monospace; }
   .text-vtext { color: var(--text); }
   .text-vred { color: var(--red); }

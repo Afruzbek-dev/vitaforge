@@ -20,7 +20,7 @@ const config: Config = {
         vblue: "var(--blue)",
       },
       fontFamily: {
-        display: ["Syne", "sans-serif"],
+        display: ["Host Grotesk", "sans-serif"],
         body: ["DM Sans", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },

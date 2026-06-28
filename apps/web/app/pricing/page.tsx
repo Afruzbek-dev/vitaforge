@@ -26,30 +26,30 @@ export default function PricingPage() {
       {/* Nav */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 24px", borderBottom: "1px solid #1e1e2c" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: "#e8ff47", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#07070a" }}>Z</div>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16, color: "#efefeb" }}>ZenFit</span>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: "#d5ff45", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#07070a" }}>Z</div>
+          <span style={{ fontFamily: "'Host Grotesk', sans-serif", fontWeight: 800, fontSize: 16, color: "#efefeb" }}>ZenFit</span>
         </Link>
         <div style={{ display: "flex", gap: 8 }}>
           <Link href="/login" style={{ color: "#52526a", fontSize: 13, textDecoration: "none", padding: "7px 14px" }}>Kirish</Link>
-          <Link href="/register" style={{ background: "#e8ff47", color: "#07070a", borderRadius: 7, padding: "7px 14px", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>Boshlash</Link>
+          <Link href="/register" style={{ background: "#d5ff45", color: "#07070a", borderRadius: 7, padding: "7px 14px", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>Boshlash</Link>
         </div>
       </nav>
 
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "48px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: 48 }}>
-          <p style={{ color: "#e8ff47", fontFamily: "monospace", fontSize: 11, letterSpacing: 3, marginBottom: 10 }}>NARXLAR</p>
-          <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "clamp(28px, 5vw, 44px)", marginBottom: 10 }}>Gym ingiz uchun to'g'ri plan</h1>
+          <p style={{ color: "#d5ff45", fontFamily: "monospace", fontSize: 11, letterSpacing: 3, marginBottom: 10 }}>NARXLAR</p>
+          <h1 style={{ fontFamily: "'Host Grotesk', sans-serif", fontWeight: 800, fontSize: "clamp(28px, 5vw, 44px)", marginBottom: 10 }}>Gym ingiz uchun to'g'ri plan</h1>
           <p style={{ color: "#52526a", fontSize: 15, maxWidth: 480, margin: "0 auto" }}>Barcha tariflar 3 oy bepul pilot bilan boshlanadi. Kredit karta kerak emas.</p>
         </div>
 
         {/* Plans grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 48 }}>
           {PLANS.map((p) => (
-            <div key={p.name} style={{ background: "#13131c", border: p.featured ? "2px solid #e8ff47" : "1px solid #1e1e2c", borderRadius: 16, padding: "24px 20px", position: "relative" }}>
-              {p.featured && <span style={{ position: "absolute", top: 12, right: 12, fontSize: 9, background: "#e8ff4720", color: "#e8ff47", border: "1px solid #e8ff4740", borderRadius: 20, padding: "2px 8px", fontFamily: "monospace" }}>TAVSIYA</span>}
+            <div key={p.name} style={{ background: "#13131c", border: p.featured ? "2px solid #d5ff45" : "1px solid #1e1e2c", borderRadius: 16, padding: "24px 20px", position: "relative" }}>
+              {p.featured && <span style={{ position: "absolute", top: 12, right: 12, fontSize: 9, background: "#d5ff4520", color: "#d5ff45", border: "1px solid #d5ff4540", borderRadius: 20, padding: "2px 8px", fontFamily: "monospace" }}>TAVSIYA</span>}
               <p style={{ color: "#52526a", fontSize: 10, fontFamily: "monospace", letterSpacing: 2, marginBottom: 4 }}>{p.name.toUpperCase()}</p>
               <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
-                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 32, color: p.featured ? "#e8ff47" : "#efefeb" }}>{p.price}</span>
+                <span style={{ fontFamily: "'Host Grotesk', sans-serif", fontWeight: 800, fontSize: 32, color: p.featured ? "#d5ff45" : "#efefeb" }}>{p.price}</span>
                 <span style={{ color: "#52526a", fontSize: 12 }}>{p.unit}</span>
               </div>
               <p style={{ color: "#52526a", fontSize: 12, marginBottom: 16 }}>{p.desc}</p>
@@ -61,7 +61,7 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href={p.href} style={{ display: "block", textAlign: "center", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none", background: p.featured ? "#e8ff47" : "transparent", color: p.featured ? "#07070a" : "#efefeb", border: p.featured ? "none" : "1px solid #1e1e2c" }}>{p.cta}</Link>
+              <Link href={p.href} style={{ display: "block", textAlign: "center", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none", background: p.featured ? "#d5ff45" : "transparent", color: p.featured ? "#07070a" : "#efefeb", border: p.featured ? "none" : "1px solid #1e1e2c" }}>{p.cta}</Link>
             </div>
           ))}
         </div>
@@ -74,7 +74,7 @@ export default function PricingPage() {
                 <th style={{ textAlign: "left", padding: "12px 16px", color: "#52526a" }}>Feature</th>
                 <th style={{ textAlign: "center", padding: "12px 8px", color: "#52526a" }}>Free</th>
                 <th style={{ textAlign: "center", padding: "12px 8px", color: "#52526a" }}>Starter</th>
-                <th style={{ textAlign: "center", padding: "12px 8px", color: "#e8ff47" }}>Pro</th>
+                <th style={{ textAlign: "center", padding: "12px 8px", color: "#d5ff45" }}>Pro</th>
                 <th style={{ textAlign: "center", padding: "12px 8px", color: "#52526a" }}>Network</th>
               </tr>
             </thead>
