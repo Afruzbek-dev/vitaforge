@@ -74,8 +74,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // Check if user already registered
+    const existingUserId = await getUserByTgId(tgId);
+    if (existingUserId) {
+      const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${existingUserId}&select=full_name`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+      const users = await userRes.json();
+      const name = users?.[0]?.full_name ?? firstName;
+      const streak = await getStreak(existingUserId);
+      await sendMsg(chatId, `🏋️ Qaytganingizdan xursandmiz, *${name}*! 💪\n\n🔥 Streak: ${streak.current_streak} kun\n⚡ Ball: ${streak.total_points}\n\n📋 /plan — Haftalik plan\n🤖 /ask <savol> — AI trener\n\n📱 Ilovani ochish 👇`, appBtn);
+      return NextResponse.json({ ok: true });
+    }
+
     // Normal start
-    await sendMsg(chatId, `🏋️ *ZenFit AI* ga xush kelibsiz, ${firstName}!\n\n📋 /plan — Haftalik plan\n🥗 /food <ovqat> — Kaloriya\n🔥 /streak — Streak holati\n🏆 /top — Leaderboard\n🤖 /ask <savol> — AI trener\n❓ /help — Yordam\n\n📱 Ilovani ochish uchun 👇`, appBtn);
+    await sendMsg(chatId, `🏋️ *ZenFit AI* ga xush kelibsiz, ${firstName}!\n\n📋 /plan — Haftalik plan\n🥗 /food <ovqat> — Kaloriya\n🔥 /streak — Streak holati\n🏆 /top — Leaderboard\n🤖 /ask <savol> — AI trener\n👤 /profile — Profilim\n⚙️ /settings — Sozlamalar\n❓ /help — Yordam\n\n📱 Ilovani ochish uchun 👇`, appBtn);
     return NextResponse.json({ ok: true });
   }
 
@@ -142,9 +153,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  // ─── /profile ──────────────────────────────────────────
+  if (text === "/profile") {
+    const userId = await getUserByTgId(tgId);
+    if (!userId) { await sendMsg(chatId, "❌ Avval ro'yxatdan o'ting", appBtn); return NextResponse.json({ ok: true }); }
+    const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}&select=full_name,role,created_at`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    const users = await userRes.json();
+    const u = users?.[0];
+    const streak = await getStreak(userId);
+    if (u) {
+      const joined = new Date(u.created_at).toLocaleDateString("uz-UZ");
+      await sendMsg(chatId, `👤 *Profil*\n\n📛 Ism: ${u.full_name}\n🎭 Rol: ${u.role === "member" ? "A'zo" : u.role === "gym_owner" ? "Gym Egasi" : u.role}\n📅 Qo'shilgan: ${joined}\n🔥 Streak: ${u.current_streak ?? streak.current_streak} kun\n⚡ Ball: ${streak.total_points}`, appBtn);
+    } else {
+      await sendMsg(chatId, "❌ Profil topilmadi", appBtn);
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // ─── /settings ─────────────────────────────────────────
+  if (text === "/settings") {
+    const settingsBtn = { inline_keyboard: [[{ text: "⚙️ Sozlamalarni ochish", web_app: { url: `${APP_URL}/dashboard/settings` } }]] };
+    await sendMsg(chatId, "⚙️ Sozlamalarni Mini App orqali o'zgartiring 👇", settingsBtn);
+    return NextResponse.json({ ok: true });
+  }
+
   // ─── /help ─────────────────────────────────────────────
   if (text === "/help") {
-    await sendMsg(chatId, "🤖 *ZenFit Bot buyruqlari:*\n\n📋 /plan — Bugungi mashq plani\n🥗 /food <ovqat> — Kaloriya hisoblash\n🔥 /streak — Streak va ball\n🏆 /top — Leaderboard\n🤖 /ask <savol> — AI trener\n📱 /app — Ilovani ochish\n❓ /help — Ushbu yordam");
+    await sendMsg(chatId, "🤖 *ZenFit Bot buyruqlari:*\n\n📋 /plan — Bugungi mashq plani\n🥗 /food <ovqat> — Kaloriya hisoblash\n🔥 /streak — Streak va ball\n🏆 /top — Leaderboard\n🤖 /ask <savol> — AI trener\n👤 /profile — Profil ma'lumotlari\n⚙️ /settings — Sozlamalar\n📱 /app — Ilovani ochish\n❓ /help — Ushbu yordam");
     return NextResponse.json({ ok: true });
   }
 
@@ -160,9 +195,31 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// GET: webhook setup
+// GET: webhook setup + register commands + menu button
 export async function GET() {
   const url = `${APP_URL}/api/telegram`;
-  const res = await fetch(`${TG}/setWebhook`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) });
-  return NextResponse.json(await res.json());
+  
+  // 1. Set webhook
+  const webhookRes = await fetch(`${TG}/setWebhook`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) });
+  const webhookData = await webhookRes.json();
+
+  // 2. Register bot commands menu
+  await fetch(`${TG}/setMyCommands`, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ commands: [
+      { command: "start", description: "🏋️ Boshlash" },
+      { command: "plan", description: "📋 Bugungi mashq rejasi" },
+      { command: "food", description: "🥗 Ovqat kaloriyasi" },
+      { command: "streak", description: "🔥 Streak holati" },
+      { command: "top", description: "🏆 Reyting (Leaderboard)" },
+      { command: "ask", description: "🤖 AI trenerga savol" },
+      { command: "profile", description: "👤 Profil ma'lumotlari" },
+      { command: "app", description: "📱 Mini App ochish" },
+      { command: "help", description: "❓ Yordam" },
+    ] }) });
+
+  // 3. Set menu button to open Mini App
+  await fetch(`${TG}/setChatMenuButton`, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ menu_button: { type: "web_app", text: "📱 ZenFit", web_app: { url: `${APP_URL}/dashboard` } } }) });
+
+  return NextResponse.json({ ...webhookData, commands_set: true, menu_button_set: true });
 }

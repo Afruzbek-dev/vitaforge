@@ -1,13 +1,12 @@
+"use client";
+import dynamic from "next/dynamic";
+
+const TelegramAutoAuth = dynamic(() => import("@/components/telegram-auto-auth"), { ssr: false });
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg relative overflow-hidden">
-      {/* ambient glow */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div style={{ position: "absolute", top: "-20%", right: "-10%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(232,255,71,0.06) 0%, transparent 65%)" }} />
-        <div style={{ position: "absolute", bottom: 0, left: "-20%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(82,153,255,0.05) 0%, transparent 65%)" }} />
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(#1e1e2c 1px, transparent 1px)", backgroundSize: "40px 40px", opacity: 0.4 }} />
-      </div>
-
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative" style={{ background: "#07070a", color: "#efefeb" }}>
+      <TelegramAutoAuth />
       <div className="w-full max-w-md p-8 rounded-2xl relative z-10" style={{ background: "#13131c", border: "1px solid #1e1e2c" }}>
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
