@@ -6,6 +6,7 @@ const config: Config = {
       colors: {
         bg: "var(--bg)",
         surface: "var(--surface)",
+        surface2: "var(--surface2)",
         card: "var(--card)",
         sidebar: "var(--sidebar)",
         border: "var(--border)",
@@ -20,8 +21,8 @@ const config: Config = {
         vblue: "var(--blue)",
       },
       fontFamily: {
-        display: ["Host Grotesk", "sans-serif"],
-        body: ["DM Sans", "sans-serif"],
+        display: ["Inter", "sans-serif"],
+        body: ["Inter", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
     },

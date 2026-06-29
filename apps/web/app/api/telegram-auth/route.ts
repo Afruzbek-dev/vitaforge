@@ -19,14 +19,15 @@ function validateInitData(initData: string): Record<string, string> | null {
 }
 
 export async function POST(req: NextRequest) {
-  const { initData } = await req.json();
+  const { initData, register, name, phone, role } = await req.json();
   if (!initData) return NextResponse.json({ error: "No initData" }, { status: 400 });
 
   const tgUser = validateInitData(initData);
   if (!tgUser) return NextResponse.json({ error: "Invalid initData" }, { status: 401 });
 
   const telegramId = (tgUser as any).id;
-  const fullName = `${(tgUser as any).first_name ?? ""} ${(tgUser as any).last_name ?? ""}`.trim();
+  const fullName = name || `${(tgUser as any).first_name ?? ""} ${(tgUser as any).last_name ?? ""}`.trim();
+  const username = (tgUser as any).username ?? "";
 
   // Check if telegram user already linked
   const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions?telegram_id=eq.${telegramId}&select=user_id`, {
@@ -40,28 +41,70 @@ export async function POST(req: NextRequest) {
       headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
     });
     const users = await userRes.json();
-    return NextResponse.json({ success: true, user: users?.[0] ?? null, telegram_id: telegramId });
+    
+    // Login to get token
+    const email = `tg${telegramId}@zenfit.app`;
+    const password = `tg_${telegramId}_${BOT_TOKEN.slice(0, 8)}`;
+    const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_SERVICE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const login = await loginRes.json();
+
+    return NextResponse.json({ success: true, access_token: login.access_token, user: users?.[0] ?? null, telegram_id: telegramId });
   }
 
-  // New telegram user — create account via Supabase Auth
+  // If user does not exist and registration data is not provided yet
+  if (!register) {
+    return NextResponse.json({ success: false, register_required: true, telegram_id: telegramId, name: fullName, username });
+  }
+
+  // Registering new user
   const email = `tg${telegramId}@zenfit.app`;
   const password = `tg_${telegramId}_${BOT_TOKEN.slice(0, 8)}`;
+  const userRole = role || "member";
 
   // Try sign up
   const signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
     method: "POST",
     headers: { apikey: SUPABASE_SERVICE_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, data: { full_name: fullName, role: "member" } }),
+    body: JSON.stringify({ email, password, data: { full_name: fullName, role: userRole } }),
   });
   const signup = await signupRes.json();
   const userId = signup?.user?.id ?? signup?.id;
 
   if (userId) {
+    // Update user profile table with phone, name, role
+    await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: fullName, full_name: fullName, phone, role: userRole, telegram_id: telegramId }),
+    });
+
+    // Auto-create gym for gym_owner
+    if (userRole === "gym_owner") {
+      const slug = fullName.toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-gym";
+      const gymInsertRes = await fetch(`${SUPABASE_URL}/rest/v1/gyms`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify({ name: `${fullName} Gym`, slug, owner_id: userId, subscription_plan: 'basic' }),
+      });
+      const gymsCreated = await gymInsertRes.json();
+      if (gymsCreated?.length > 0) {
+        await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+          method: "PATCH",
+          headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ gym_id: gymsCreated[0].id }),
+        });
+      }
+    }
+
     // Link telegram
     await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions`, {
       method: "POST",
       headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ user_id: userId, telegram_id: telegramId, chat_id: telegramId, username: (tgUser as any).username ?? "" }),
+      body: JSON.stringify({ user_id: userId, telegram_id: telegramId, chat_id: telegramId, username }),
     });
   }
 
@@ -73,5 +116,5 @@ export async function POST(req: NextRequest) {
   });
   const login = await loginRes.json();
 
-  return NextResponse.json({ success: true, access_token: login.access_token, user: { id: userId, full_name: fullName, role: "member", telegram_id: telegramId } });
+  return NextResponse.json({ success: true, access_token: login.access_token, user: { id: userId, name: fullName, full_name: fullName, phone, role: userRole, telegram_id: telegramId } });
 }

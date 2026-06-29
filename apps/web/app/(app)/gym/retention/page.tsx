@@ -7,15 +7,21 @@ import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import Link from "next/link";
 import { useState, useMemo } from "react";
+import {
+  CheckCircle, RefreshCw, AlertTriangle, ShieldAlert, HeartCrack,
+  TrendingUp, TrendingDown, MessageCircle, Phone, Tag,
+  Users, Search, ArrowLeft, DollarSign,
+  type LucideIcon,
+} from "lucide-react";
 
 type Risk = "active" | "recovering" | "at_risk" | "critical" | "lost";
 
-const RISK_CONFIG: Record<Risk, { label: string; icon: string; color: string; border: string; bg: string }> = {
-  active: { label: "Faol", icon: "✅", color: "text-emerald-300", border: "border-emerald-500/30", bg: "bg-emerald-500/10" },
-  recovering: { label: "Qaytayotgan", icon: "♻️", color: "text-sky-300", border: "border-sky-500/30", bg: "bg-sky-500/10" },
-  at_risk: { label: "Xavfda", icon: "⚠️", color: "text-amber-300", border: "border-amber-500/30", bg: "bg-amber-500/10" },
-  critical: { label: "Jiddiy", icon: "🛑", color: "text-orange-300", border: "border-orange-500/30", bg: "bg-orange-500/10" },
-  lost: { label: "Yo'qotilgan", icon: "💔", color: "text-rose-300", border: "border-rose-500/30", bg: "bg-rose-500/10" },
+const RISK_CONFIG: Record<Risk, { label: string; icon: LucideIcon; color: string; border: string; bg: string }> = {
+  active: { label: "Faol", icon: CheckCircle, color: "text-emerald-300", border: "border-emerald-500/30", bg: "bg-emerald-500/10" },
+  recovering: { label: "Qaytayotgan", icon: RefreshCw, color: "text-sky-300", border: "border-sky-500/30", bg: "bg-sky-500/10" },
+  at_risk: { label: "Xavfda", icon: AlertTriangle, color: "text-amber-300", border: "border-amber-500/30", bg: "bg-amber-500/10" },
+  critical: { label: "Jiddiy", icon: ShieldAlert, color: "text-orange-300", border: "border-orange-500/30", bg: "bg-orange-500/10" },
+  lost: { label: "Yo'qotilgan", icon: HeartCrack, color: "text-rose-300", border: "border-rose-500/30", bg: "bg-rose-500/10" },
 };
 
 const computeRisk = (streak: { last_activity?: string | null; current_streak?: number } | null, now = Date.now()): Risk => {
@@ -139,19 +145,47 @@ export default function RetentionPage() {
         <p className="text-muted text-xs font-mono mt-1">A'ZOLARNING XAVF DARAJASI</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {([
-          { k: "critical", label: "JIDDIY", color: "border-l-orange-400", text: "text-orange-300" },
-          { k: "at_risk", label: "XAVFDA", color: "border-l-amber-400", text: "text-amber-300" },
-          { k: "lost", label: "YO'QOTILGAN", color: "border-l-rose-400", text: "text-rose-300" },
-        ] as const).map((c) => (
-          <Card key={c.k as string} className={`border-l-2 ${c.color} card-hover`}>
-            <CardContent className="p-3 text-center">
-              <p className={`font-display font-bold text-xl ${c.text}`}>{counts[c.k as Risk] ?? 0}</p>
-              <p className="text-[9px] text-muted font-mono">{c.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <Card className="border-l-2 border-l-rose-400 card-hover">
+          <CardContent className="p-3 flex items-center gap-2">
+            <TrendingDown size={20} strokeWidth={1.5} className="text-rose-400" />
+            <div>
+              <p className="font-display font-bold text-xl text-rose-300">
+                {counts.all ? (((counts.lost + counts.critical) / counts.all) * 100).toFixed(1) : "0.0"}%
+              </p>
+              <p className="text-[9px] text-muted font-mono">CHURN RATE</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-2 border-l-emerald-400 card-hover">
+          <CardContent className="p-3 flex items-center gap-2">
+            <TrendingUp size={20} strokeWidth={1.5} className="text-emerald-400" />
+            <div>
+              <p className="font-display font-bold text-xl text-emerald-300">
+                {counts.all ? (((counts.active + counts.recovering) / counts.all) * 100).toFixed(1) : "0.0"}%
+              </p>
+              <p className="text-[9px] text-muted font-mono">RETENTION RATE</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-2 border-l-amber-400 card-hover">
+          <CardContent className="p-3 flex items-center gap-2">
+            <DollarSign size={20} strokeWidth={1.5} className="text-amber-400" />
+            <div>
+              <p className="font-display font-bold text-xl text-amber-300">{counts.at_risk + counts.critical}</p>
+              <p className="text-[9px] text-muted font-mono">REVENUE AT RISK</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-2 border-l-orange-400 card-hover">
+          <CardContent className="p-3 flex items-center gap-2">
+            <Users size={20} strokeWidth={1.5} className="text-orange-400" />
+            <div>
+              <p className="font-display font-bold text-xl text-orange-300">{counts.at_risk + counts.critical}</p>
+              <p className="text-[9px] text-muted font-mono">AT-RISK COUNT</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="border-border">
@@ -189,7 +223,8 @@ export default function RetentionPage() {
                   tab === r ? `${RISK_CONFIG[r].border} ${RISK_CONFIG[r].bg} ${RISK_CONFIG[r].color}` : "border-border text-muted"
                 }`}
               >
-                {RISK_CONFIG[r].icon} {RISK_CONFIG[r].label} ({counts[r] ?? 0})
+                {(() => { const Icon = RISK_CONFIG[r].icon; return <Icon size={14} strokeWidth={1.5} className="inline-block mr-1 -mt-0.5" />; })()}
+                {RISK_CONFIG[r].label} ({counts[r] ?? 0})
               </button>
             ))}
           </div>
@@ -218,10 +253,20 @@ export default function RetentionPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${cfg.border} ${cfg.bg} ${cfg.color}`}>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border flex items-center gap-1 ${cfg.border} ${cfg.bg} ${cfg.color}`}>
+                        <cfg.icon size={12} strokeWidth={1.5} />
                         {cfg.label}
                       </span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted hover:text-accent" title="Xabar" onClick={() => {}}>
+                        <MessageCircle size={14} strokeWidth={1.5} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted hover:text-emerald-400" title="Qo'ng'iroq" onClick={() => { if (m.phone) window.open(`tel:${m.phone}`); }}>
+                        <Phone size={14} strokeWidth={1.5} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted hover:text-amber-400" title="Chegirma" onClick={() => {}}>
+                        <Tag size={14} strokeWidth={1.5} />
+                      </Button>
                       <Link href={`/gym/members/${m.id}`}>
                         <Button variant="ghost" size="sm" className="text-[11px]">Batafsil</Button>
                       </Link>
@@ -233,6 +278,49 @@ export default function RetentionPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Win-Back Campaign */}
+      {(() => {
+        const lostMembers = (data?.members ?? []).filter((m: any) => m.risk === "lost");
+        if (!lostMembers.length) return null;
+        return (
+          <Card className="border-rose-500/20 bg-rose-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <HeartCrack size={18} strokeWidth={1.5} className="text-rose-400" />
+                Qaytarish kampaniyasi
+                <span className="text-[10px] font-mono text-muted ml-auto">{lostMembers.length} ta a'zo</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {lostMembers.map((m: any) => (
+                <div key={m.id} className="flex items-center justify-between p-2 rounded-lg border border-rose-500/20 bg-rose-500/5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-rose-500/10 text-rose-300">
+                      {m.full_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm text-vtext">{m.full_name}</p>
+                      <p className="text-[10px] text-muted font-mono">
+                        {m.days_ago >= 1000 ? "Hech qachon" : `${m.days_ago} kun oldin`}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="text-[11px] h-7 border border-rose-500/30 hover:bg-rose-500/20"
+                    onClick={() => triggerNotification(m, `Assalomu alaykum, ${m.full_name}! Sizga maxsus taklif tayyorladik. Qaytib keling — biz kutamiz! 💪`)}
+                  >
+                    <RefreshCw size={12} strokeWidth={1.5} className="mr-1" />
+                    Qayta taklif
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 }

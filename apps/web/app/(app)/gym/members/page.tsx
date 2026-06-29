@@ -1,256 +1,456 @@
 "use client";
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { getSupabase } from "@/lib/supabase";
+import { getUser } from "@/lib/auth";
+import { 
+  Search, UserPlus, Send, CreditCard, Filter, Users, 
+  AlertTriangle, UserCheck, CheckCircle, Clock, X, 
+  Calendar, Award, MessageSquare, ArrowRight
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getSupabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
-import { Search, UserPlus, Send, CreditCard, Filter, Users, AlertTriangle, UserCheck } from "lucide-react";
-import Link from "next/link";
+import { Label } from "@/components/ui/label";
 
-type FilterType = "all" | "risk" | "active" | "new";
+type FilterType = "all" | "active" | "expiring" | "expired" | "no_trainer";
 
 export default function MembersPage() {
+  const sb = getSupabase();
+  const [gymId, setGymId] = useState<string | null>(null);
+  
+  // Data lists
+  const [members, setMembers] = useState<any[]>([]);
+  const [trainers, setTrainers] = useState<any[]>([]);
+  
+  // Table UI State
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
-  const [assigningTrainer, setAssigningTrainer] = useState<string | null>(null);
-  const sb = getSupabase();
-  const qc = useQueryClient();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  
+  // Actions Modals state
+  const [assigningTrainerId, setAssigningTrainerId] = useState<string | null>(null);
+  const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
+  const [extendDays, setExtendDays] = useState(30);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedTrainerForAssign, setSelectedTrainerForAssign] = useState("");
 
-  const { data } = useQuery({
-    queryKey: ["gym-members-crm"],
-    queryFn: async () => {
+  useEffect(() => {
+    load();
+  }, []);
+
+  const load = async () => {
+    const user = await getUser();
+    if (!user) return;
+    const { data: me } = await sb.from("users").select("gym_id").eq("id", user.id).single();
+    if (!me?.gym_id) return;
+    const gid = me.gym_id;
+    setGymId(gid);
+
+    // Fetch members with user profile and trainer details
+    const { data: membersList, error } = await sb.from("members")
+      .select(`
+        *,
+        user:users!members_user_id_fkey(id, name, full_name, phone, email, avatar_url),
+        trainer:users!members_trainer_id_fkey(id, name, full_name)
+      `)
+      .eq("gym_id", gid);
+
+    if (error) console.error("Error loading members:", error);
+
+    // Get trainers for assignment dropdown
+    const { data: trainersList } = await sb.from("users")
+      .select("id, full_name, name")
+      .eq("gym_id", gid)
+      .eq("role", "trainer");
+
+    // Map members to computed status
+    const mapped = (membersList || []).map((m: any) => {
+      const now = new Date();
+      const end = m.end_date ? new Date(m.end_date) : null;
+      let calculatedStatus = m.status || "active";
+      
+      if (end) {
+        const diffTime = end.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+          calculatedStatus = "expired";
+        } else if (diffDays <= 7) {
+          calculatedStatus = "expiring";
+        }
+      }
+
+      return {
+        ...m,
+        member_name: m.user?.name || m.user?.full_name || "Noma'lum",
+        member_phone: m.user?.phone || "—",
+        member_email: m.user?.email || "",
+        member_avatar: m.user?.avatar_url,
+        trainer_name: m.trainer?.name || m.trainer?.full_name || "Biriktirilmagan",
+        computedStatus: calculatedStatus
+      };
+    });
+
+    setMembers(mapped);
+    setTrainers(trainersList || []);
+  };
+
+  // Bulk Selection toggle
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredMembers.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredMembers.map(m => m.id));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(prev => prev.filter(x => x !== id));
+    } else {
+      setSelectedIds(prev => [...prev, id]);
+    }
+  };
+
+  // Bulk Actions
+  const handleBulkExtend = async () => {
+    if (!selectedIds.length) return;
+    try {
+      for (const memberId of selectedIds) {
+        const currentMember = members.find(m => m.id === memberId);
+        let baseDate = new Date();
+        if (currentMember && currentMember.end_date) {
+          const currentEnd = new Date(currentMember.end_date);
+          if (currentEnd > baseDate) baseDate = currentEnd;
+        }
+        baseDate.setDate(baseDate.getDate() + extendDays);
+        
+        await sb.from("members").update({
+          end_date: baseDate.toISOString(),
+          status: "active"
+        }).eq("id", memberId);
+      }
+      setIsExtendModalOpen(false);
+      setSelectedIds([]);
+      load();
+    } catch (err: any) {
+      alert("Xatolik: " + err.message);
+    }
+  };
+
+  const handleBulkSendReminder = async () => {
+    if (!selectedIds.length) return;
+    try {
       const user = await getUser();
-      const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
-      if (!me?.gym_id) return { members: [], trainers: [] };
-      const gid = me.gym_id;
+      for (const memberId of selectedIds) {
+        const m = members.find(x => x.id === memberId);
+        if (m) {
+          await sb.from("notifications").insert({
+            user_id: m.user_id,
+            title: "ZenFit Eslatma",
+            body: "Hurmatli sportchi! ZenFit a'zolik muddatingiz to'lovi va faolligi bo'yicha ma'lumotlarni tekshirib qo'yishingizni so'raymiz.",
+            type: "streak_reminder",
+            data: JSON.stringify({ action: "payment_reminder" })
+          });
+        }
+      }
+      alert("Eslatmalar Telegram orqali yuborildi!");
+      setSelectedIds([]);
+    } catch (err: any) {
+      alert("Xatolik: " + err.message);
+    }
+  };
 
-      const { data: members } = await sb.from("users").select("id, full_name, phone, created_at").eq("gym_id", gid).eq("role", "member");
-      const { data: trainers } = await sb.from("users").select("id, full_name").eq("gym_id", gid).eq("role", "trainer");
+  const handleAssignTrainerBulk = async () => {
+    if (!selectedIds.length || !selectedTrainerForAssign) return;
+    try {
+      await sb.from("members")
+        .update({ trainer_id: selectedTrainerForAssign })
+        .in("id", selectedIds);
+      
+      setAssignModalOpen(false);
+      setSelectedIds([]);
+      setSelectedTrainerForAssign("");
+      load();
+    } catch (err: any) {
+      alert("Xatolik: " + err.message);
+    }
+  };
 
-      const ids = (members ?? []).map((m) => m.id);
-      if (!ids.length) return { members: [], trainers: trainers ?? [] };
-
-      const { data: streaks } = await sb.from("member_streaks").select("member_id, current_streak, last_activity").in("member_id", ids);
-      const sMap = Object.fromEntries((streaks ?? []).map((s) => [s.member_id, s]));
-
-      // Memberships for tariff/payment info
-      const { data: memberships } = await sb.from("memberships").select("member_id, plan_name, status, end_date").in("member_id", ids);
-      const mMap = Object.fromEntries((memberships ?? []).map((m) => [m.member_id, m]));
-
-      // Attendance last entry
-      const { data: lastAtt } = await sb.from("attendance").select("member_id, checked_in_at").in("member_id", ids).order("checked_in_at", { ascending: false });
-      const attMap: Record<string, string> = {};
-      for (const a of lastAtt ?? []) { if (!attMap[a.member_id]) attMap[a.member_id] = a.checked_in_at; }
-
-      const now = Date.now();
-      const result = (members ?? []).map((m) => {
-        const s = sMap[m.id];
-        const ms = mMap[m.id];
-        const lastVisit = attMap[m.id] ?? s?.last_activity;
-        const daysAgo = lastVisit ? Math.floor((now - new Date(lastVisit).getTime()) / 86400000) : 999;
-        const isNew = (now - new Date(m.created_at).getTime()) < 7 * 86400000;
-
-        let risk: "high" | "medium" | "low" = "low";
-        if (daysAgo >= 14) risk = "high";
-        else if (daysAgo >= 7) risk = "medium";
-
-        const paymentStatus = ms?.status === "active" ? "active" : ms?.status === "expired" ? "expired" : "none";
-
-        return {
-          ...m,
-          streak: s?.current_streak ?? 0,
-          daysAgo,
-          risk,
-          isNew,
-          status: risk === "high" ? "risk" : risk === "medium" ? "risk" : isNew ? "new" : "active",
-          tariff: ms?.plan_name ?? "—",
-          paymentStatus,
-          endDate: ms?.end_date,
-          lastVisit,
-        };
-      }).sort((a, b) => {
-        const riskOrder = { high: 0, medium: 1, low: 2 };
-        return riskOrder[a.risk] - riskOrder[b.risk];
-      });
-
-      return { members: result, trainers: trainers ?? [] };
-    },
+  // Filter members
+  const filteredMembers = members.filter((m) => {
+    const matchSearch = m.member_name.toLowerCase().includes(search.toLowerCase()) || 
+                        m.member_phone.includes(search);
+    
+    if (filter === "all") return matchSearch;
+    if (filter === "active") return matchSearch && m.computedStatus === "active";
+    if (filter === "expiring") return matchSearch && m.computedStatus === "expiring";
+    if (filter === "expired") return matchSearch && m.computedStatus === "expired";
+    if (filter === "no_trainer") return matchSearch && (!m.trainer_id);
+    return matchSearch;
   });
 
-  const sendNotification = useMutation({
-    mutationFn: async ({ memberId, message }: { memberId: string; message: string }) => {
-      const user = await getUser();
-      await sb.from("notifications").insert({ user_id: memberId, title: "Gym xabari", body: message, type: "gym_message", sender_id: user!.id });
-    },
-  });
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20";
+      case "expiring":
+        return "bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/20";
+      case "expired":
+        return "bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/20";
+      default:
+        return "bg-[#9CA3AF]/10 text-[#9CA3AF] border border-[#2D2D3D]";
+    }
+  };
 
-  const assignTrainer = useMutation({
-    mutationFn: async ({ memberId, trainerId }: { memberId: string; trainerId: string }) => {
-      await sb.from("users").update({ trainer_id: trainerId }).eq("id", memberId);
-    },
-    onSuccess: () => { setAssigningTrainer(null); qc.invalidateQueries({ queryKey: ["gym-members-crm"] }); },
-  });
-
-  const members = (data?.members ?? [])
-    .filter((m) => filter === "all" || (filter === "risk" ? m.risk !== "low" : filter === "new" ? m.isNew : m.risk === "low" && !m.isNew))
-    .filter((m) => !search || m.full_name?.toLowerCase().includes(search.toLowerCase()) || m.phone?.includes(search));
-
-  const riskCount = (data?.members ?? []).filter((m) => m.risk !== "low").length;
-
-  const riskIndicator = (r: string) => r === "high" ? "bg-[var(--red)]" : r === "medium" ? "bg-[#ffa726]" : "bg-[var(--green)]";
-  const payBadge = (s: string) => s === "active" ? "text-vgreen bg-vgreen/10" : s === "expired" ? "text-vred bg-vred/10" : "text-muted bg-card";
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "active": return "Faol";
+      case "expiring": return "Yaqinda tugaydi";
+      case "expired": return "Tugagan";
+      default: return status;
+    }
+  };
 
   return (
-    <div className="max-w-6xl space-y-5 animate-fadeUp">
+    <div className="max-w-6xl mx-auto space-y-6 animate-fadeUp text-[#F9FAFB]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-        <div>
-          <h1 className="font-display font-bold text-xl text-vtext">A'zolar</h1>
-          <p className="text-[11px] text-muted">{data?.members.length ?? 0} ta a'zo{riskCount > 0 && <span className="text-vred"> · {riskCount} xavf ostida</span>}</p>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#2D2D3D] pb-4">
+        <div className="flex items-center gap-2">
+          <Users className="text-[#6366F1]" size={24} />
+          <div>
+            <p className="text-xs uppercase tracking-wider text-[#9CA3AF] font-mono">CRM tizimi</p>
+            <h1 className="font-display font-bold text-2xl tracking-tight">Klub A'zolari</h1>
+          </div>
         </div>
-        <Link href="/gym/invite"><Button size="sm" className="gap-1.5"><UserPlus size={14} /> Yangi a'zo</Button></Link>
+        <Link href="/gym/invite">
+          <Button className="bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-xl font-bold h-10">
+            <UserPlus size={16} className="mr-1.5 inline" /> Taklif yuborish
+          </Button>
+        </Link>
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="flex-1 relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ism yoki telefon..." className="pl-9" />
-        </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {([
-            { id: "all" as FilterType, label: "Barchasi", icon: Users },
-            { id: "risk" as FilterType, label: `Xavf (${riskCount})`, icon: AlertTriangle },
-            { id: "active" as FilterType, label: "Faol", icon: UserCheck },
-            { id: "new" as FilterType, label: "Yangi", icon: Filter },
-          ]).map((f) => (
-            <Button key={f.id} variant={filter === f.id ? "default" : "outline"} size="sm" onClick={() => setFilter(f.id)} className="gap-1 text-xs">
-              <f.icon size={12} />{f.label}
+      {/* Bulk actions panel */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-[#6366F1]/10 border border-[#6366F1]/30 rounded-2xl animate-fadeUp">
+          <span className="text-xs font-semibold text-[#6366F1]">{selectedIds.length} ta a'zo tanlandi</span>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              onClick={() => setIsExtendModalOpen(true)}
+              className="bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-lg text-xs"
+            >
+              Uzatish
             </Button>
+            <Button 
+              size="sm" 
+              onClick={() => setAssignModalOpen(true)}
+              className="bg-[#10B981] hover:bg-[#059669] text-white rounded-lg text-xs"
+            >
+              Murabbiy biriktirish
+            </Button>
+            <Button 
+              size="sm" 
+              variant="destructive"
+              onClick={handleBulkSendReminder}
+              className="bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444] hover:text-white rounded-lg text-xs"
+            >
+              Eslatma
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Controls */}
+      <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full md:w-80">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+          <Input 
+            value={search} 
+            onChange={(e) => setSearch(e.target.value)} 
+            placeholder="A'zo ismi yoki telefon..." 
+            className="pl-10 rounded-xl bg-[#1A1A24] border-[#2D2D3D] placeholder-[#9CA3AF]/45 text-white focus:border-[#6366F1]"
+          />
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto pb-1">
+          {[
+            { id: "all", label: "Barchasi" },
+            { id: "active", label: "Faol" },
+            { id: "expiring", label: "Yaqinda tugaydi" },
+            { id: "expired", label: "Muddati o'tgan" },
+            { id: "no_trainer", label: "Trenerisiz" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id as FilterType)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${filter === f.id ? "bg-[#6366F1] text-white" : "bg-[#1A1A24] border border-[#2D2D3D] text-[#9CA3AF] hover:text-white"}`}
+            >
+              {f.label}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Table */}
-      <Card>
+      {/* Desktop view table */}
+      <Card className="bg-[#1A1A24] border border-[#2D2D3D] rounded-2xl overflow-hidden shadow-xl">
         <CardContent className="p-0">
-          {members.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-muted text-sm">A'zo topilmadi</p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile card view */}
-              <div className="block sm:hidden divide-y divide-border/30">
-                {members.map((m: any) => {
-                  const initials = m.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "?";
-                  return (
-                    <div key={m.id} className="p-3 flex items-center gap-3">
-                      <Link href={`/gym/members/${m.id}`} className="flex items-center gap-3 flex-1 min-w-0 press">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 ${m.risk === "high" ? "bg-vred/15 text-vred" : m.risk === "medium" ? "bg-[#ffa726]/15 text-[#ffa726]" : "bg-accent/10 text-accent"}`}>{initials}</div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-vtext truncate">{m.full_name}</p>
-                          <p className="text-[10px] text-muted">{m.tariff} · {m.daysAgo === 0 ? "Bugun" : m.daysAgo < 999 ? `${m.daysAgo}k oldin` : "—"}</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#2D2D3D] text-[#9CA3AF] font-bold">
+                  <th className="py-4 px-4 w-12 text-center">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.length === filteredMembers.length && filteredMembers.length > 0}
+                      onChange={toggleSelectAll}
+                      className="rounded border-[#2D2D3D] bg-[#22222F] text-[#6366F1] focus:ring-0 w-4 h-4 cursor-pointer"
+                    />
+                  </th>
+                  <th className="py-4 px-3">SPORTCHI</th>
+                  <th className="py-4 px-3">PLAN TURI</th>
+                  <th className="py-4 px-3">MURABBIY</th>
+                  <th className="py-4 px-3">TUGASH SANA</th>
+                  <th className="py-4 px-3">STATUS</th>
+                  <th className="py-4 px-4 text-right">AMALLAR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMembers.map((m) => (
+                  <tr key={m.id} className="border-b border-[#2D2D3D]/30 text-white/90 hover:bg-[#22222F]/30 transition">
+                    <td className="py-3 px-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.includes(m.id)}
+                        onChange={() => toggleSelectOne(m.id)}
+                        className="rounded border-[#2D2D3D] bg-[#22222F] text-[#6366F1] focus:ring-0 w-4 h-4 cursor-pointer"
+                      />
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center text-[#6366F1] text-[10px] font-bold shrink-0">
+                          {m.member_avatar ? <img src={m.member_avatar} alt="Avatar" className="w-full h-full object-cover rounded-xl" /> : m.member_name[0]}
                         </div>
-                      </Link>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className={`w-2 h-2 rounded-full ${riskIndicator(m.risk)}`} />
-                        <button onClick={() => sendNotification.mutate({ memberId: m.id, message: "Sizni gym'da kutmoqdamiz!" })} className="w-8 h-8 rounded-lg bg-vblue/10 flex items-center justify-center press"><Send size={12} className="text-vblue" /></button>
+                        <div>
+                          <p className="font-semibold">{m.member_name}</p>
+                          <p className="text-[10px] text-[#9CA3AF] font-mono">{m.member_phone}</p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Desktop table */}
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full text-[12px] min-w-[700px]">
-                  <thead>
-                    <tr className="text-[9px] font-mono text-muted tracking-wider border-b border-border">
-                      <th className="text-left py-3 px-4">A'ZO</th>
-                      <th className="text-left py-3 px-3">TELEFON</th>
-                      <th className="text-left py-3 px-3">TARIF</th>
-                      <th className="text-left py-3 px-3">TO'LOV</th>
-                      <th className="text-left py-3 px-3">OXIRGI TASHRIF</th>
-                      <th className="text-left py-3 px-3">XAVF</th>
-                      <th className="py-3 px-4 text-right">AMALLAR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {members.map((m: any) => {
-                      const initials = m.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "?";
-                      return (
-                        <tr key={m.id} className="border-b border-border/30 hover:bg-[var(--subtle)] transition-colors">
-                          <td className="py-3 px-4">
-                            <Link href={`/gym/members/${m.id}`} className="flex items-center gap-2.5 press">
-                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold ${m.risk === "high" ? "bg-vred/15 text-vred" : m.risk === "medium" ? "bg-[#ffa726]/15 text-[#ffa726]" : "bg-accent/10 text-accent"}`}>{initials}</div>
-                              <span className="text-vtext font-medium">{m.full_name}</span>
-                            </Link>
-                          </td>
-                          <td className="py-3 px-3 text-muted font-mono">{m.phone ?? "—"}</td>
-                          <td className="py-3 px-3 text-vtext">{m.tariff}</td>
-                          <td className="py-3 px-3">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${payBadge(m.paymentStatus)}`}>
-                              {m.paymentStatus === "active" ? "Faol" : m.paymentStatus === "expired" ? "Tugagan" : "—"}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-muted">
-                            {m.daysAgo === 0 ? "Bugun" : m.daysAgo < 999 ? `${m.daysAgo} kun oldin` : "—"}
-                          </td>
-                          <td className="py-3 px-3">
-                            <div className="flex items-center gap-1.5">
-                              <span className={`w-2 h-2 rounded-full ${riskIndicator(m.risk)}`} />
-                              <span className={`text-[10px] font-mono ${m.risk === "high" ? "text-vred" : m.risk === "medium" ? "text-[#ffa726]" : "text-vgreen"}`}>
-                                {m.risk === "high" ? "Yuqori" : m.risk === "medium" ? "O'rta" : "Past"}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => sendNotification.mutate({ memberId: m.id, message: "Sizni gym'da kutmoqdamiz!" })}
-                                className="w-7 h-7 rounded-lg bg-vblue/10 flex items-center justify-center press hover:bg-vblue/20 transition-colors"
-                                title="Xabar yuborish"
-                              >
-                                <Send size={12} className="text-vblue" />
-                              </button>
-                              <button
-                                onClick={() => sendNotification.mutate({ memberId: m.id, message: "To'lov muddati yaqinlashmoqda. Iltimos, to'lovni amalga oshiring." })}
-                                className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center press hover:bg-accent/20 transition-colors"
-                                title="To'lov so'rash"
-                              >
-                                <CreditCard size={12} className="text-accent" />
-                              </button>
-                              <button
-                                onClick={() => setAssigningTrainer(assigningTrainer === m.id ? null : m.id)}
-                                className="w-7 h-7 rounded-lg bg-vgreen/10 flex items-center justify-center press hover:bg-vgreen/20 transition-colors"
-                                title="Trener biriktirish"
-                              >
-                                <UserCheck size={12} className="text-vgreen" />
-                              </button>
-                            </div>
-                            {assigningTrainer === m.id && (data?.trainers?.length ?? 0) > 0 && (
-                              <div className="absolute right-4 mt-1 bg-card border border-border rounded-xl p-2 shadow-xl z-10 animate-scaleIn">
-                                <p className="text-[9px] font-mono text-muted mb-1.5">TRENER TANLANG</p>
-                                {data!.trainers.map((t: any) => (
-                                  <button key={t.id} onClick={() => assignTrainer.mutate({ memberId: m.id, trainerId: t.id })} className="w-full text-left text-xs text-vtext px-2 py-1.5 rounded hover:bg-accent/10 transition-colors press">
-                                    {t.full_name}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+                    </td>
+                    <td className="py-3 px-3 capitalize font-medium">{m.membership_type || "monthly"}</td>
+                    <td className="py-3 px-3 text-[#9CA3AF] font-medium">{m.trainer_name}</td>
+                    <td className="py-3 px-3 font-medium">
+                      {m.end_date ? new Date(m.end_date).toLocaleDateString() : "Cheksiz"}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${getStatusBadgeClass(m.computedStatus)}`}>
+                        {getStatusLabel(m.computedStatus)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex justify-end gap-1.5">
+                        <Button 
+                          onClick={() => {
+                            setSelectedIds([m.id]);
+                            setIsExtendModalOpen(true);
+                          }}
+                          variant="secondary" 
+                          size="sm" 
+                          className="bg-[#22222F] text-white border-[#2D2D3D] hover:bg-[#2D2D3D] text-[10px] py-1.5 h-auto rounded-lg"
+                        >
+                          Muddati uzaytirish
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredMembers.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center py-12 text-[#9CA3AF]">
+                      Zal a'zolari topilmadi
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Bulk Extend Membership Modal */}
+      {isExtendModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-[#1A1A24] border border-[#2D2D3D] w-full max-w-sm rounded-2xl p-6 relative animate-scaleIn">
+            <button onClick={() => setIsExtendModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-white">
+              <X size={18} />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-1.5">
+              <Calendar size={18} className="text-[#6366F1]" /> A'zolik muddatini uzaytirish
+            </h3>
+            <p className="text-xs text-[#9CA3AF] mb-4">Tanlangan {selectedIds.length} ta a'zo uchun muddatni qo'shish:</p>
+            
+            <div className="space-y-3">
+              <Label className="text-xs uppercase tracking-wider text-[#9CA3AF] font-bold">Kunlar soni</Label>
+              <select
+                value={extendDays}
+                onChange={(e) => setExtendDays(Number(e.target.value))}
+                className="flex h-11 w-full rounded-xl border border-[#2D2D3D] bg-[#22222F] px-3.5 text-sm text-[#F9FAFB] outline-none focus:border-[#6366F1]"
+              >
+                <option value={7}>7 kun (Haftalik)</option>
+                <option value={30}>30 kun (Bir oylik)</option>
+                <option value={90}>90 kun (Uch oylik)</option>
+                <option value={365}>365 kun (Yillik)</option>
+              </select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button onClick={() => setIsExtendModalOpen(false)} variant="secondary" className="flex-1 rounded-xl bg-[#22222F] text-white border-[#2D2D3D]">
+                Bekor qilish
+              </Button>
+              <Button onClick={handleBulkExtend} className="flex-1 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-xl font-bold">
+                Uzaytirish
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Assign Trainer Modal */}
+      {assignModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-[#1A1A24] border border-[#2D2D3D] w-full max-w-sm rounded-2xl p-6 relative animate-scaleIn">
+            <button onClick={() => setAssignModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-white">
+              <X size={18} />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-1.5">
+              <UserCheck size={18} className="text-[#6366F1]" /> Murabbiy biriktirish
+            </h3>
+            <p className="text-xs text-[#9CA3AF] mb-4">Tanlangan {selectedIds.length} ta a'zo uchun umumiy murabbiy:</p>
+
+            <div className="space-y-3">
+              <Label className="text-xs uppercase tracking-wider text-[#9CA3AF] font-bold">Trener ro'yxati</Label>
+              <select
+                value={selectedTrainerForAssign}
+                onChange={(e) => setSelectedTrainerForAssign(e.target.value)}
+                className="flex h-11 w-full rounded-xl border border-[#2D2D3D] bg-[#22222F] px-3.5 text-sm text-[#F9FAFB] outline-none focus:border-[#6366F1]"
+              >
+                <option value="">Murabbiyni tanlang</option>
+                {trainers.map(t => (
+                  <option key={t.id} value={t.id}>{t.full_name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button onClick={() => setAssignModalOpen(false)} variant="secondary" className="flex-1 rounded-xl bg-[#22222F] text-white border-[#2D2D3D]">
+                Bekor qilish
+              </Button>
+              <Button onClick={handleAssignTrainerBulk} className="flex-1 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-xl font-bold">
+                Biriktirish
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
