@@ -47,5 +47,26 @@ export async function GET(req: NextRequest) {
   // 3. Expire memberships
   await sbFetch(`memberships?expires_at=lt.${today}&status=eq.active`, { method: "PATCH", body: JSON.stringify({ status: "expired" }) });
 
-  return NextResponse.json({ success: true, streaks_reset: (expired ?? []).length, reminders_sent: memberIds.length });
+  // 4. Auto-Engage (Deep Churn Recovery)
+  // Send motivational message + 10% discount to users who haven't logged activity in exactly 7 days
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+  const { data: deepChurnRisk } = await (await sbFetch(`member_streaks?last_activity=eq.${sevenDaysAgo}&select=member_id`)).json() as any;
+  const churnMemberIds = (deepChurnRisk ?? []).map((s: any) => s.member_id);
+  
+  let churnReminders = 0;
+  if (churnMemberIds.length > 0) {
+    const { data: churnSessions } = await (await sbFetch(`telegram_sessions?user_id=in.(${churnMemberIds.join(",")})&select=user_id,chat_id`)).json() as any;
+    for (const sess of churnSessions ?? []) {
+      const msg = `⚠️ *Sizni sog'indik!* 😢\n\nZalga kelmaganingizga rosa 7 kun bo'ldi. Maqsadlaringizni unutmang! 💪\n\n🎁 *Maxsus taklif:* Bugun yoki ertaga zaldagi obunangizni yangilasangiz sizga *10% chegirma* beramiz. Bugun keling!`;
+      await sendTg(sess.chat_id, msg);
+      churnReminders++;
+    }
+  }
+
+  return NextResponse.json({ 
+    success: true, 
+    streaks_reset: (expired ?? []).length, 
+    reminders_sent: memberIds.length,
+    auto_engaged_users: churnReminders 
+  });
 }
