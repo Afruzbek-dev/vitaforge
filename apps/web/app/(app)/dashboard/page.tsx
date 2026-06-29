@@ -78,74 +78,66 @@ export default function DashboardPage() {
   return (
     <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 animate-fadeUp pb-24 md:pb-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <p className="text-[11px] text-muted">{greeting}</p>
-          <h1 className="font-display font-bold text-xl text-vtext">{user?.full_name?.split(" ")[0] ?? "A'zo"}</h1>
+          <p className="font-mono text-[10px] tracking-[2px] text-accent uppercase mb-1.5">{greeting}</p>
+          <h1 className="font-display font-bold text-2xl tracking-[-0.5px] text-vtext">
+            {user?.full_name?.split(" ")[0] ?? "A'zo"}
+          </h1>
         </div>
-        <Link href="/dashboard/settings" className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-accent font-bold text-sm press">
+        <Link href="/dashboard/settings" className="w-10 h-10 rounded-2xl bg-surface2 border border-border flex items-center justify-center font-display font-bold text-sm press shadow-xl">
           {user?.full_name?.[0] ?? "?"}
         </Link>
       </div>
 
       {/* Checkin card */}
       {!todayWorkout ? (
-        <Card className="border-accent/20 bg-accent/[0.03] press" onClick={() => checkin.mutate()}>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <MapPin size={18} className="text-accent" />
+        <Card className="border border-accent/30 bg-accent/[0.04] rounded-2xl p-4 press mb-3" onClick={() => checkin.mutate()}>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                <MapPin size={18} className="text-accent" />
+              </div>
+              <div className="flex-1">
+                <p className="font-display font-semibold text-[14px] text-vtext">Bugungi mashg'ulot</p>
+                <p className="text-[12px] text-muted">Gymga kelganingizni belgilang</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-vtext">Gym'ga keldim</p>
-              <p className="text-[10px] text-muted">Bugungi davomatni belgilang</p>
-            </div>
-            <Button size="sm" disabled={checkin.isPending}>{checkin.isPending ? "..." : "Belgilash"}</Button>
-          </CardContent>
+            <button disabled={checkin.isPending} className="w-full bg-accent text-bg font-body font-semibold text-[13px] text-center p-[13px] rounded-xl shadow-[0_0_18px_rgba(213,255,69,0.25)] transition-opacity disabled:opacity-50">
+              {checkin.isPending ? "Belgilanmoqda..." : "Zaldaman, belgiga bosish"}
+            </button>
+          </div>
         </Card>
       ) : (
-        <Card className="border-[var(--green)]/20 bg-[var(--green)]/[0.03]">
-          <CardContent className="p-3 flex items-center gap-2 justify-center">
-            <MapPin size={14} className="text-vgreen" />
-            <p className="text-vgreen text-[11px] font-mono">BUGUN BELGILANGAN</p>
+        <Card className="border-[var(--green)]/20 bg-[var(--green)]/[0.03] rounded-2xl mb-3">
+          <CardContent className="p-4 flex items-center gap-2 justify-center">
+            <MapPin size={16} className="text-vgreen" />
+            <p className="text-vgreen text-[11px] font-mono tracking-[1px]">BUGUN BELGILANGAN</p>
           </CardContent>
         </Card>
       )}
 
       {/* Main stats — streak, calories, protein */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="card-hover">
-          <CardContent className="p-4 flex flex-col items-center">
-            <Flame size={20} className="text-accent mb-2" />
-            <p className="font-display font-bold text-2xl text-accent">{s?.current_streak ?? 0}</p>
-            <p className="text-[10px] text-muted">kun streak</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="bg-surface border border-border rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm">
+          <Flame size={20} className="text-accent" />
+          <p className="font-display font-bold text-[18px] text-accent leading-none">{s?.current_streak ?? 0}</p>
+          <p className="text-[9px] font-mono text-muted text-center leading-tight">STREAK</p>
+        </div>
 
-        <Card className="card-hover">
-          <CardContent className="p-4 flex flex-col items-center">
-            <div className="relative mb-1.5">
-              <Ring progress={calPct} size={48} stroke={3.5} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Utensils size={14} className="text-accent" />
-              </div>
-            </div>
-            <p className="font-display font-bold text-base text-vtext">{todayCal?.cal ?? 0}</p>
-            <p className="text-[10px] text-muted">/ {targetCal} kkal</p>
-          </CardContent>
-        </Card>
+        <div className="bg-surface border border-border rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+          <div className="absolute top-2 right-2 text-muted opacity-50"><Utensils size={10} /></div>
+          <Ring progress={calPct} size={36} stroke={3} />
+          <p className="font-display font-bold text-[18px] text-vtext leading-none mt-1">{todayCal?.cal ?? 0}</p>
+          <p className="text-[9px] font-mono text-muted text-center leading-tight">/ {targetCal} kkal</p>
+        </div>
 
-        <Card className="card-hover">
-          <CardContent className="p-4 flex flex-col items-center">
-            <div className="relative mb-1.5">
-              <Ring progress={proteinPct} size={48} stroke={3.5} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Zap size={14} className="text-vgreen" />
-              </div>
-            </div>
-            <p className="font-display font-bold text-base text-vtext">{todayCal?.protein ?? 0}g</p>
-            <p className="text-[10px] text-muted">/ {targetProtein}g protein</p>
-          </CardContent>
-        </Card>
+        <div className="bg-surface border border-border rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+          <div className="absolute top-2 right-2 text-muted opacity-50"><Zap size={10} /></div>
+          <Ring progress={proteinPct} size={36} stroke={3} />
+          <p className="font-display font-bold text-[18px] text-vtext leading-none mt-1">{todayCal?.protein ?? 0}g</p>
+          <p className="text-[9px] font-mono text-muted text-center leading-tight">/ {targetProtein}g</p>
+        </div>
       </div>
 
       {/* Today's plan */}

@@ -21,8 +21,8 @@ const config: Config = {
         vblue: "var(--blue)",
       },
       fontFamily: {
-        display: ["Inter", "sans-serif"],
-        body: ["Inter", "sans-serif"],
+        display: ["Unbounded", "sans-serif"],
+        body: ["DM Sans", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
     },
