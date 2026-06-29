@@ -191,12 +191,10 @@ export default function DashboardPage() {
             { href: "/dashboard/chat", icon: Bot, label: "AI Coach", color: "text-[#ffa726]" },
           ].map((a) => (
             <Link key={a.href} href={a.href}>
-              <Card className="press card-hover h-full">
-                <CardContent className="p-3 flex items-center gap-2.5">
-                  <a.icon size={16} className={a.color} />
-                  <p className="text-[11px] font-medium text-vtext">{a.label}</p>
-                </CardContent>
-              </Card>
+              <div className="bg-surface border border-border rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 shadow-sm press h-full transition-colors active:bg-surface2">
+                <a.icon size={18} className={a.color} />
+                <p className="text-[10px] font-medium text-muted text-center leading-tight">{a.label}</p>
+              </div>
             </Link>
           ))}
         </div>

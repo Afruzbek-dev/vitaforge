@@ -137,15 +137,30 @@ function MobileNav({ role }: { role: string }) {
           </div>
         </div>
       )}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-border safe-bottom">
-        <div className="flex justify-around py-1.5 px-1">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d16]/95 backdrop-blur-md border-t border-[#1a1a26] safe-bottom">
+        <div className="flex justify-around">
           {links.map((l) => {
             const active = pathname === l.href;
             const Icon = l.icon;
-            return (<Link key={l.href} href={l.href} className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] py-1 px-2 rounded-xl press ${active ? "text-accent" : "text-muted"}`}><Icon size={20} /><span className="text-[9px] mt-0.5 font-medium">{l.label}</span></Link>);
+            return (
+              <Link 
+                key={l.href} 
+                href={l.href} 
+                className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-0 press transition-colors ${active ? "text-accent" : "text-[#52526a]"}`}
+              >
+                <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+                <span className="text-[9px] font-mono tracking-wide">{l.label}</span>
+              </Link>
+            );
           })}
           {role !== "member" && (
-            <button onClick={() => setShowMore(!showMore)} className={`flex flex-col items-center py-1 px-3 rounded-xl press ${showMore ? "text-accent" : "text-muted"}`}><MoreHorizontal size={18} /><span className="text-[9px] mt-0.5 font-medium">Ko&apos;proq</span></button>
+            <button 
+              onClick={() => setShowMore(!showMore)} 
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-0 press transition-colors ${showMore ? "text-accent" : "text-[#52526a]"}`}
+            >
+              <MoreHorizontal size={22} strokeWidth={showMore ? 2.5 : 2} />
+              <span className="text-[9px] font-mono tracking-wide">Ko&apos;proq</span>
+            </button>
           )}
         </div>
       </nav>
