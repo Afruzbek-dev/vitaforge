@@ -7,18 +7,18 @@
 @layer base {
   :root,
   [data-theme="dark"] {
-    --bg: #0F0F14;
-    --surface: #1A1A24;
-    --card: #1A1A24;
-    --surface2: #22222F;
-    --sidebar: #0F0F14;
+    --bg: #07070A;
+    --surface: #13131C;
+    --card: #13131C;
+    --surface2: #1E1E2C;
+    --sidebar: #07070A;
     --border: #2D2D3D;
-    --accent: #6366F1;
-    --accent-dim: rgba(99, 102, 241, 0.08);
-    --accent-border: rgba(99, 102, 241, 0.20);
-    --text: #F9FAFB;
-    --muted: #9CA3AF;
-    --subtle: #22222F;
+    --accent: #D5FF45;
+    --accent-dim: rgba(213, 255, 69, 0.08);
+    --accent-border: rgba(213, 255, 69, 0.20);
+    --text: #EFEFEB;
+    --muted: #8F8F9A;
+    --subtle: #1E1E2C;
     --red: #EF4444;
     --green: #10B981;
     --blue: #3B82F6;
@@ -26,25 +26,25 @@
     --radius: 12px;
     --radius-sm: 8px;
     --radius-full: 9999px;
-    --chart-tooltip-bg: #1A1A24;
+    --chart-tooltip-bg: #13131C;
     --chart-tooltip-border: #2D2D3D;
     --chart-grid: #2D2D3D;
-    --chart-tick: #9CA3AF;
+    --chart-tick: #8F8F9A;
   }
 
   [data-theme="light"] {
-    --bg: #f3f4f6;
-    --surface: #ffffff;
-    --card: #ffffff;
-    --surface2: #f9fafb;
-    --sidebar: #f3f4f6;
-    --border: #e5e7eb;
-    --accent: #4f46e5;
-    --accent-dim: rgba(79, 70, 229, 0.08);
-    --accent-border: rgba(79, 70, 229, 0.20);
-    --text: #111827;
-    --muted: #6b7280;
-    --subtle: #e5e7eb;
+    --bg: #F4F5F7;
+    --surface: #FFFFFF;
+    --card: #FFFFFF;
+    --surface2: #EAECEF;
+    --sidebar: #F4F5F7;
+    --border: #D8DBDF;
+    --accent: #A9D11C;
+    --accent-dim: rgba(169, 209, 28, 0.12);
+    --accent-border: rgba(169, 209, 28, 0.30);
+    --text: #373A41;
+    --muted: #7E8490;
+    --subtle: #EAECEF;
     --red: #ef4444;
     --green: #10b981;
     --blue: #3b82f6;
@@ -52,10 +52,10 @@
     --radius: 12px;
     --radius-sm: 8px;
     --radius-full: 9999px;
-    --chart-tooltip-bg: #ffffff;
-    --chart-tooltip-border: #e5e7eb;
-    --chart-grid: #e5e7eb;
-    --chart-tick: #6b7280;
+    --chart-tooltip-bg: #FFFFFF;
+    --chart-tooltip-border: #D8DBDF;
+    --chart-grid: #D8DBDF;
+    --chart-tick: #7E8490;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
