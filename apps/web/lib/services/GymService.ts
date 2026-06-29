@@ -76,33 +76,100 @@ export class GymService {
     };
   }
 
-  static async getChurnRisk() {
+  static async getDeepChurnAnalysis() {
     const user = await getUser();
     if (!user) throw new Error("Unauthorized");
     
     const sb = getSupabase();
     const { data: me } = await sb.from("users").select("gym_id").eq("id", user.id).single();
+    if (!me?.gym_id) return { at_risk_members: [], count: 0 };
     
-    const twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    
+    // Get all members
+    const { data: members } = await sb
+      .from("users")
+      .select("id, full_name, phone")
+      .eq("gym_id", me.gym_id)
+      .eq("role", "member");
+      
+    if (!members || members.length === 0) return { at_risk_members: [], count: 0 };
+    
+    const memberIds = members.map((m) => m.id);
+    
+    // Get last 7 days attendance
     const { data: recentActive } = await sb
       .from("attendance")
       .select("member_id")
-      .eq("gym_id", me?.gym_id)
-      .gte("checked_in_at", twoWeeksAgo);
-      
+      .eq("gym_id", me.gym_id)
+      .gte("checked_in_at", sevenDaysAgo);
     const activeIds = new Set(recentActive?.map((a) => a.member_id));
     
-    const { data: allMembers } = await sb
-      .from("users")
-      .select("id,full_name")
-      .eq("gym_id", me?.gym_id)
-      .eq("role", "member");
+    // Get streaks
+    const { data: streaks } = await sb
+      .from("member_streaks")
+      .select("member_id, current_streak")
+      .in("member_id", memberIds);
+    const streakMap = Object.fromEntries((streaks ?? []).map((s) => [s.member_id, s.current_streak]));
+    
+    // Get last payments (simulated check for unpaid/overdue)
+    // We check if they have a pending/rejected payment or lack a confirmed payment in last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+    const { data: payments } = await sb
+      .from("payments")
+      .select("member_id, status")
+      .in("member_id", memberIds)
+      .gte("created_at", thirtyDaysAgo)
+      .order("created_at", { ascending: false });
       
-    const atRisk = (allMembers ?? []).filter((m) => !activeIds.has(m.id));
+    const paymentMap = new Map();
+    (payments ?? []).forEach(p => {
+      if (!paymentMap.has(p.member_id)) paymentMap.set(p.member_id, p.status);
+    });
+
+    const atRiskMembers = members.map(m => {
+      const reasons: string[] = [];
+      let riskScore = 0;
+      
+      // Rule 1: No attendance in last 7 days
+      if (!activeIds.has(m.id)) {
+        reasons.push("7 kundan beri mashg'ulotga kelmadi");
+        riskScore += 40;
+      }
+      
+      // Rule 2: Lost streak (or zero streak)
+      const st = streakMap[m.id] ?? 0;
+      if (st === 0) {
+        reasons.push("Streak seriyasi uzilgan (0 kun)");
+        riskScore += 20;
+      }
+      
+      // Rule 3: Payment issues
+      const pStat = paymentMap.get(m.id);
+      if (pStat === "pending" || pStat === "overdue" || pStat === "rejected") {
+        reasons.push("To'lov bilan bog'liq muammo");
+        riskScore += 40;
+      } else if (!pStat) {
+        reasons.push("So'nggi 30 kunda to'lov qilmagan");
+        riskScore += 30;
+      }
+      
+      return {
+        ...m,
+        risk_score: riskScore,
+        risk_level: riskScore >= 70 ? "High" : riskScore >= 40 ? "Medium" : "Low",
+        reasons,
+        recommended_action: riskScore >= 70 
+          ? "Zudlik bilan qo'ng'iroq qilish va holatni so'rash"
+          : riskScore >= 40 
+          ? "Telegram orqali eslatma va chegirma yuborish" 
+          : "Kuzatishda davom etish"
+      };
+    }).filter(m => m.risk_score >= 40).sort((a, b) => b.risk_score - a.risk_score);
     
     return {
-      at_risk_members: atRisk,
-      count: atRisk.length
+      at_risk_members: atRiskMembers,
+      count: atRiskMembers.length
     };
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getSupabase } from "@/lib/supabase";
@@ -9,318 +9,205 @@ import Link from "next/link";
 import { useState, useMemo } from "react";
 import {
   CheckCircle, RefreshCw, AlertTriangle, ShieldAlert, HeartCrack,
-  TrendingUp, TrendingDown, MessageCircle, Phone, Tag,
-  Users, Search, ArrowLeft, DollarSign,
-  type LucideIcon,
+  TrendingUp, TrendingDown, MessageCircle, ArrowLeft, DollarSign,
+  Users, Bot
 } from "lucide-react";
-
-type Risk = "active" | "recovering" | "at_risk" | "critical" | "lost";
-
-const RISK_CONFIG: Record<Risk, { label: string; icon: LucideIcon; color: string; border: string; bg: string }> = {
-  active: { label: "Faol", icon: CheckCircle, color: "text-emerald-300", border: "border-emerald-500/30", bg: "bg-emerald-500/10" },
-  recovering: { label: "Qaytayotgan", icon: RefreshCw, color: "text-sky-300", border: "border-sky-500/30", bg: "bg-sky-500/10" },
-  at_risk: { label: "Xavfda", icon: AlertTriangle, color: "text-amber-300", border: "border-amber-500/30", bg: "bg-amber-500/10" },
-  critical: { label: "Jiddiy", icon: ShieldAlert, color: "text-orange-300", border: "border-orange-500/30", bg: "bg-orange-500/10" },
-  lost: { label: "Yo'qotilgan", icon: HeartCrack, color: "text-rose-300", border: "border-rose-500/30", bg: "bg-rose-500/10" },
-};
-
-const computeRisk = (streak: { last_activity?: string | null; current_streak?: number } | null, now = Date.now()): Risk => {
-  if (!streak?.last_activity) return "critical";
-  const daysAgo = Math.floor((now - new Date(streak.last_activity).getTime()) / 86400000);
-  if (daysAgo >= 30) return "lost";
-  if (daysAgo >= 10) return "critical";
-  if (daysAgo >= 5) return "at_risk";
-  if (daysAgo <= 1 && (streak.current_streak ?? 0) >= 2) return "recovering";
-  return "active";
-};
 
 export default function RetentionPage() {
   const sb = getSupabase();
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<Risk | "all">("all");
+  const [tab, setTab] = useState<string>("all");
 
-  const { data } = useQuery({
-    queryKey: ["retention-center"],
+  const { data, isLoading } = useQuery({
+    queryKey: ["deep-retention"],
     queryFn: async () => {
       const user = await getUser();
       const { data: me } = await sb.from("users").select("gym_id").eq("id", user!.id).single();
       const gid = me?.gym_id;
-      if (!gid) return { members: [] };
+      if (!gid) return { members: [], counts: { all: 0, critical: 0, atRisk: 0, active: 0 } };
 
-      const { data: allMembers } = await sb
-        .from("users")
-        .select("id, full_name, created_at, telegram_id")
-        .eq("gym_id", gid)
-        .eq("role", "member");
+      const { data: allMembers } = await sb.from("users").select("id, full_name, created_at, telegram_id, role").eq("gym_id", gid).eq("role", "member");
+      const memberIds = (allMembers ?? []).map((m) => m.id);
 
-      const { data: streaks } = await sb
-        .from("member_streaks")
-        .select("member_id, current_streak, last_activity, total_points");
+      const ago7 = new Date(Date.now() - 7 * 86400000).toISOString();
+      const ago30 = new Date(Date.now() - 30 * 86400000).toISOString();
 
-      const streakMap = Object.fromEntries((streaks ?? []).map((s) => [s.member_id, s]));
-      const now = Date.now();
-
-      const members = (allMembers ?? []).map((m: any) => {
-        const streak = streakMap[m.id];
-        const risk = computeRisk(streak ?? null, now);
-        return {
-          id: m.id,
-          full_name: m.full_name,
-          telegram_id: m.telegram_id,
-          created_at: m.created_at,
-          days_ago: streak?.last_activity ? Math.floor((now - new Date(streak.last_activity).getTime()) / 86400000) : 9999,
-          streak,
-          risk,
-          score: Math.max(0, 100 - (streak?.current_streak ?? 0) * 5 - Math.max(0, (streak?.total_points ?? 0) / 10)),
-        };
+      const { data: att } = await sb.from("attendance").select("member_id, checked_in_at").eq("gym_id", gid).gte("checked_in_at", ago30);
+      const attMap = new Map<string, Date>();
+      (att ?? []).forEach(a => {
+        const d = new Date(a.checked_in_at);
+        const existing = attMap.get(a.member_id);
+        if (!existing || d > existing) attMap.set(a.member_id, d);
       });
 
-      return { members };
-    },
+      const { data: streaks } = await sb.from("member_streaks").select("member_id, current_streak").in("member_id", memberIds);
+      const streakMap = Object.fromEntries((streaks ?? []).map(s => [s.member_id, s.current_streak]));
+
+      const { data: payments } = await sb.from("payments").select("member_id, status").in("member_id", memberIds).gte("created_at", ago30).order("created_at", { ascending: false });
+      const payMap = new Map();
+      (payments ?? []).forEach(p => { if (!payMap.has(p.member_id)) payMap.set(p.member_id, p.status); });
+
+      const members = (allMembers ?? []).map(m => {
+        const reasons: string[] = [];
+        let score = 0;
+        let pStat = payMap.get(m.id);
+        const lastAtt = attMap.get(m.id);
+        const daysAgo = lastAtt ? Math.floor((Date.now() - lastAtt.getTime()) / 86400000) : 999;
+        const st = streakMap[m.id] ?? 0;
+
+        if (daysAgo >= 30) { score += 60; reasons.push("30 kundan beri qatnashmaydi"); }
+        else if (daysAgo >= 14) { score += 50; reasons.push("2 haftadan beri kelmadi"); }
+        else if (daysAgo >= 7) { score += 30; reasons.push("1 haftalik tanaffus"); }
+
+        if (st === 0) { score += 20; reasons.push("Streak 0 (uzilgan)"); }
+
+        if (pStat === "overdue" || pStat === "rejected") { score += 50; reasons.push("To'lov muammosi"); }
+        else if (!pStat) { score += 30; reasons.push("Joriy oyda faol to'lov yo'q"); }
+
+        let risk = "active";
+        if (score >= 80) risk = "critical";
+        else if (score >= 40) risk = "at_risk";
+        else if (daysAgo <= 2 && score < 30) risk = "active";
+        
+        return { ...m, riskScore: score, reasons, risk, daysAgo };
+      }).sort((a, b) => b.riskScore - a.riskScore);
+
+      const counts = {
+        all: members.length,
+        critical: members.filter(m => m.risk === "critical").length,
+        atRisk: members.filter(m => m.risk === "at_risk").length,
+        active: members.filter(m => m.risk === "active").length
+      };
+
+      return { members, counts };
+    }
   });
 
   const filtered = useMemo(() => {
-    const list = data?.members ?? [];
-    return list.filter((m: any) => {
-      const matchesQuery = (m.full_name ?? "").toLowerCase().includes(query.toLowerCase());
-      const matchesTab = tab === "all" || m.risk === tab;
-      return matchesQuery && matchesTab;
+    return (data?.members ?? []).filter((m: any) => {
+      const matchQ = (m.full_name ?? "").toLowerCase().includes(query.toLowerCase());
+      const matchT = tab === "all" || m.risk === tab;
+      return matchQ && matchT;
     });
   }, [data, query, tab]);
 
-  const counts = useMemo(() => {
-    const list = data?.members ?? [];
-    return list.reduce((acc: any, m: any) => {
-      acc[m.risk] = (acc[m.risk] || 0) + 1;
-      acc.all += 1;
-      return acc;
-    }, { active: 0, recovering: 0, at_risk: 0, critical: 0, lost: 0, all: 0 });
-  }, [data]);
-
-  const triggerNotification = async (member: any, msg: string) => {
-    if (!member.telegram_id) return;
-    const user = await getUser();
-    const { data: me } = await sb.from("users").select("gym_id, full_name").eq("id", user!.id).single();
-
-    try {
-      await sb.from("notifications").insert({
-        user_id: member.id,
-        gym_id: me?.gym_id,
-        type: "retention_alert",
-        title: `Retention: ${member.full_name}`,
-        body: msg,
-      });
-      await fetch(`/api/telegram`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: member.telegram_id,
-          text: `Hi, ${member.full_name}! 💪 Asalomu alaykum, biz sizni sog‘inishni boshladik. Bugun kelishga jur’at eting, kuch va motivatsiya bo‘ladi.`,
-        }),
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const bulkNotify = async () => {
-    const targets = ["critical", "at_risk", "lost"] as Risk[];
-    const list = (data?.members ?? []).filter((m: any) => targets.includes(m.risk));
-    if (!list.length) return;
-    const user = await getUser();
-    const { data: me } = await sb.from("users").select("gym_id, full_name").eq("id", user!.id).single();
-    const now = new Date().toLocaleString("uz-UZ", { timeZone: "Asia/Tashkent" });
-
-    for (const m of list) {
-      const msg = `Asalomu alaykum, ${m.full_name}! Biz sizni ko‘rishdan xursand bo‘lardik. Bugun 5 daqiqa vaqtingizni ajrating — kelishga ikkilanmang 💪`;
-      await triggerNotification(m, msg);
-    }
-    alert(`${list.length} ta a'zoga ogohantirish yuborildi. (${now})`);
-  };
-
   return (
-    <div className="max-w-3xl space-y-6 animate-fadeUp">
-      <div>
-        <h1 className="font-display font-bold text-2xl text-vtext">🎯 Retention Center</h1>
-        <p className="text-muted text-xs font-mono mt-1">A'ZOLARNING XAVF DARAJASI</p>
+    <div className="max-w-4xl mx-auto space-y-4 animate-fadeUp pb-24 md:pb-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-2">
+        <Link href="/gym" className="w-10 h-10 rounded-2xl bg-surface2 border border-border flex items-center justify-center press shadow-sm">
+          <ArrowLeft size={18} className="text-vtext" />
+        </Link>
+        <div>
+          <p className="font-mono text-[10px] tracking-[2px] text-accent uppercase mb-0.5">CHURN ANALYSIS</p>
+          <h1 className="font-display font-bold text-2xl tracking-[-0.5px] text-vtext">Mijozlarni ushlab qolish</h1>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <Card className="border-l-2 border-l-rose-400 card-hover">
-          <CardContent className="p-3 flex items-center gap-2">
-            <TrendingDown size={20} strokeWidth={1.5} className="text-rose-400" />
-            <div>
-              <p className="font-display font-bold text-xl text-rose-300">
-                {counts.all ? (((counts.lost + counts.critical) / counts.all) * 100).toFixed(1) : "0.0"}%
-              </p>
-              <p className="text-[9px] text-muted font-mono">CHURN RATE</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-2 border-l-emerald-400 card-hover">
-          <CardContent className="p-3 flex items-center gap-2">
-            <TrendingUp size={20} strokeWidth={1.5} className="text-emerald-400" />
-            <div>
-              <p className="font-display font-bold text-xl text-emerald-300">
-                {counts.all ? (((counts.active + counts.recovering) / counts.all) * 100).toFixed(1) : "0.0"}%
-              </p>
-              <p className="text-[9px] text-muted font-mono">RETENTION RATE</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-2 border-l-amber-400 card-hover">
-          <CardContent className="p-3 flex items-center gap-2">
-            <DollarSign size={20} strokeWidth={1.5} className="text-amber-400" />
-            <div>
-              <p className="font-display font-bold text-xl text-amber-300">{counts.at_risk + counts.critical}</p>
-              <p className="text-[9px] text-muted font-mono">REVENUE AT RISK</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-2 border-l-orange-400 card-hover">
-          <CardContent className="p-3 flex items-center gap-2">
-            <Users size={20} strokeWidth={1.5} className="text-orange-400" />
-            <div>
-              <p className="font-display font-bold text-xl text-orange-300">{counts.at_risk + counts.critical}</p>
-              <p className="text-[9px] text-muted font-mono">AT-RISK COUNT</p>
-            </div>
-          </CardContent>
-        </Card>
+      <p className="text-[12px] text-muted mb-4 max-w-lg leading-relaxed">
+        AI tizimi a'zolarning davomati, streaki va to'lovlarini tahlil qilib, ularning ketib qolish xavfini (<span className="text-vred font-bold">Churn Risk</span>) avtomatik hisoblaydi.
+      </p>
+
+      {/* KPI Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+        <div className="bg-surface border border-vred/30 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+          <div className="absolute top-2 right-2 text-vred opacity-50"><ShieldAlert size={12} /></div>
+          <p className="font-display font-bold text-xl text-vred mt-2">{data?.counts?.critical ?? 0}</p>
+          <p className="text-[9px] font-mono text-vred text-center leading-tight uppercase">Jiddiy Xavf</p>
+        </div>
+        <div className="bg-surface border border-amber-500/30 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+          <div className="absolute top-2 right-2 text-amber-400 opacity-50"><AlertTriangle size={12} /></div>
+          <p className="font-display font-bold text-xl text-amber-400 mt-2">{data?.counts?.atRisk ?? 0}</p>
+          <p className="text-[9px] font-mono text-amber-400 text-center leading-tight uppercase">Xavf ostida</p>
+        </div>
+        <div className="bg-surface border border-vgreen/30 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+          <div className="absolute top-2 right-2 text-vgreen opacity-50"><CheckCircle size={12} /></div>
+          <p className="font-display font-bold text-xl text-vgreen mt-2">{data?.counts?.active ?? 0}</p>
+          <p className="text-[9px] font-mono text-vgreen text-center leading-tight uppercase">Faol</p>
+        </div>
+        <div className="bg-surface border border-border rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+          <div className="absolute top-2 right-2 text-muted opacity-50"><Users size={12} /></div>
+          <p className="font-display font-bold text-xl text-vtext mt-2">{data?.counts?.all ?? 0}</p>
+          <p className="text-[9px] font-mono text-muted text-center leading-tight uppercase">Jami a'zolar</p>
+        </div>
       </div>
 
-      <Card className="border-border">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center justify-between gap-2">
-            <span>A'zolar</span>
-            <div className="flex items-center gap-2">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Qidirish..."
-                className="h-7 w-32 text-[11px] bg-surface border-border"
-              />
-              <Button size="sm" variant="secondary" onClick={bulkNotify} className="text-[11px] h-7">
-                ✉️ Bulk ogohlantirish
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-1 overflow-x-auto pb-2">
+      {/* Action / Filtering */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input 
+          placeholder="Ism bo'yicha qidirish..." 
+          value={query} 
+          onChange={(e) => setQuery(e.target.value)} 
+          className="bg-surface2 border-border h-11 text-[13px] rounded-xl flex-1"
+        />
+        <div className="flex gap-1.5 bg-surface2 p-1 rounded-xl overflow-x-auto">
+          {[
+            { id: "all", label: "Barchasi" },
+            { id: "critical", label: "Jiddiy" },
+            { id: "at_risk", label: "Xavfda" },
+            { id: "active", label: "Faol" },
+          ].map(t => (
             <button
-              onClick={() => setTab("all")}
-              className={`px-3 py-1 rounded-full text-[10px] font-mono border transition ${
-                tab === "all" ? "border-accent/40 bg-accent/10 text-accent" : "border-border text-muted"
-              }`}
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-4 py-1.5 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap ${tab === t.id ? "bg-surface border border-border text-vtext shadow-sm" : "text-muted hover:text-vtext"}`}
             >
-              Hammasi ({counts.all})
+              {t.label}
             </button>
-            {(["at_risk", "critical", "recovering", "lost"] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setTab(r)}
-                className={`px-3 py-1 rounded-full text-[10px] font-mono border transition ${
-                  tab === r ? `${RISK_CONFIG[r].border} ${RISK_CONFIG[r].bg} ${RISK_CONFIG[r].color}` : "border-border text-muted"
-                }`}
-              >
-                {(() => { const Icon = RISK_CONFIG[r].icon; return <Icon size={14} strokeWidth={1.5} className="inline-block mr-1 -mt-0.5" />; })()}
-                {RISK_CONFIG[r].label} ({counts[r] ?? 0})
-              </button>
-            ))}
+          ))}
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="space-y-3">
+        {isLoading ? (
+          <p className="text-center text-muted text-sm py-8">Tahlil qilinmoqda...</p>
+        ) : filtered.length === 0 ? (
+          <div className="bg-surface border border-border rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+            <Bot size={32} className="text-muted mb-3" />
+            <p className="text-sm font-medium text-vtext">Natija topilmadi</p>
+            <p className="text-xs text-muted mt-1">Boshqa filter tanlang</p>
           </div>
-
-          <div className="mt-2 space-y-2">
-            {!filtered.length ? (
-              <p className="text-muted text-xs py-3 text-center">Mos keladigan a'zolar topilmadi.</p>
-            ) : (
-              filtered.map((m: any) => {
-                const cfg = (RISK_CONFIG as any)[m.risk] ?? RISK_CONFIG.active;
-                return (
-                  <div
-                    key={m.id}
-                    className={`flex items-center justify-between p-2.5 rounded-lg border ${cfg.border} ${cfg.bg} transition`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${cfg.bg} ${cfg.color}`}>
-                        {m.full_name?.[0]}
-                      </div>
-                      <div>
-                        <p className="text-sm text-vtext">{m.full_name}</p>
-                        <p className="text-[10px] text-muted font-mono">
-                          {m.days_ago >= 1000 ? "Hech qachon faollashtmagan" : m.days_ago === 0 ? "Bugun" : `${m.days_ago} kun oldin`}
-                          {m.streak?.current_streak ? ` · ${m.streak.current_streak} kun streak` : ""}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border flex items-center gap-1 ${cfg.border} ${cfg.bg} ${cfg.color}`}>
-                        <cfg.icon size={12} strokeWidth={1.5} />
-                        {cfg.label}
-                      </span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted hover:text-accent" title="Xabar" onClick={() => {}}>
-                        <MessageCircle size={14} strokeWidth={1.5} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted hover:text-emerald-400" title="Qo'ng'iroq" onClick={() => { if (m.phone) window.open(`tel:${m.phone}`); }}>
-                        <Phone size={14} strokeWidth={1.5} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted hover:text-amber-400" title="Chegirma" onClick={() => {}}>
-                        <Tag size={14} strokeWidth={1.5} />
-                      </Button>
-                      <Link href={`/gym/members/${m.id}`}>
-                        <Button variant="ghost" size="sm" className="text-[11px]">Batafsil</Button>
-                      </Link>
-                    </div>
+        ) : (
+          filtered.map((m: any) => (
+            <Card key={m.id} className={`border ${m.risk === 'critical' ? 'border-vred/40 bg-vred/[0.02]' : m.risk === 'at_risk' ? 'border-amber-500/40 bg-amber-500/[0.02]' : 'border-border bg-surface'} rounded-2xl`}>
+              <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <h3 className="font-display font-bold text-[15px] text-vtext">{m.full_name}</h3>
+                    {m.risk === 'critical' && <span className="bg-vred/10 text-vred text-[9px] font-mono px-1.5 py-0.5 rounded uppercase font-bold">Jiddiy Xavf</span>}
+                    {m.risk === 'at_risk' && <span className="bg-amber-500/10 text-amber-400 text-[9px] font-mono px-1.5 py-0.5 rounded uppercase font-bold">Xavf</span>}
                   </div>
-                );
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Win-Back Campaign */}
-      {(() => {
-        const lostMembers = (data?.members ?? []).filter((m: any) => m.risk === "lost");
-        if (!lostMembers.length) return null;
-        return (
-          <Card className="border-rose-500/20 bg-rose-500/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <HeartCrack size={18} strokeWidth={1.5} className="text-rose-400" />
-                Qaytarish kampaniyasi
-                <span className="text-[10px] font-mono text-muted ml-auto">{lostMembers.length} ta a'zo</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {lostMembers.map((m: any) => (
-                <div key={m.id} className="flex items-center justify-between p-2 rounded-lg border border-rose-500/20 bg-rose-500/5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-rose-500/10 text-rose-300">
-                      {m.full_name?.[0]}
-                    </div>
-                    <div>
-                      <p className="text-sm text-vtext">{m.full_name}</p>
-                      <p className="text-[10px] text-muted font-mono">
-                        {m.days_ago >= 1000 ? "Hech qachon" : `${m.days_ago} kun oldin`}
+                  <div className="space-y-1">
+                    {m.reasons.length > 0 ? m.reasons.map((r: string, i: number) => (
+                      <p key={i} className="text-[10px] text-muted flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-muted" /> {r}
                       </p>
-                    </div>
+                    )) : (
+                      <p className="text-[10px] text-vgreen flex items-center gap-1.5">
+                        <CheckCircle size={10} /> Hammasi joyida
+                      </p>
+                    )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="text-[11px] h-7 border border-rose-500/30 hover:bg-rose-500/20"
-                    onClick={() => triggerNotification(m, `Assalomu alaykum, ${m.full_name}! Sizga maxsus taklif tayyorladik. Qaytib keling — biz kutamiz! 💪`)}
-                  >
-                    <RefreshCw size={12} strokeWidth={1.5} className="mr-1" />
-                    Qayta taklif
-                  </Button>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        );
-      })()}
+                
+                <div className="flex items-center gap-2">
+                  <Link href={`/gym/members/${m.id}`}>
+                    <Button variant="outline" className="h-10 text-[11px] rounded-xl border-border bg-surface2 hover:bg-surface">
+                      Profil
+                    </Button>
+                  </Link>
+                  {m.telegram_id && m.risk !== 'active' && (
+                    <Button className="h-10 bg-accent text-bg hover:bg-accent/90 rounded-xl text-[11px] font-bold px-4 shadow-[0_0_12px_rgba(213,255,69,0.15)] flex items-center gap-1.5">
+                      <MessageCircle size={14} /> Xabar yozish
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }
