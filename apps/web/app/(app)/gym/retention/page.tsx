@@ -159,53 +159,73 @@ export default function RetentionPage() {
       </div>
 
       {/* List */}
-      <div className="space-y-3">
+      <div className="bg-surface border border-border rounded-[13px] p-0 overflow-hidden">
+        {/* Table Header */}
+        <div className="grid grid-cols-[2fr_1fr_1.5fr_100px] p-[11px_18px] bg-[#13131a] font-mono text-[10px] text-muted tracking-[1px] uppercase">
+          <span>A'ZO</span>
+          <span>STREAK</span>
+          <span>HOLAT</span>
+          <span></span>
+        </div>
+
+        {/* Table Body */}
         {isLoading ? (
-          <p className="text-center text-muted text-sm py-8">Tahlil qilinmoqda...</p>
+          <p className="text-center text-muted text-[12px] py-8">Tahlil qilinmoqda...</p>
         ) : filtered.length === 0 ? (
-          <div className="bg-surface border border-border rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+          <div className="p-8 flex flex-col items-center justify-center text-center">
             <Bot size={32} className="text-muted mb-3" />
-            <p className="text-sm font-medium text-vtext">Natija topilmadi</p>
-            <p className="text-xs text-muted mt-1">Boshqa filter tanlang</p>
+            <p className="text-[12px] font-medium text-vtext">Natija topilmadi</p>
+            <p className="text-[10px] text-muted mt-1">Boshqa filter tanlang</p>
           </div>
         ) : (
-          filtered.map((m: any) => (
-            <Card key={m.id} className={`border ${m.risk === 'critical' ? 'border-vred/40 bg-vred/[0.02]' : m.risk === 'at_risk' ? 'border-amber-500/40 bg-amber-500/[0.02]' : 'border-border bg-surface'} rounded-2xl`}>
-              <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <h3 className="font-display font-bold text-[15px] text-vtext">{m.full_name}</h3>
-                    {m.risk === 'critical' && <span className="bg-vred/10 text-vred text-[9px] font-mono px-1.5 py-0.5 rounded uppercase font-bold">Jiddiy Xavf</span>}
-                    {m.risk === 'at_risk' && <span className="bg-amber-500/10 text-amber-400 text-[9px] font-mono px-1.5 py-0.5 rounded uppercase font-bold">Xavf</span>}
-                  </div>
-                  <div className="space-y-1">
-                    {m.reasons.length > 0 ? m.reasons.map((r: string, i: number) => (
-                      <p key={i} className="text-[10px] text-muted flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-muted" /> {r}
-                      </p>
-                    )) : (
-                      <p className="text-[10px] text-vgreen flex items-center gap-1.5">
-                        <CheckCircle size={10} /> Hammasi joyida
-                      </p>
-                    )}
-                  </div>
-                </div>
+          filtered.map((m: any) => {
+            const isCrit = m.risk === 'critical';
+            const isRisk = m.risk === 'at_risk';
+            const rowClass = isCrit ? 'bg-vred/5' : isRisk ? 'bg-warning/5' : 'bg-transparent';
+            const nameInitial = m.full_name?.substring(0, 2).toUpperCase() || 'MI';
+            const avClass = isCrit ? 'bg-vred/15 text-vred' : isRisk ? 'bg-warning/15 text-warning' : 'bg-vgreen/15 text-vgreen';
+
+            return (
+              <div key={m.id} className={`grid grid-cols-[2fr_1fr_1.5fr_100px] items-center p-[13px_18px] border-b border-[#15151f] last:border-0 ${rowClass}`}>
                 
-                <div className="flex items-center gap-2">
-                  <Link href={`/gym/members/${m.id}`}>
-                    <Button variant="outline" className="h-10 text-[11px] rounded-xl border-border bg-surface2 hover:bg-surface">
-                      Profil
-                    </Button>
-                  </Link>
-                  {m.telegram_id && m.risk !== 'active' && (
-                    <Button className="h-10 bg-accent text-bg hover:bg-accent/90 rounded-xl text-[11px] font-bold px-4 shadow-[0_0_12px_rgba(213,255,69,0.15)] flex items-center gap-1.5">
-                      <MessageCircle size={14} /> Xabar yozish
-                    </Button>
-                  )}
+                {/* Column 1: Member Name */}
+                <div className="flex items-center gap-[10px]">
+                  <div className={`w-[28px] h-[28px] rounded-[8px] flex items-center justify-center font-display font-bold text-[11px] flex-shrink-0 ${avClass}`}>
+                    {nameInitial}
+                  </div>
+                  <div>
+                    <span className="text-[13px] text-vtext font-body block">{m.full_name}</span>
+                    <span className="text-[10px] text-muted line-clamp-1">{m.reasons[0] || 'Hammasi joyida'}</span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
+
+                {/* Column 2: Streak */}
+                <span className={`font-mono text-[12px] ${m.riskScore >= 40 ? 'text-vred' : 'text-accent'}`}>
+                  {m.riskScore >= 40 ? '0 kun' : '🔥 ' + (m.daysAgo < 7 ? 'Faol' : 'Qaytgan')}
+                </span>
+
+                {/* Column 3: Status Badge */}
+                <div>
+                  <span className={`text-[11px] px-[8px] py-[3px] rounded-[6px] font-mono w-fit block
+                    ${isCrit ? 'bg-vred/10 text-vred' : 
+                      isRisk ? 'bg-warning/10 text-warning' : 
+                      'bg-vgreen/10 text-vgreen'}
+                  `}>
+                    {isCrit ? 'Jiddiy xavf' : isRisk ? 'Xavf' : 'Faol'}
+                  </span>
+                </div>
+
+                {/* Column 4: Action */}
+                <div className="flex gap-[8px]">
+                  <Link href={`/gym/members/${m.id}`}>
+                    <span className="font-mono text-[10px] text-vblue p-[3px_8px] border border-vblue/30 rounded-[6px] hover:bg-vblue/10 transition-colors whitespace-nowrap">
+                      Xabar →
+                    </span>
+                  </Link>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

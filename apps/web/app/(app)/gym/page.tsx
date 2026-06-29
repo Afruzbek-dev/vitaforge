@@ -1,10 +1,9 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import { useAuthStore } from "@/lib/store/auth";
-import { Users, CalendarCheck, DollarSign, UserPlus, ArrowRight, AlertTriangle, ArrowUpRight, MessageCircle } from "lucide-react";
+import { Users, CalendarCheck, DollarSign, UserPlus, AlertTriangle, MessageCircle, Info } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from "recharts";
 import Link from "next/link";
 import AdminDashboard from "./admin-dashboard";
@@ -65,7 +64,13 @@ export default function GymDashboard() {
 
       const { data: payments } = await sb.from("payments").select("member_id, status").in("member_id", memberIds).gte("created_at", ago30).order("created_at", { ascending: false });
       const paymentMap = new Map();
-      (payments ?? []).forEach(p => { if (!paymentMap.has(p.member_id)) paymentMap.set(p.member_id, p.status); });
+      let expiringPayments = 0;
+      (payments ?? []).forEach(p => { 
+        if (!paymentMap.has(p.member_id)) {
+          paymentMap.set(p.member_id, p.status); 
+          if(p.status === "pending" || p.status === "overdue") expiringPayments++;
+        }
+      });
 
       const atRisk = (allM ?? []).map(m => {
         const reasons: string[] = [];
@@ -87,204 +92,176 @@ export default function GymDashboard() {
         revenue = (pay ?? []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
       }
 
-      return { isTrainer, total, todayAtt, newToday, churnRate, revenue, atRisk, weekChart };
+      return { isTrainer, total, todayAtt, newToday, churnRate, revenue, atRisk, weekChart, expiringPayments };
     },
   });
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Xayrli tong" : hour < 18 ? "Xayrli kun" : "Xayrli kech";
+  const dateStr = new Date().toLocaleDateString("uz-UZ", { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div className="max-w-[1200px] mx-auto p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6 pb-24 animate-fadeUp">
-      {/* Header */}
-      <div className="flex items-end justify-between pb-2 border-b border-border">
+    <div className="flex-1 p-[22px_28px] bg-bg overflow-hidden animate-fadeUp">
+      
+      {/* Topbar */}
+      <div className="flex justify-between items-start mb-[22px]">
         <div>
-          <p className="font-mono text-[10px] md:text-[11px] tracking-[0.2em] text-muted uppercase mb-1">
-            {greeting}, {d?.isTrainer ? "Trener" : "Owner"}
-          </p>
-          <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight text-vtext">
-            {user?.full_name?.split(" ")[0]}
+          <h1 className="font-display font-bold text-[21px] text-vtext">
+            {greeting}, {user?.full_name?.split(" ")[0]} 👋
           </h1>
+          <p className="text-[12px] text-muted mt-[3px]">
+            {dateStr} · Bugun {d?.todayAtt ?? 0} ta a'zo tashrif buyurdi
+          </p>
         </div>
-        <div className="flex gap-2">
-          {!d?.isTrainer && (
-            <Link href="/gym/invite">
-              <button className="h-10 w-10 md:h-12 md:w-12 rounded-[12px] bg-accent hover:bg-accent/90 text-bg flex items-center justify-center transition-transform active:scale-95">
-                <UserPlus size={20} strokeWidth={2.5} />
-              </button>
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* Grid layout */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        
-        {/* Main Stat: Revenue or Total Students */}
-        {!d?.isTrainer ? (
-          <div className="col-span-2 m-card-accent flex flex-col justify-between press">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-mono text-[11px] tracking-widest text-muted">DAROMAD</span>
-              <DollarSign size={16} className="text-accent" />
-            </div>
-            <div>
-              <p className="font-display font-bold text-3xl md:text-4xl text-vtext">
-                {d?.revenue ? `${(d.revenue / 1000).toFixed(0)}k` : "0"}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="flex items-center text-accent font-mono text-[10px]">
-                  <ArrowUpRight size={12} className="mr-0.5" /> +12%
-                </span>
-                <span className="text-muted font-mono text-[10px]">O'TGAN OYGA N.</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="col-span-2 m-card flex flex-col justify-between press">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-mono text-[11px] tracking-widest text-muted">JAMI SHOGIRDLAR</span>
-              <Users size={16} className="text-accent" />
-            </div>
-            <div>
-              <p className="font-display font-bold text-3xl md:text-4xl text-vtext">
-                {d?.total ?? 0}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Attendance stat */}
-        <div className="m-card flex flex-col justify-between press">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[10px] tracking-widest text-muted">DAVOMAT</span>
-            <CalendarCheck size={14} className="text-muted" />
-          </div>
-          <div>
-            <p className="font-display font-bold text-2xl text-accent">{d?.todayAtt ?? 0}</p>
-            <p className="text-muted font-mono text-[9px] mt-1">BUGUNGI</p>
-          </div>
-        </div>
-
-        {/* Churn Risk summary (Red only if danger) */}
         {!d?.isTrainer && (
-          <div className={`m-card flex flex-col justify-between press ${(d?.churnRate ?? 0) > 20 ? "border-[var(--red)]" : ""}`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-mono text-[10px] tracking-widest text-muted">CHURN</span>
-              <AlertTriangle size={14} className={(d?.churnRate ?? 0) > 20 ? "text-vred" : "text-muted"} />
-            </div>
-            <div>
-              <p className={`font-display font-bold text-2xl ${(d?.churnRate ?? 0) > 20 ? "text-vred" : "text-vtext"}`}>
-                {d?.churnRate ?? 0}%
-              </p>
-              <p className="text-muted font-mono text-[9px] mt-1">30 KUNLIK</p>
-            </div>
-          </div>
+          <Link href="/gym/invite">
+            <button className="flex items-center gap-[6px] bg-accent text-bg font-body font-semibold text-[13px] p-[9px_16px] rounded-[9px] hover:opacity-90 transition-opacity">
+              + Yangi a'zo
+            </button>
+          </Link>
         )}
-        {d?.isTrainer && (
-          <div className="m-card flex flex-col justify-between press">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-mono text-[10px] tracking-widest text-muted">YANGI</span>
-              <UserPlus size={14} className="text-muted" />
-            </div>
-            <div>
-              <p className="font-display font-bold text-2xl text-accent">+{d?.newToday ?? 0}</p>
-              <p className="text-muted font-mono text-[9px] mt-1">BUGUNGI</p>
-            </div>
-          </div>
-        )}
-
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mt-2">
-        {/* Weekly Chart */}
-        <div className="lg:col-span-2 m-card press flex flex-col">
-          <div className="flex items-start justify-between mb-6">
+      {/* Priority Strip */}
+      <div className="flex gap-[10px] mb-[18px] overflow-x-auto pb-2 custom-scrollbar">
+        {/* Urgent Action */}
+        <Link href="/gym/retention" className="flex-shrink-0">
+          <div className="min-w-[230px] bg-vred/5 border border-vred/30 rounded-[12px] p-[13px_15px] flex items-center gap-[11px] cursor-pointer hover:bg-vred/10 transition-colors">
+            <span className="text-[20px]">⚠️</span>
             <div>
-              <h2 className="font-display font-bold text-[15px] text-vtext">Davomat dinamikasi</h2>
-              <p className="font-mono text-[10px] tracking-widest text-muted mt-1">OXIRGI 7 KUN</p>
+              <div className="font-display font-bold text-[17px] leading-none text-vtext">{d?.atRisk?.length ?? 0}</div>
+              <div className="text-[10px] text-muted mt-[2px]">A'zo risk ostida — tezroq xabar bering</div>
             </div>
-            <Link href="/gym/analytics">
-              <button className="px-3 py-1.5 rounded-full border border-border text-[10px] font-mono text-muted hover:text-vtext transition-colors">
-                Batafsil
-              </button>
-            </Link>
           </div>
-          <div className="h-44 w-full mt-auto">
+        </Link>
+        
+        {/* Warning Action */}
+        {!d?.isTrainer && (
+          <div className="min-w-[230px] bg-surface border border-border rounded-[12px] p-[13px_15px] flex items-center gap-[11px] cursor-pointer hover:bg-surface2 transition-colors">
+            <span className="text-[20px]">💰</span>
+            <div>
+              <div className="font-display font-bold text-[17px] leading-none text-vtext">{d?.expiringPayments ?? 0}</div>
+              <div className="text-[10px] text-muted mt-[2px]">To'lov muddati bugun tugaydi</div>
+            </div>
+          </div>
+        )}
+
+        {/* Good Action */}
+        <div className="min-w-[230px] bg-vgreen/5 border border-vgreen/30 rounded-[12px] p-[13px_15px] flex items-center gap-[11px] cursor-pointer hover:bg-vgreen/10 transition-colors">
+          <span className="text-[20px]">🎉</span>
+          <div>
+            <div className="font-display font-bold text-[17px] leading-none text-vtext">{d?.newToday ?? 0}</div>
+            <div className="text-[10px] text-muted mt-[2px]">Yangi a'zo bugun qo'shildi</div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-[12px] mb-[18px]">
+        {/* KPI Card 1 */}
+        <div className="bg-surface border border-border rounded-[12px] p-[14px_16px] border-l-[2px] border-l-accent">
+          <div className="font-mono text-[9px] text-muted tracking-[1px] mb-[7px] uppercase">RETENTION (30 KUN)</div>
+          <div className="font-display font-bold text-[20px] text-vtext">{100 - (d?.churnRate ?? 0)}%</div>
+          <div className="text-[10px] text-vgreen mt-[3px] font-mono">Maqsad sari yaxshi</div>
+        </div>
+        
+        {/* KPI Card 2 */}
+        <div className="bg-surface border border-border rounded-[12px] p-[14px_16px] border-l-[2px] border-l-border">
+          <div className="font-mono text-[9px] text-muted tracking-[1px] mb-[7px] uppercase">JAMI A'ZOLAR</div>
+          <div className="font-display font-bold text-[20px] text-vtext">{d?.total ?? 0}</div>
+          <div className="text-[10px] text-vblue mt-[3px] font-mono">+{d?.newToday ?? 0} yangi</div>
+        </div>
+
+        {/* KPI Card 3 */}
+        {!d?.isTrainer && (
+          <div className="bg-surface border border-border rounded-[12px] p-[14px_16px] border-l-[2px] border-l-border">
+            <div className="font-mono text-[9px] text-muted tracking-[1px] mb-[7px] uppercase">BU OY DAROMAD</div>
+            <div className="font-display font-bold text-[20px] text-vtext">{(d?.revenue ? d.revenue / 1000000 : 0).toFixed(1)}M</div>
+            <div className="text-[10px] text-muted mt-[3px] font-mono">so'm</div>
+          </div>
+        )}
+        
+        {/* KPI Card 4 */}
+        <div className="bg-surface border border-border rounded-[12px] p-[14px_16px] border-l-[2px] border-l-border">
+          <div className="font-mono text-[9px] text-muted tracking-[1px] mb-[7px] uppercase">BUGUN FAOL</div>
+          <div className="font-display font-bold text-[20px] text-vtext">{d?.todayAtt ?? 0}</div>
+          <div className="text-[10px] text-vblue mt-[3px] font-mono">
+            {d?.total ? Math.round(((d.todayAtt ?? 0) / d.total) * 100) : 0}% DAU
+          </div>
+        </div>
+      </div>
+
+      {/* Main Panels Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[14px]">
+        
+        {/* Left Panel: Activity Feed / Chart */}
+        <div className="bg-surface border border-border rounded-[13px] p-[16px_18px] flex flex-col h-[320px]">
+          <div className="font-mono text-[9px] text-muted tracking-[1.5px] mb-[12px] flex justify-between uppercase">
+            <span>SO'NGGI DAVOMAT TRENDI</span>
+            <Link href="/gym/analytics"><span className="text-vblue hover:underline cursor-pointer">Batafsil →</span></Link>
+          </div>
+          <div className="flex-1 w-full mt-2">
             {d?.weekChart && (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={d.weekChart} margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
+                <AreaChart data={d.weekChart} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                   <defs>
-                    <linearGradient id="citrusGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--blue)" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="var(--blue)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--muted)", fontFamily: "var(--font-mono)" }} dy={10} />
                   <Tooltip 
-                    contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }} 
-                    itemStyle={{ color: "var(--accent)", fontFamily: "var(--font-display)", fontWeight: 700 }}
+                    contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px" }} 
+                    itemStyle={{ color: "var(--vtext)", fontFamily: "var(--font-display)", fontWeight: 700 }}
                     labelStyle={{ color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: "10px" }}
                   />
-                  <Area type="monotone" dataKey="count" stroke="var(--accent)" strokeWidth={2} fill="url(#citrusGrad)" />
+                  <Area type="monotone" dataKey="count" stroke="var(--blue)" strokeWidth={2} fill="url(#chartGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
         </div>
 
-        {/* Risk Zone (Critical only uses red) */}
-        <div className="m-card flex flex-col h-[320px]">
-          <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
-            <div>
-              <h2 className="font-display font-bold text-[15px] text-vtext">Xavf zonasi</h2>
-              <p className="font-mono text-[10px] tracking-widest text-vred mt-1 uppercase">CHURN RISK</p>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-vred/10 flex items-center justify-center">
-              <AlertTriangle size={14} className="text-vred" />
-            </div>
+        {/* Right Panel: Risk List */}
+        <div className="bg-surface border border-border rounded-[13px] p-[16px_18px] flex flex-col h-[320px]">
+          <div className="font-mono text-[9px] text-muted tracking-[1.5px] mb-[12px] flex justify-between uppercase">
+            <span className="flex items-center gap-1"><AlertTriangle size={10} /> DIQQAT TALAB QILADI</span>
           </div>
           
-          <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {(!d || d.atRisk.length === 0) ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
                 <p className="font-mono text-xs text-vtext">Hammasi joyida.</p>
-                <p className="font-mono text-[10px] text-muted mt-1">Xavf yo'q.</p>
               </div>
             ) : (
-              d.atRisk.slice(0, 5).map((m: any) => (
-                <div key={m.id} className="p-3 rounded-[10px] bg-surface2 border border-border flex flex-col gap-2">
-                  <div className="flex justify-between items-start">
-                    <p className="font-display font-bold text-[13px] text-vtext">{m.full_name}</p>
+              <div className="flex flex-col">
+                {d.atRisk.slice(0, 5).map((m: any, i: number) => (
+                  <div key={m.id} className="flex items-center justify-between py-[8px] border-b border-[#15151f] last:border-0">
+                    <div className="flex items-center gap-[8px]">
+                      <div className="w-[6px] h-[6px] rounded-full bg-vred flex-shrink-0" />
+                      <span className="text-[12px] text-vtext font-body">{m.full_name}</span>
+                    </div>
                     <Link href={`/gym/members/${m.id}`}>
-                      <button className="text-muted hover:text-accent p-1">
-                        <MessageCircle size={14} />
-                      </button>
+                      <span className="font-mono text-[10px] text-vblue p-[3px_8px] border border-vblue/30 rounded-[6px] hover:bg-vblue/10 transition-colors">
+                        Xabar →
+                      </span>
                     </Link>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {m.reasons.map((r: string, i: number) => (
-                      <span key={i} className="px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wider bg-vred/10 text-vred">
-                        {r}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
-          
-          {d && d.atRisk.length > 5 && (
-            <div className="pt-3 mt-2 border-t border-border">
-              <Link href="/gym/retention">
-                <Button variant="ghost" className="w-full font-mono text-[10px] tracking-widest text-muted hover:text-vtext">
-                  BARCHASINI KO'RISH <ArrowRight size={12} className="ml-2" />
-                </Button>
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
 
+          <div className="mt-[24px] relative">
+            <div className="bg-vblue/5 border border-dashed border-vblue/30 rounded-[12px] p-[14px_18px] text-[12px] text-[#9fc4e8] leading-[1.6]">
+              <b className="text-[#c8e0f8] block mb-1">Muvaffaqiyat formulasi:</b>
+              Risk ro'yxatidagi a'zolarga darhol telegramdan xabar yozish Retention foizini +20% ga oshiradi.
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

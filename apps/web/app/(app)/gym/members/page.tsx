@@ -3,17 +3,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
-import { 
-  Search, UserPlus, Send, CreditCard, Filter, Users, 
-  AlertTriangle, UserCheck, CheckCircle, Clock, X, 
-  Calendar, Award, MessageSquare, ArrowRight
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Search, UserPlus, X, Calendar, UserCheck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
-type FilterType = "all" | "active" | "expiring" | "expired" | "no_trainer";
+type FilterType = "all" | "active" | "expiring" | "expired" | "no_trainer" | "risk";
 
 export default function MembersPage() {
   const sb = getSupabase();
@@ -29,7 +22,6 @@ export default function MembersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   // Actions Modals state
-  const [assigningTrainerId, setAssigningTrainerId] = useState<string | null>(null);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [extendDays, setExtendDays] = useState(30);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -51,7 +43,7 @@ export default function MembersPage() {
     const { data: membersList, error } = await sb.from("members")
       .select(`
         *,
-        user:users!members_user_id_fkey(id, name, full_name, phone, email, avatar_url),
+        user:users!members_user_id_fkey(id, name, full_name, phone, email, avatar_url, telegram_id),
         trainer:users!members_trainer_id_fkey(id, name, full_name)
       `)
       .eq("gym_id", gid);
@@ -64,15 +56,16 @@ export default function MembersPage() {
       .eq("gym_id", gid)
       .eq("role", "trainer");
 
-    // Map members to computed status
+    // Mock risk calculation similar to retention to keep data structure
     const mapped = (membersList || []).map((m: any) => {
       const now = new Date();
       const end = m.end_date ? new Date(m.end_date) : null;
       let calculatedStatus = m.status || "active";
+      let diffDays = 999;
       
       if (end) {
         const diffTime = end.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays < 0) {
           calculatedStatus = "expired";
         } else if (diffDays <= 7) {
@@ -80,14 +73,18 @@ export default function MembersPage() {
         }
       }
 
+      const risk = diffDays < 0 ? "critical" : diffDays <= 7 ? "at_risk" : "active";
+
       return {
         ...m,
         member_name: m.user?.name || m.user?.full_name || "Noma'lum",
         member_phone: m.user?.phone || "—",
         member_email: m.user?.email || "",
         member_avatar: m.user?.avatar_url,
+        telegram_id: m.user?.telegram_id,
         trainer_name: m.trainer?.name || m.trainer?.full_name || "Biriktirilmagan",
-        computedStatus: calculatedStatus
+        computedStatus: calculatedStatus,
+        risk
       };
     });
 
@@ -95,7 +92,7 @@ export default function MembersPage() {
     setTrainers(trainersList || []);
   };
 
-  // Bulk Selection toggle
+  // Bulk Actions
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredMembers.length) {
       setSelectedIds([]);
@@ -112,7 +109,6 @@ export default function MembersPage() {
     }
   };
 
-  // Bulk Actions
   const handleBulkExtend = async () => {
     if (!selectedIds.length) return;
     try {
@@ -141,7 +137,6 @@ export default function MembersPage() {
   const handleBulkSendReminder = async () => {
     if (!selectedIds.length) return;
     try {
-      const user = await getUser();
       for (const memberId of selectedIds) {
         const m = members.find(x => x.id === memberId);
         if (m) {
@@ -177,113 +172,80 @@ export default function MembersPage() {
     }
   };
 
-  // Filter members
+  // Filtering
   const filteredMembers = members.filter((m) => {
-    const matchSearch = m.member_name.toLowerCase().includes(search.toLowerCase()) || 
-                        m.member_phone.includes(search);
-    
+    const matchSearch = m.member_name.toLowerCase().includes(search.toLowerCase()) || m.member_phone.includes(search);
     if (filter === "all") return matchSearch;
     if (filter === "active") return matchSearch && m.computedStatus === "active";
     if (filter === "expiring") return matchSearch && m.computedStatus === "expiring";
     if (filter === "expired") return matchSearch && m.computedStatus === "expired";
-    if (filter === "no_trainer") return matchSearch && (!m.trainer_id);
+    if (filter === "no_trainer") return matchSearch && !m.trainer_id;
+    if (filter === "risk") return matchSearch && (m.risk === "critical" || m.risk === "at_risk");
     return matchSearch;
   });
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20";
-      case "expiring":
-        return "bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/20";
-      case "expired":
-        return "bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/20";
-      default:
-        return "bg-[#9CA3AF]/10 text-[#9CA3AF] border border-[#2D2D3D]";
-    }
+  const getRowClass = (risk: string) => {
+    if (risk === "critical") return "bg-vred/5";
+    if (risk === "at_risk") return "bg-warning/5";
+    return "bg-transparent";
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "active": return "Faol";
-      case "expiring": return "Yaqinda tugaydi";
-      case "expired": return "Tugagan";
-      default: return status;
-    }
-  };
+  const riskCount = members.filter(m => m.risk === 'critical' || m.risk === 'at_risk').length;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fadeUp text-[#F9FAFB]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#2D2D3D] pb-4">
-        <div className="flex items-center gap-2">
-          <Users className="text-[#6366F1]" size={24} />
-          <div>
-            <p className="text-xs uppercase tracking-wider text-[#9CA3AF] font-mono">CRM tizimi</p>
-            <h1 className="font-display font-bold text-2xl tracking-tight">Klub A'zolari</h1>
-          </div>
+    <div className="flex-1 p-[22px_28px] bg-bg overflow-hidden animate-fadeUp pb-24 md:pb-[80px]">
+      
+      {/* Topbar */}
+      <div className="flex justify-between items-start mb-[22px]">
+        <div>
+          <h1 className="font-display font-bold text-[21px] text-vtext">A'zolar</h1>
+          <p className="text-[12px] text-muted mt-[3px]">
+            {members.length} ta a'zo · {riskCount} tasi diqqat talab qiladi
+          </p>
         </div>
         <Link href="/gym/invite">
-          <Button className="bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-xl font-bold h-10">
-            <UserPlus size={16} className="mr-1.5 inline" /> Taklif yuborish
-          </Button>
+          <button className="flex items-center gap-[6px] bg-accent text-bg font-body font-semibold text-[13px] p-[9px_16px] rounded-[9px] hover:opacity-90 transition-opacity">
+            + Yangi a'zo
+          </button>
         </Link>
       </div>
 
-      {/* Bulk actions panel */}
+      {/* Bulk actions */}
       {selectedIds.length > 0 && (
-        <div className="flex items-center justify-between p-4 bg-[#6366F1]/10 border border-[#6366F1]/30 rounded-2xl animate-fadeUp">
-          <span className="text-xs font-semibold text-[#6366F1]">{selectedIds.length} ta a'zo tanlandi</span>
-          <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              onClick={() => setIsExtendModalOpen(true)}
-              className="bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-lg text-xs"
-            >
-              Uzatish
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => setAssignModalOpen(true)}
-              className="bg-[#10B981] hover:bg-[#059669] text-white rounded-lg text-xs"
-            >
-              Murabbiy biriktirish
-            </Button>
-            <Button 
-              size="sm" 
-              variant="destructive"
-              onClick={handleBulkSendReminder}
-              className="bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444] hover:text-white rounded-lg text-xs"
-            >
-              Eslatma
-            </Button>
+        <div className="flex items-center justify-between p-[10px_14px] bg-accent/10 border border-accent/30 rounded-[10px] mb-[16px] animate-fadeUp">
+          <span className="text-[12px] font-semibold text-accent">{selectedIds.length} ta a'zo tanlandi</span>
+          <div className="flex gap-[8px]">
+            <button onClick={() => setIsExtendModalOpen(true)} className="bg-accent text-bg px-[12px] py-[6px] rounded-[6px] text-[11px] font-bold hover:opacity-90">Uzatish</button>
+            <button onClick={() => setAssignModalOpen(true)} className="bg-vblue text-bg px-[12px] py-[6px] rounded-[6px] text-[11px] font-bold hover:opacity-90">Murabbiy biriktirish</button>
+            <button onClick={handleBulkSendReminder} className="bg-vred/15 border border-vred/30 text-vred hover:bg-vred hover:text-bg px-[12px] py-[6px] rounded-[6px] text-[11px] font-bold transition-colors">Eslatma</button>
           </div>
         </div>
       )}
 
-      {/* Controls */}
-      <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full md:w-80">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
-          <Input 
-            value={search} 
-            onChange={(e) => setSearch(e.target.value)} 
-            placeholder="A'zo ismi yoki telefon..." 
-            className="pl-10 rounded-xl bg-[#1A1A24] border-[#2D2D3D] placeholder-[#9CA3AF]/45 text-white focus:border-[#6366F1]"
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-[10px] mb-[16px]">
+        <div className="flex-1 bg-surface border border-border rounded-[10px] p-[10px_14px] font-mono text-[13px] text-muted flex items-center gap-[8px]">
+          <Search size={14} className="text-muted" />
+          <input 
+            type="text" 
+            placeholder="Ism yoki telefon bo'yicha qidirish..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-transparent border-none outline-none w-full text-vtext placeholder-muted"
           />
         </div>
-        <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto pb-1">
+        <div className="flex gap-[6px] overflow-x-auto pb-1 custom-scrollbar">
           {[
-            { id: "all", label: "Barchasi" },
-            { id: "active", label: "Faol" },
-            { id: "expiring", label: "Yaqinda tugaydi" },
-            { id: "expired", label: "Muddati o'tgan" },
-            { id: "no_trainer", label: "Trenerisiz" },
-          ].map((f) => (
+            { id: "all", label: "Barchasi", c: "bg-surface text-muted" },
+            { id: "risk", label: `Risk · ${riskCount}`, c: "bg-vred/15 border-vred/30 text-vred" },
+            { id: "active", label: "Faol", c: "bg-surface text-muted" },
+            { id: "expiring", label: "Yaqinda", c: "bg-surface text-muted" },
+            { id: "expired", label: "Tugagan", c: "bg-surface text-muted" },
+          ].map(f => (
             <button
               key={f.id}
               onClick={() => setFilter(f.id as FilterType)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${filter === f.id ? "bg-[#6366F1] text-white" : "bg-[#1A1A24] border border-[#2D2D3D] text-[#9CA3AF] hover:text-white"}`}
+              className={`whitespace-nowrap px-[14px] py-[9px] rounded-[8px] font-mono text-[12px] transition-colors border ${filter === f.id ? "border-accent text-accent bg-accent/5" : "border-border " + f.c}`}
             >
               {f.label}
             </button>
@@ -291,162 +253,132 @@ export default function MembersPage() {
         </div>
       </div>
 
-      {/* Desktop view table */}
-      <Card className="bg-[#1A1A24] border border-[#2D2D3D] rounded-2xl overflow-hidden shadow-xl">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-[#2D2D3D] text-[#9CA3AF] font-bold">
-                  <th className="py-4 px-4 w-12 text-center">
+      {/* Table Panel */}
+      <div className="bg-surface border border-border rounded-[13px] p-0 overflow-hidden custom-scrollbar overflow-x-auto">
+        <div className="min-w-[600px]">
+          {/* Table Header */}
+          <div className="grid grid-cols-[40px_2fr_1fr_1fr_1fr_100px] p-[11px_18px] bg-[#13131a] font-mono text-[10px] text-muted tracking-[1px] uppercase items-center">
+            <div className="flex justify-center">
+              <input 
+                type="checkbox" 
+                checked={selectedIds.length === filteredMembers.length && filteredMembers.length > 0}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded-[4px] border-border bg-surface accent-accent cursor-pointer"
+              />
+            </div>
+            <span>A'ZO</span>
+            <span>TRENER</span>
+            <span>TUGASH SANA</span>
+            <span>HOLAT</span>
+            <span></span>
+          </div>
+
+          {/* Table Body */}
+          {filteredMembers.length === 0 ? (
+            <div className="p-8 flex flex-col items-center justify-center text-center">
+              <p className="text-[12px] font-medium text-vtext">Natija topilmadi</p>
+            </div>
+          ) : (
+            filteredMembers.map((m: any) => {
+              const nameInitial = m.member_name?.substring(0, 2).toUpperCase() || 'MI';
+              const isExpired = m.computedStatus === "expired";
+              const isExpiring = m.computedStatus === "expiring";
+              const dateText = m.end_date ? new Date(m.end_date).toLocaleDateString() : "Cheksiz";
+              
+              return (
+                <div key={m.id} className={`grid grid-cols-[40px_2fr_1fr_1fr_1fr_100px] items-center p-[13px_18px] border-b border-[#15151f] last:border-0 ${getRowClass(m.risk)}`}>
+                  <div className="flex justify-center">
                     <input 
                       type="checkbox" 
-                      checked={selectedIds.length === filteredMembers.length && filteredMembers.length > 0}
-                      onChange={toggleSelectAll}
-                      className="rounded border-[#2D2D3D] bg-[#22222F] text-[#6366F1] focus:ring-0 w-4 h-4 cursor-pointer"
+                      checked={selectedIds.includes(m.id)}
+                      onChange={() => toggleSelectOne(m.id)}
+                      className="w-4 h-4 rounded-[4px] border-border bg-surface accent-accent cursor-pointer"
                     />
-                  </th>
-                  <th className="py-4 px-3">SPORTCHI</th>
-                  <th className="py-4 px-3">PLAN TURI</th>
-                  <th className="py-4 px-3">MURABBIY</th>
-                  <th className="py-4 px-3">TUGASH SANA</th>
-                  <th className="py-4 px-3">STATUS</th>
-                  <th className="py-4 px-4 text-right">AMALLAR</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMembers.map((m) => (
-                  <tr key={m.id} className="border-b border-[#2D2D3D]/30 text-white/90 hover:bg-[#22222F]/30 transition">
-                    <td className="py-3 px-4 text-center">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedIds.includes(m.id)}
-                        onChange={() => toggleSelectOne(m.id)}
-                        className="rounded border-[#2D2D3D] bg-[#22222F] text-[#6366F1] focus:ring-0 w-4 h-4 cursor-pointer"
-                      />
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center text-[#6366F1] text-[10px] font-bold shrink-0">
-                          {m.member_avatar ? <img src={m.member_avatar} alt="Avatar" className="w-full h-full object-cover rounded-xl" /> : m.member_name[0]}
-                        </div>
-                        <div>
-                          <p className="font-semibold">{m.member_name}</p>
-                          <p className="text-[10px] text-[#9CA3AF] font-mono">{m.member_phone}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 capitalize font-medium">{m.membership_type || "monthly"}</td>
-                    <td className="py-3 px-3 text-[#9CA3AF] font-medium">{m.trainer_name}</td>
-                    <td className="py-3 px-3 font-medium">
-                      {m.end_date ? new Date(m.end_date).toLocaleDateString() : "Cheksiz"}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${getStatusBadgeClass(m.computedStatus)}`}>
-                        {getStatusLabel(m.computedStatus)}
+                  </div>
+
+                  {/* Name Col */}
+                  <div className="flex items-center gap-[10px]">
+                    <div className="w-[28px] h-[28px] rounded-[8px] bg-accent/15 text-accent flex items-center justify-center font-display font-bold text-[11px] flex-shrink-0">
+                      {nameInitial}
+                    </div>
+                    <div>
+                      <span className="text-[13px] text-vtext font-body block">{m.member_name}</span>
+                      <span className="text-[10px] text-muted font-mono">{m.member_phone}</span>
+                    </div>
+                  </div>
+
+                  {/* Trainer */}
+                  <span className="font-mono text-[12px] text-muted line-clamp-1">{m.trainer_name}</span>
+
+                  {/* Date */}
+                  <span className={`font-mono text-[12px] ${isExpired ? 'text-vred' : isExpiring ? 'text-warning' : 'text-vgreen'}`}>
+                    {dateText}
+                  </span>
+
+                  {/* Status Badge */}
+                  <div>
+                    <span className={`text-[11px] px-[8px] py-[3px] rounded-[6px] font-mono w-fit block
+                      ${isExpired ? 'bg-vred/10 text-vred' : 
+                        isExpiring ? 'bg-warning/10 text-warning' : 
+                        'bg-vgreen/10 text-vgreen'}
+                    `}>
+                      {isExpired ? 'Tugagan' : isExpiring ? 'Yaqinda' : 'Faol'}
+                    </span>
+                  </div>
+
+                  {/* Action */}
+                  <div className="flex gap-[8px] justify-end">
+                    <Link href={`/gym/members/${m.user_id || m.id}`}>
+                      <span className="font-mono text-[10px] text-vblue p-[3px_8px] border border-vblue/30 rounded-[6px] hover:bg-vblue/10 transition-colors whitespace-nowrap">
+                        Profil →
                       </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex justify-end gap-1.5">
-                        <Button 
-                          onClick={() => {
-                            setSelectedIds([m.id]);
-                            setIsExtendModalOpen(true);
-                          }}
-                          variant="secondary" 
-                          size="sm" 
-                          className="bg-[#22222F] text-white border-[#2D2D3D] hover:bg-[#2D2D3D] text-[10px] py-1.5 h-auto rounded-lg"
-                        >
-                          Muddati uzaytirish
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredMembers.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="text-center py-12 text-[#9CA3AF]">
-                      Zal a'zolari topilmadi
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
 
-      {/* Bulk Extend Membership Modal */}
+      {/* Bulk Extend Modal */}
       {isExtendModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-[#1A1A24] border border-[#2D2D3D] w-full max-w-sm rounded-2xl p-6 relative animate-scaleIn">
-            <button onClick={() => setIsExtendModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-white">
-              <X size={18} />
-            </button>
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-1.5">
-              <Calendar size={18} className="text-[#6366F1]" /> A'zolik muddatini uzaytirish
-            </h3>
-            <p className="text-xs text-[#9CA3AF] mb-4">Tanlangan {selectedIds.length} ta a'zo uchun muddatni qo'shish:</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-surface border border-border w-full max-w-sm rounded-[16px] p-6 relative animate-scaleIn">
+            <button onClick={() => setIsExtendModalOpen(false)} className="absolute top-4 right-4 text-muted hover:text-vtext"><X size={18} /></button>
+            <h3 className="text-lg font-bold text-vtext mb-2 flex items-center gap-1.5"><Calendar size={18} className="text-accent" /> A'zolikni uzaytirish</h3>
+            <p className="text-xs text-muted mb-4">{selectedIds.length} ta a'zo uchun muddat qancha uzaytirilsin?</p>
             
-            <div className="space-y-3">
-              <Label className="text-xs uppercase tracking-wider text-[#9CA3AF] font-bold">Kunlar soni</Label>
-              <select
-                value={extendDays}
-                onChange={(e) => setExtendDays(Number(e.target.value))}
-                className="flex h-11 w-full rounded-xl border border-[#2D2D3D] bg-[#22222F] px-3.5 text-sm text-[#F9FAFB] outline-none focus:border-[#6366F1]"
-              >
-                <option value={7}>7 kun (Haftalik)</option>
-                <option value={30}>30 kun (Bir oylik)</option>
-                <option value={90}>90 kun (Uch oylik)</option>
-                <option value={365}>365 kun (Yillik)</option>
-              </select>
-            </div>
+            <select value={extendDays} onChange={(e) => setExtendDays(Number(e.target.value))} className="w-full h-11 bg-surface2 border border-border rounded-[10px] px-3 text-[13px] text-vtext outline-none focus:border-accent mb-4">
+              <option value={7}>7 kun (Haftalik)</option>
+              <option value={30}>30 kun (Bir oy)</option>
+              <option value={90}>90 kun (Uch oy)</option>
+            </select>
 
-            <div className="flex gap-3 pt-4">
-              <Button onClick={() => setIsExtendModalOpen(false)} variant="secondary" className="flex-1 rounded-xl bg-[#22222F] text-white border-[#2D2D3D]">
-                Bekor qilish
-              </Button>
-              <Button onClick={handleBulkExtend} className="flex-1 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-xl font-bold">
-                Uzaytirish
-              </Button>
+            <div className="flex gap-3">
+              <button onClick={() => setIsExtendModalOpen(false)} className="flex-1 p-[10px] rounded-[10px] bg-surface2 text-vtext text-[13px] font-bold hover:bg-border">Bekor qilish</button>
+              <button onClick={handleBulkExtend} className="flex-1 p-[10px] rounded-[10px] bg-accent text-bg text-[13px] font-bold hover:opacity-90">Uzaytirish</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Bulk Assign Trainer Modal */}
+      {/* Bulk Assign Modal */}
       {assignModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-[#1A1A24] border border-[#2D2D3D] w-full max-w-sm rounded-2xl p-6 relative animate-scaleIn">
-            <button onClick={() => setAssignModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-white">
-              <X size={18} />
-            </button>
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-1.5">
-              <UserCheck size={18} className="text-[#6366F1]" /> Murabbiy biriktirish
-            </h3>
-            <p className="text-xs text-[#9CA3AF] mb-4">Tanlangan {selectedIds.length} ta a'zo uchun umumiy murabbiy:</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-surface border border-border w-full max-w-sm rounded-[16px] p-6 relative animate-scaleIn">
+            <button onClick={() => setAssignModalOpen(false)} className="absolute top-4 right-4 text-muted hover:text-vtext"><X size={18} /></button>
+            <h3 className="text-lg font-bold text-vtext mb-2 flex items-center gap-1.5"><UserCheck size={18} className="text-vblue" /> Murabbiy biriktirish</h3>
+            <p className="text-xs text-muted mb-4">{selectedIds.length} ta a'zoga umumiy murabbiy:</p>
+            
+            <select value={selectedTrainerForAssign} onChange={(e) => setSelectedTrainerForAssign(e.target.value)} className="w-full h-11 bg-surface2 border border-border rounded-[10px] px-3 text-[13px] text-vtext outline-none focus:border-vblue mb-4">
+              <option value="">Murabbiyni tanlang</option>
+              {trainers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+            </select>
 
-            <div className="space-y-3">
-              <Label className="text-xs uppercase tracking-wider text-[#9CA3AF] font-bold">Trener ro'yxati</Label>
-              <select
-                value={selectedTrainerForAssign}
-                onChange={(e) => setSelectedTrainerForAssign(e.target.value)}
-                className="flex h-11 w-full rounded-xl border border-[#2D2D3D] bg-[#22222F] px-3.5 text-sm text-[#F9FAFB] outline-none focus:border-[#6366F1]"
-              >
-                <option value="">Murabbiyni tanlang</option>
-                {trainers.map(t => (
-                  <option key={t.id} value={t.id}>{t.full_name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button onClick={() => setAssignModalOpen(false)} variant="secondary" className="flex-1 rounded-xl bg-[#22222F] text-white border-[#2D2D3D]">
-                Bekor qilish
-              </Button>
-              <Button onClick={handleAssignTrainerBulk} className="flex-1 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-xl font-bold">
-                Biriktirish
-              </Button>
+            <div className="flex gap-3">
+              <button onClick={() => setAssignModalOpen(false)} className="flex-1 p-[10px] rounded-[10px] bg-surface2 text-vtext text-[13px] font-bold hover:bg-border">Bekor qilish</button>
+              <button onClick={handleAssignTrainerBulk} className="flex-1 p-[10px] rounded-[10px] bg-vblue text-bg text-[13px] font-bold hover:opacity-90">Biriktirish</button>
             </div>
           </div>
         </div>
