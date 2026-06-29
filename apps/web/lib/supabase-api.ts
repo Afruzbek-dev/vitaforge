@@ -104,7 +104,7 @@ export const supabaseApi = {
       return { data };
     },
     churnRisk: async () => {
-      const data = await GymService.getChurnRisk();
+      const data = await GymService.getDeepChurnAnalysis();
       return { data };
     },
   },
