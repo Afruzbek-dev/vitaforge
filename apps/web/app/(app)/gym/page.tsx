@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import { useAuthStore } from "@/lib/store/auth";
-import { Users, CalendarCheck, DollarSign, UserPlus, Bell, ArrowRight, AlertTriangle, ArrowUpRight, MessageCircle } from "lucide-react";
+import { Users, CalendarCheck, DollarSign, UserPlus, ArrowRight, AlertTriangle, ArrowUpRight, MessageCircle } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from "recharts";
 import Link from "next/link";
 import AdminDashboard from "./admin-dashboard";
@@ -97,19 +97,19 @@ export default function GymDashboard() {
   return (
     <div className="max-w-[1200px] mx-auto p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6 pb-24 animate-fadeUp">
       {/* Header */}
-      <div className="flex items-end justify-between pb-2 border-b border-white/5">
+      <div className="flex items-end justify-between pb-2 border-b border-border">
         <div>
-          <p className="font-mono text-[10px] md:text-[11px] tracking-[0.2em] text-[#8e8e9e] uppercase mb-1">
+          <p className="font-mono text-[10px] md:text-[11px] tracking-[0.2em] text-muted uppercase mb-1">
             {greeting}, {d?.isTrainer ? "Trener" : "Owner"}
           </p>
-          <h1 className="font-display font-black text-2xl md:text-3xl tracking-tight text-white">
+          <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight text-vtext">
             {user?.full_name?.split(" ")[0]}
           </h1>
         </div>
         <div className="flex gap-2">
           {!d?.isTrainer && (
             <Link href="/gym/invite">
-              <button className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-[#E8FF47] hover:bg-[#d4ee38] text-black flex items-center justify-center transition-transform active:scale-95 shadow-[0_0_20px_rgba(232,255,71,0.2)]">
+              <button className="h-10 w-10 md:h-12 md:w-12 rounded-[12px] bg-accent hover:bg-accent/90 text-bg flex items-center justify-center transition-transform active:scale-95">
                 <UserPlus size={20} strokeWidth={2.5} />
               </button>
             </Link>
@@ -117,37 +117,36 @@ export default function GymDashboard() {
         </div>
       </div>
 
-      {/* Bento Grid layout */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Grid layout */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         
         {/* Main Stat: Revenue or Total Students */}
         {!d?.isTrainer ? (
-          <div className="col-span-2 bento-card glow-hover p-5 md:p-6 flex flex-col justify-between relative group overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#E8FF47] blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
+          <div className="col-span-2 m-card-accent flex flex-col justify-between press">
             <div className="flex items-center justify-between mb-4">
-              <span className="font-mono text-[11px] md:text-xs tracking-widest text-[#8e8e9e]">DAROMAD</span>
-              <DollarSign size={16} className="text-[#E8FF47]" />
+              <span className="font-mono text-[11px] tracking-widest text-muted">DAROMAD</span>
+              <DollarSign size={16} className="text-accent" />
             </div>
             <div>
-              <p className="font-display font-black text-4xl md:text-5xl tracking-tighter text-white">
+              <p className="font-display font-bold text-3xl md:text-4xl text-vtext">
                 {d?.revenue ? `${(d.revenue / 1000).toFixed(0)}k` : "0"}
               </p>
               <div className="flex items-center gap-2 mt-2">
-                <span className="flex items-center text-[#E8FF47] font-mono text-[10px]">
+                <span className="flex items-center text-accent font-mono text-[10px]">
                   <ArrowUpRight size={12} className="mr-0.5" /> +12%
                 </span>
-                <span className="text-[#8e8e9e] font-mono text-[10px]">O'TGAN OYGA N.</span>
+                <span className="text-muted font-mono text-[10px]">O'TGAN OYGA N.</span>
               </div>
             </div>
           </div>
         ) : (
-          <div className="col-span-2 bento-card glow-hover p-5 md:p-6 flex flex-col justify-between">
+          <div className="col-span-2 m-card flex flex-col justify-between press">
             <div className="flex items-center justify-between mb-4">
-              <span className="font-mono text-[11px] tracking-widest text-[#8e8e9e]">JAMI SHOGIRDLAR</span>
-              <Users size={16} className="text-[#E8FF47]" />
+              <span className="font-mono text-[11px] tracking-widest text-muted">JAMI SHOGIRDLAR</span>
+              <Users size={16} className="text-accent" />
             </div>
             <div>
-              <p className="font-display font-black text-4xl md:text-5xl tracking-tighter text-white">
+              <p className="font-display font-bold text-3xl md:text-4xl text-vtext">
                 {d?.total ?? 0}
               </p>
             </div>
@@ -155,79 +154,78 @@ export default function GymDashboard() {
         )}
 
         {/* Attendance stat */}
-        <div className="bento-card glow-hover p-4 md:p-5 flex flex-col justify-between">
+        <div className="m-card flex flex-col justify-between press">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[10px] tracking-widest text-[#8e8e9e]">DAVOMAT</span>
-            <CalendarCheck size={14} className="text-white/40" />
+            <span className="font-mono text-[10px] tracking-widest text-muted">DAVOMAT</span>
+            <CalendarCheck size={14} className="text-muted" />
           </div>
           <div>
-            <p className="font-display font-bold text-3xl tracking-tight text-[#E8FF47]">{d?.todayAtt ?? 0}</p>
-            <p className="text-[#8e8e9e] font-mono text-[9px] mt-1">BUGUNGI</p>
+            <p className="font-display font-bold text-2xl text-accent">{d?.todayAtt ?? 0}</p>
+            <p className="text-muted font-mono text-[9px] mt-1">BUGUNGI</p>
           </div>
         </div>
 
         {/* Churn Risk summary (Red only if danger) */}
         {!d?.isTrainer && (
-          <div className={`bento-card p-4 md:p-5 flex flex-col justify-between ${(d?.churnRate ?? 0) > 20 ? "danger-hover border-[#FF453A]/20" : "glow-hover"}`}>
+          <div className={`m-card flex flex-col justify-between press ${(d?.churnRate ?? 0) > 20 ? "border-[var(--red)]" : ""}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-mono text-[10px] tracking-widest text-[#8e8e9e]">CHURN</span>
-              <AlertTriangle size={14} className={(d?.churnRate ?? 0) > 20 ? "text-[#FF453A]" : "text-white/40"} />
+              <span className="font-mono text-[10px] tracking-widest text-muted">CHURN</span>
+              <AlertTriangle size={14} className={(d?.churnRate ?? 0) > 20 ? "text-vred" : "text-muted"} />
             </div>
             <div>
-              <p className={`font-display font-bold text-3xl tracking-tight ${(d?.churnRate ?? 0) > 20 ? "text-[#FF453A]" : "text-white"}`}>
+              <p className={`font-display font-bold text-2xl ${(d?.churnRate ?? 0) > 20 ? "text-vred" : "text-vtext"}`}>
                 {d?.churnRate ?? 0}%
               </p>
-              <p className="text-[#8e8e9e] font-mono text-[9px] mt-1">30 KUNLIK</p>
+              <p className="text-muted font-mono text-[9px] mt-1">30 KUNLIK</p>
             </div>
           </div>
         )}
         {d?.isTrainer && (
-          <div className="bento-card glow-hover p-4 md:p-5 flex flex-col justify-between">
+          <div className="m-card flex flex-col justify-between press">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-mono text-[10px] tracking-widest text-[#8e8e9e]">YANGI</span>
-              <UserPlus size={14} className="text-white/40" />
+              <span className="font-mono text-[10px] tracking-widest text-muted">YANGI</span>
+              <UserPlus size={14} className="text-muted" />
             </div>
             <div>
-              <p className="font-display font-bold text-3xl tracking-tight text-[#E8FF47]">+{d?.newToday ?? 0}</p>
-              <p className="text-[#8e8e9e] font-mono text-[9px] mt-1">BUGUNGI QO'SHILGAN</p>
+              <p className="font-display font-bold text-2xl text-accent">+{d?.newToday ?? 0}</p>
+              <p className="text-muted font-mono text-[9px] mt-1">BUGUNGI</p>
             </div>
           </div>
         )}
 
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mt-2">
         {/* Weekly Chart */}
-        <div className="lg:col-span-2 bento-card p-5 md:p-6 glow-hover relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#E8FF47]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <div className="lg:col-span-2 m-card press flex flex-col">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="font-display font-bold text-lg text-white">Davomat dinamikasi</h2>
-              <p className="font-mono text-[10px] tracking-widest text-[#8e8e9e] mt-1">OXIRGI 7 KUN</p>
+              <h2 className="font-display font-bold text-[15px] text-vtext">Davomat dinamikasi</h2>
+              <p className="font-mono text-[10px] tracking-widest text-muted mt-1">OXIRGI 7 KUN</p>
             </div>
             <Link href="/gym/analytics">
-              <button className="px-3 py-1.5 rounded-full border border-white/10 text-[10px] font-mono hover:bg-white/5 transition-colors">
+              <button className="px-3 py-1.5 rounded-full border border-border text-[10px] font-mono text-muted hover:text-vtext transition-colors">
                 Batafsil
               </button>
             </Link>
           </div>
-          <div className="h-44 w-full">
+          <div className="h-44 w-full mt-auto">
             {d?.weekChart && (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={d.weekChart} margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="citrusGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#E8FF47" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#E8FF47" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#8e8e9e", fontFamily: "var(--font-mono)" }} dy={10} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--muted)", fontFamily: "var(--font-mono)" }} dy={10} />
                   <Tooltip 
-                    contentStyle={{ background: "rgba(13,13,22,0.9)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", backdropFilter: "blur(10px)" }} 
-                    itemStyle={{ color: "#E8FF47", fontFamily: "var(--font-display)", fontWeight: 700 }}
-                    labelStyle={{ color: "#8e8e9e", fontFamily: "var(--font-mono)", fontSize: "10px" }}
+                    contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }} 
+                    itemStyle={{ color: "var(--accent)", fontFamily: "var(--font-display)", fontWeight: 700 }}
+                    labelStyle={{ color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: "10px" }}
                   />
-                  <Area type="monotone" dataKey="count" stroke="#E8FF47" strokeWidth={3} fill="url(#citrusGrad)" animationDuration={1500} />
+                  <Area type="monotone" dataKey="count" stroke="var(--accent)" strokeWidth={2} fill="url(#citrusGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -235,37 +233,37 @@ export default function GymDashboard() {
         </div>
 
         {/* Risk Zone (Critical only uses red) */}
-        <div className="bento-card danger-hover p-5 flex flex-col h-[320px]">
-          <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
+        <div className="m-card flex flex-col h-[320px]">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
             <div>
-              <h2 className="font-display font-bold text-lg text-white">Xavf zonasi</h2>
-              <p className="font-mono text-[10px] tracking-widest text-[#FF453A] mt-1 uppercase">CHURN RISK</p>
+              <h2 className="font-display font-bold text-[15px] text-vtext">Xavf zonasi</h2>
+              <p className="font-mono text-[10px] tracking-widest text-vred mt-1 uppercase">CHURN RISK</p>
             </div>
-            <div className="w-8 h-8 rounded-full bg-[#FF453A]/10 flex items-center justify-center shadow-[0_0_15px_rgba(255,69,58,0.2)]">
-              <AlertTriangle size={14} className="text-[#FF453A]" />
+            <div className="w-8 h-8 rounded-full bg-vred/10 flex items-center justify-center">
+              <AlertTriangle size={14} className="text-vred" />
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
             {(!d || d.atRisk.length === 0) ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
-                <p className="font-mono text-xs text-white">Hammasi joyida.</p>
-                <p className="font-mono text-[10px] text-[#8e8e9e] mt-1">Xavf yo'q.</p>
+                <p className="font-mono text-xs text-vtext">Hammasi joyida.</p>
+                <p className="font-mono text-[10px] text-muted mt-1">Xavf yo'q.</p>
               </div>
             ) : (
               d.atRisk.slice(0, 5).map((m: any) => (
-                <div key={m.id} className="group p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <p className="font-display font-bold text-sm text-white">{m.full_name}</p>
+                <div key={m.id} className="p-3 rounded-[10px] bg-surface2 border border-border flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <p className="font-display font-bold text-[13px] text-vtext">{m.full_name}</p>
                     <Link href={`/gym/members/${m.id}`}>
-                      <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white/10 rounded-lg text-white hover:bg-[#E8FF47] hover:text-black">
-                        <MessageCircle size={12} />
+                      <button className="text-muted hover:text-accent p-1">
+                        <MessageCircle size={14} />
                       </button>
                     </Link>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {m.reasons.map((r: string, i: number) => (
-                      <span key={i} className="px-1.5 py-0.5 rounded font-mono text-[8px] uppercase tracking-wider bg-[#FF453A]/10 text-[#FF453A]">
+                      <span key={i} className="px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wider bg-vred/10 text-vred">
                         {r}
                       </span>
                     ))}
@@ -276,9 +274,9 @@ export default function GymDashboard() {
           </div>
           
           {d && d.atRisk.length > 5 && (
-            <div className="pt-3 mt-2 border-t border-white/5">
+            <div className="pt-3 mt-2 border-t border-border">
               <Link href="/gym/retention">
-                <Button variant="ghost" className="w-full font-mono text-[10px] tracking-widest text-[#8e8e9e] hover:text-white">
+                <Button variant="ghost" className="w-full font-mono text-[10px] tracking-widest text-muted hover:text-vtext">
                   BARCHASINI KO'RISH <ArrowRight size={12} className="ml-2" />
                 </Button>
               </Link>

@@ -120,30 +120,30 @@ export default function DashboardPage() {
       {/* Main stats — streak, calories, protein */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         {/* Streak */}
-        <div className="bento-card glow-hover flex flex-col items-center justify-center py-4 relative">
-          <Flame size={18} className="text-[#E8FF47] mb-1" />
-          <span className="font-display font-black text-2xl text-white tracking-tighter">
+        <div className="bg-surface border border-border rounded-[13px] flex flex-col items-center justify-center p-3">
+          <Flame size={20} className="text-accent mb-1" />
+          <span className="font-display font-bold text-[18px] text-vtext leading-none">
             {s?.current_streak ?? 0}
           </span>
-          <span className="text-[9px] font-mono text-[#8e8e9e] uppercase tracking-widest mt-0.5">Kun</span>
+          <span className="text-[9px] font-mono text-muted uppercase tracking-widest mt-1">Kun</span>
         </div>
 
         {/* Kaloriya */}
-        <div className="bento-card glow-hover flex flex-col items-center justify-center py-4 relative">
-          <Utensils size={18} className="text-white/40 mb-1" />
-          <span className="font-display font-black text-2xl text-white tracking-tighter">
+        <div className="bg-surface border border-border rounded-[13px] flex flex-col items-center justify-center p-3 relative">
+          <div className="absolute top-2 right-2 text-muted opacity-50"><Utensils size={10} /></div>
+          <span className="font-display font-bold text-[18px] text-vtext leading-none mt-4">
             {todayCal?.cal ?? 0}
           </span>
-          <span className="text-[9px] font-mono text-[#8e8e9e] uppercase tracking-widest mt-0.5">/{targetCal} kkal</span>
+          <span className="text-[9px] font-mono text-muted uppercase tracking-widest mt-1">/{targetCal} kkal</span>
         </div>
 
         {/* Protein */}
-        <div className="bento-card glow-hover flex flex-col items-center justify-center py-4 relative">
-          <Zap size={18} className="text-white/40 mb-1" />
-          <span className="font-display font-black text-2xl text-white tracking-tighter">
+        <div className="bg-surface border border-border rounded-[13px] flex flex-col items-center justify-center p-3 relative">
+          <div className="absolute top-2 right-2 text-muted opacity-50"><Zap size={10} /></div>
+          <span className="font-display font-bold text-[18px] text-vtext leading-none mt-4">
             {todayCal?.protein ?? 0}g
           </span>
-          <span className="text-[9px] font-mono text-[#8e8e9e] uppercase tracking-widest mt-0.5">/{targetProtein}g</span>
+          <span className="text-[9px] font-mono text-muted uppercase tracking-widest mt-1">/{targetProtein}g</span>
         </div>
       </div>
 

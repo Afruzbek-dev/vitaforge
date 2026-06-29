@@ -110,22 +110,22 @@ export default function RetentionPage() {
 
       {/* KPI Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-        <div className="bg-surface border border-vred/30 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+        <div className="m-card flex flex-col items-center gap-1.5 shadow-sm relative border-vred/30">
           <div className="absolute top-2 right-2 text-vred opacity-50"><ShieldAlert size={12} /></div>
           <p className="font-display font-bold text-xl text-vred mt-2">{data?.counts?.critical ?? 0}</p>
           <p className="text-[9px] font-mono text-vred text-center leading-tight uppercase">Jiddiy Xavf</p>
         </div>
-        <div className="bg-surface border border-amber-500/30 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+        <div className="m-card flex flex-col items-center gap-1.5 shadow-sm relative border-amber-500/30">
           <div className="absolute top-2 right-2 text-amber-400 opacity-50"><AlertTriangle size={12} /></div>
           <p className="font-display font-bold text-xl text-amber-400 mt-2">{data?.counts?.atRisk ?? 0}</p>
           <p className="text-[9px] font-mono text-amber-400 text-center leading-tight uppercase">Xavf ostida</p>
         </div>
-        <div className="bg-surface border border-vgreen/30 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+        <div className="m-card flex flex-col items-center gap-1.5 shadow-sm relative border-vgreen/30">
           <div className="absolute top-2 right-2 text-vgreen opacity-50"><CheckCircle size={12} /></div>
           <p className="font-display font-bold text-xl text-vgreen mt-2">{data?.counts?.active ?? 0}</p>
           <p className="text-[9px] font-mono text-vgreen text-center leading-tight uppercase">Faol</p>
         </div>
-        <div className="bg-surface border border-border rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
+        <div className="m-card bg-surface border border-border rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm relative">
           <div className="absolute top-2 right-2 text-muted opacity-50"><Users size={12} /></div>
           <p className="font-display font-bold text-xl text-vtext mt-2">{data?.counts?.all ?? 0}</p>
           <p className="text-[9px] font-mono text-muted text-center leading-tight uppercase">Jami a'zolar</p>

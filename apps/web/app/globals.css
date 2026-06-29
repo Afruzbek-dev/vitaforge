@@ -7,29 +7,29 @@
 @layer base {
   :root,
   [data-theme="dark"] {
-    --bg: #07070A;
-    --surface: #13131C;
-    --card: #13131C;
-    --surface2: #1E1E2C;
-    --sidebar: #07070A;
-    --border: #2D2D3D;
-    --accent: #D5FF45;
-    --accent-dim: rgba(213, 255, 69, 0.08);
-    --accent-border: rgba(213, 255, 69, 0.20);
-    --text: #EFEFEB;
-    --muted: #8F8F9A;
-    --subtle: #1E1E2C;
-    --red: #EF4444;
-    --green: #10B981;
-    --blue: #3B82F6;
-    --warning: #F59E0B;
+    --bg: #080810;
+    --surface: #0d0d16;
+    --card: #0d0d16;
+    --surface2: #13131c;
+    --sidebar: #080810;
+    --border: #1e1e2c;
+    --accent: #E8FF47;
+    --accent-dim: rgba(232, 255, 71, 0.04);
+    --accent-border: rgba(232, 255, 71, 0.3);
+    --text: #EEEEE8;
+    --muted: #52526a;
+    --subtle: #13131c;
+    --red: #FF453A;
+    --green: #E8FF47;
+    --blue: #E8FF47;
+    --warning: #E8FF47;
     --radius: 12px;
     --radius-sm: 8px;
     --radius-full: 9999px;
-    --chart-tooltip-bg: #13131C;
-    --chart-tooltip-border: #2D2D3D;
-    --chart-grid: #2D2D3D;
-    --chart-tick: #8F8F9A;
+    --chart-tooltip-bg: #0d0d16;
+    --chart-tooltip-border: #1e1e2c;
+    --chart-grid: #1e1e2c;
+    --chart-tick: #52526a;
   }
 
   [data-theme="light"] {
@@ -92,7 +92,7 @@
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 3px; height: 3px; }
-  ::-webkit-scrollbar-thumb { background: var(--subtle); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   ::-webkit-scrollbar-track { background: transparent; }
 
   /* iOS safe areas */
@@ -102,61 +102,21 @@
   }
 }
 
-/* Deep Dark Background */
-body {
-  background-color: #07070a;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(232, 255, 71, 0.04) 0%, transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(232, 255, 71, 0.02) 0%, transparent 30%);
-  color: #efefeb;
-  font-feature-settings: "rlig" 1, "calt" 1;
+.m-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 14px;
 }
-
-/* 
- * Noise Texture Overlay 
- * Applied globally but subtly to break the digital perfection.
- */
-body::before {
-  content: "";
-  position: fixed;
-  inset: -100px; /* Oversized to prevent edges showing on scroll/bounce */
-  z-index: 9999;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.025; /* Very subtle */
+.m-card-accent {
+  background: var(--accent-dim);
+  border: 1px solid rgba(232,255,71,0.3);
+  border-radius: 13px;
+  padding: 14px;
 }
-
-/* 
- * Bento Grid Base & Spring Physics 
- */
-.bento-card {
-  background: rgba(13, 13, 22, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.02),
-              0 4px 24px -8px rgba(0, 0, 0, 0.5);
-  border-radius: 20px;
-  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
-              border-color 0.3s ease, 
-              box-shadow 0.3s ease;
-  overflow: hidden;
-}
-
-.bento-card:active {
-  transform: scale(0.96); /* Spring physics bounce down */
-}
-
-.bento-card.glow-hover:hover {
-  border-color: rgba(232, 255, 71, 0.3);
-  box-shadow: inset 0 1px 1px rgba(232, 255, 71, 0.1),
-              0 0 20px -5px rgba(232, 255, 71, 0.15);
-}
-
-.bento-card.danger-hover:hover {
-  border-color: rgba(255, 69, 58, 0.3);
-  box-shadow: inset 0 1px 1px rgba(255, 69, 58, 0.1),
-              0 0 20px -5px rgba(255, 69, 58, 0.15);
+.m-card:active, .m-card-accent:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
 }
 
 @layer components {
