@@ -7,6 +7,7 @@ import { getSession } from "@/lib/auth";
 import { isTelegramWebApp, getTelegramInitData, expandWebApp } from "@/lib/telegram";
 import DesktopSidebar from "@/components/shared/desktop-sidebar";
 import MobileBottomNav from "@/components/shared/mobile-bottom-nav";
+import ThemeToggle from "@/components/shared/theme-toggle";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -89,12 +90,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="w-[18px] h-[18px] bg-accent rounded-[5px] flex items-center justify-center font-display font-black text-[9px] text-bg">V</div>
           <span className="font-display font-bold text-[11px] text-vtext">VitaForge</span>
         </div>
-        <button
-          onClick={() => router.push("/dashboard/chat")}
-          className="w-8 h-8 rounded-full bg-[rgba(232,255,71,0.12)] flex items-center justify-center text-accent text-sm"
-        >
-          🤖
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            onClick={() => router.push("/dashboard/chat")}
+            className="w-8 h-8 rounded-full bg-[rgba(232,255,71,0.12)] flex items-center justify-center text-accent text-sm"
+          >
+            🤖
+          </button>
+        </div>
       </div>
 
       {/* Content */}

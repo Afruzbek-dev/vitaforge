@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import ThemeToggle from "@/components/shared/theme-toggle";
+
 const ICON_MAP: Record<string, React.ElementType> = {
   dashboard: LayoutDashboard, members: Users, analytics: BarChart3,
   challenge: Target, copilot: Bot, messages: MessageSquare,
@@ -68,11 +70,14 @@ export default function DesktopSidebar({ role }: { role: string }) {
   return (
     <aside className="w-[220px] bg-[#0a0a12] border-r border-border flex flex-col px-4 py-5 shrink-0">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 mb-4 px-1">
-        <div className="w-7 h-7 bg-accent rounded-[7px] flex items-center justify-center font-display font-black text-[13px] text-bg">
-          V
+      <div className="flex items-center justify-between mb-4 px-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-accent rounded-[7px] flex items-center justify-center font-display font-black text-[13px] text-bg">
+            V
+          </div>
+          <span className="font-display font-bold text-[14px] text-vtext">VitaForge</span>
         </div>
-        <span className="font-display font-bold text-[14px] text-vtext">VitaForge</span>
+        <ThemeToggle />
       </div>
 
       {/* Role badge */}

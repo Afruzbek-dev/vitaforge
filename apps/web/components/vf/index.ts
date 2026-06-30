@@ -5,3 +5,4 @@ export { default as Avatar } from "./avatar";
 export { default as InsightCard } from "./insight-card";
 export { default as ChartBars } from "./chart-bars";
 export { default as ProgressBar } from "./progress-bar";
+export { BarChart, LineChart, PieChart } from "./charts";
