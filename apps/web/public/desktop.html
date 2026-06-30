@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>VitaForge — Desktop CRM (Owner / Trainer / SuperAdmin)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background:#080810; color:#EEEEE8; font-family:'DM Sans', sans-serif; padding:40px 24px; -webkit-font-smoothing:antialiased; }
+
+  .section { max-width: 1280px; margin: 0 auto 28px; }
+  .section-label { font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:3px; color:#E8FF47; margin-bottom:8px; }
+  .section-title { font-family:'Unbounded', sans-serif; font-weight:700; font-size:26px; letter-spacing:-0.5px; margin-bottom:10px; }
+  .section-body { color:#9999ad; font-size:13px; line-height:1.7; max-width:760px; margin-bottom:20px; }
+
+  .role-tabs { max-width:1280px; margin:0 auto 20px; display:flex; gap:10px; flex-wrap:wrap; }
+  .role-tab { font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:1px; padding:10px 18px; border-radius:30px; border:1px solid #1e1e2c; color:#8888a0; cursor:pointer; background:#0d0d16; transition:all .15s ease; }
+  .role-tab.active { background:#E8FF47; color:#080810; border-color:#E8FF47; font-weight:600; }
+  .role-tab:hover:not(.active) { border-color:#3a3a4a; color:#c8c8d8; }
+
+  .browser-frame { background:#0d0d16; border:1px solid #1e1e2c; border-radius:16px; overflow:hidden; max-width:1280px; margin:0 auto; }
+  .browser-bar { display:flex; align-items:center; gap:8px; padding:10px 16px; background:#13131c; border-bottom:1px solid #1e1e2c; }
+  .browser-dot { width:10px; height:10px; border-radius:50%; }
+  .browser-url { flex:1; background:#1a1a26; border-radius:6px; padding:5px 14px; font-family:'JetBrains Mono', monospace; font-size:11px; color:#52526a; margin-left:8px; }
+
+  .dash-layout { display:flex; min-height:680px; }
+  .dash-sidebar { width:220px; background:#0a0a12; border-right:1px solid #1e1e2c; padding:20px 16px; flex-shrink:0; }
+  .dash-logo { display:flex; align-items:center; gap:10px; margin-bottom:18px; padding:0 4px; }
+  .dash-logo .mark { width:28px; height:28px; background:#E8FF47; border-radius:7px; display:flex; align-items:center; justify-content:center; font-family:'Unbounded'; font-weight:900; color:#080810; font-size:13px; }
+  .dash-logo .text { font-family:'Unbounded'; font-weight:700; font-size:14px; }
+  .role-badge-side { font-family:'JetBrains Mono'; font-size:9px; letter-spacing:1px; color:#52526a; margin-bottom:16px; padding:0 4px; }
+  .dash-nav { display:flex; flex-direction:column; gap:2px; }
+  .dash-nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; font-size:13px; color:#8888a0; cursor:pointer; transition:background .12s ease, color .12s ease; user-select:none; }
+  .dash-nav-item:hover:not(.active) { background:#13131c; color:#c8c8d8; }
+  .dash-nav-item.active { background:rgba(232,255,71,0.08); color:#E8FF47; font-weight:500; }
+  .dash-nav-item .ic { width:16px; text-align:center; }
+
+  .dash-divider { height:1px; background:#1a1a26; margin:14px 0; }
+  .dash-plan-card { background:#13131c; border:1px solid #1e1e2c; border-radius:10px; padding:12px; margin-top:8px; }
+  .dash-plan-card .pl-label { font-family:'JetBrains Mono'; font-size:9px; color:#52526a; letter-spacing:1px; margin-bottom:4px; }
+  .dash-plan-card .pl-name { font-size:12px; font-weight:600; color:#E8FF47; }
+
+  .dash-main { flex:1; padding:24px 28px; background:#080810; overflow:hidden; }
+  .dash-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+  .dash-title { font-family:'Unbounded'; font-weight:700; font-size:20px; }
+  .dash-sub { color:#52526a; font-size:12px; margin-top:2px; }
+  .dash-badge { background:rgba(232,255,71,0.1); border:1px solid rgba(232,255,71,0.3); color:#E8FF47; font-size:11px; padding:5px 12px; border-radius:20px; font-family:'JetBrains Mono'; }
+  .btn { font-family:'DM Sans'; font-size:12px; font-weight:600; padding:9px 16px; border-radius:9px; cursor:pointer; border:none; }
+  .btn.primary { background:#E8FF47; color:#080810; }
+  .btn.outline { background:transparent; border:1px solid #2a2a3a; color:#EEEEE8; }
+  .back-link { font-family:'JetBrains Mono'; font-size:11px; color:#8888a0; cursor:pointer; margin-bottom:14px; display:inline-block; }
+  .back-link:hover { color:#E8FF47; }
+
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+  .kpi-card { background:#0d0d16; border:1px solid #1e1e2c; border-radius:12px; padding:16px 18px; border-left:2px solid #E8FF47; }
+  .kpi-card.warn { border-left-color:#E24B4A; }
+  .kpi-label { font-family:'JetBrains Mono'; font-size:10px; color:#52526a; letter-spacing:1px; margin-bottom:8px; }
+  .kpi-value { font-family:'Unbounded'; font-weight:700; font-size:22px; }
+  .kpi-delta { font-size:11px; color:#1D9E75; margin-top:4px; font-family:'JetBrains Mono'; }
+  .kpi-delta.down { color:#E24B4A; }
+
+  .dash-grid-2 { display:grid; grid-template-columns:1.4fr 1fr; gap:16px; }
+  .panel { background:#0d0d16; border:1px solid #1e1e2c; border-radius:14px; padding:18px 20px; }
+  .panel-title { font-family:'JetBrains Mono'; font-size:10px; color:#52526a; letter-spacing:1px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+
+  .chart-bars { display:flex; align-items:flex-end; gap:8px; height:110px; margin-bottom:8px; }
+  .bar { flex:1; background:#1a1a26; border-radius:3px 3px 0 0; position:relative; }
+  .bar.peak { background:#E8FF47; }
+  .chart-days { display:flex; gap:8px; }
+  .chart-days span { flex:1; text-align:center; font-size:9px; color:#52526a; }
+
+  .risk-row { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #1a1a26; font-size:12px; }
+  .risk-row:last-child { border-bottom:none; }
+  .risk-name { display:flex; align-items:center; gap:8px; cursor:default; }
+  .risk-dot { width:6px; height:6px; border-radius:50%; background:#E24B4A; }
+  .risk-streak { font-family:'JetBrains Mono'; color:#E24B4A; font-size:11px; }
+
+  .member-table { width:100%; margin-top:4px; font-size:12px; border-collapse:collapse; }
+  .member-table th { text-align:left; color:#52526a; font-family:'JetBrains Mono'; font-size:10px; letter-spacing:1px; padding-bottom:10px; border-bottom:1px solid #1e1e2c; }
+  .member-table td { padding:11px 8px 11px 0; border-bottom:1px solid #15151f; }
+  .member-table tr.clickable { cursor:pointer; }
+  .member-table tr.clickable:hover td { color:#F4F5F0; }
+  .avatar { width:26px; height:26px; border-radius:8px; background:rgba(232,255,71,0.12); color:#E8FF47; display:inline-flex; align-items:center; justify-content:center; font-family:'Unbounded'; font-weight:700; font-size:11px; margin-right:10px; vertical-align:middle; flex-shrink:0; }
+  .avatar.lg { width:48px; height:48px; border-radius:14px; font-size:17px; margin-right:0; }
+  .pill { padding:3px 10px; border-radius:20px; font-size:10px; font-family:'JetBrains Mono'; }
+  .pill.ok { background:rgba(29,158,117,0.12); color:#5DCAA5; }
+  .pill.risk { background:rgba(226,75,74,0.12); color:#E2807F; }
+  .pill.new { background:rgba(56,142,222,0.12); color:#7BB6E8; }
+  .pill.mid { background:rgba(232,197,71,0.12); color:#E8C547; }
+
+  .toolbar { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .search-box { flex:1; min-width:200px; background:#13131c; border:1px solid #1e1e2c; border-radius:9px; padding:9px 14px; font-size:12px; color:#8888a0; display:flex; align-items:center; gap:8px; }
+  .chip { font-family:'JetBrains Mono'; font-size:10px; letter-spacing:.5px; padding:6px 12px; border-radius:20px; background:#13131c; border:1px solid #1e1e2c; color:#8888a0; cursor:pointer; }
+  .chip.active { background:#E8FF47; color:#080810; border-color:#E8FF47; font-weight:600; }
+
+  .badge-grid-d { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .badge-card { background:#13131c; border:1px solid #1e1e2c; border-radius:12px; padding:14px 10px; text-align:center; }
+  .badge-card.locked { opacity:.4; filter:grayscale(1); }
+  .badge-card .bi { font-size:24px; margin-bottom:6px; }
+  .badge-card .bl { font-size:11px; font-weight:600; margin-bottom:2px; }
+  .badge-card .bn { font-size:10px; color:#52526a; font-family:'JetBrains Mono'; }
+
+  .progress-track-d { height:6px; background:#1a1a26; border-radius:4px; overflow:hidden; }
+  .progress-fill-d { height:100%; background:#E8FF47; border-radius:4px; }
+
+  .streak-hist { display:flex; align-items:flex-end; gap:6px; height:90px; }
+  .streak-hist .hb { flex:1; background:#1a1a26; border-radius:3px 3px 0 0; }
+  .streak-hist .hb.hi { background:#E8FF47; }
+  .hist-labels { display:flex; gap:6px; margin-top:6px; }
+  .hist-labels span { flex:1; text-align:center; font-size:9px; color:#52526a; font-family:'JetBrains Mono'; }
+
+  .compose-box { background:#13131c; border:1px solid #1e1e2c; border-radius:10px; padding:14px; font-size:12px; color:#8888a0; min-height:90px; line-height:1.6; }
+  .audience-card { background:#13131c; border:1px solid #1e1e2c; border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; cursor:pointer; }
+  .audience-card.sel { border-color:rgba(232,255,71,0.4); background:rgba(232,255,71,0.04); }
+  .campaign-row { display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid #15151f; font-size:12px; }
+  .campaign-row:last-child { border-bottom:none; }
+
+  .settings-row { display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid #15151f; }
+  .settings-row:last-child { border-bottom:none; }
+  .settings-row .sl { font-size:13px; font-weight:500; }
+  .settings-row .sd { font-size:11px; color:#52526a; margin-top:2px; }
+  .toggle { width:36px; height:20px; border-radius:20px; background:#1a1a26; position:relative; cursor:pointer; flex-shrink:0; }
+  .toggle.on { background:#E8FF47; }
+  .toggle .knob { width:16px; height:16px; border-radius:50%; background:#EEEEE8; position:absolute; top:2px; left:2px; transition:left .15s ease; }
+  .toggle.on .knob { left:18px; background:#080810; }
+
+  /* form */
+  .form-group { margin-bottom:14px; }
+  .form-label { font-family:'JetBrains Mono'; font-size:10px; letter-spacing:1px; color:#52526a; margin-bottom:6px; display:block; }
+  .form-input, .form-select { width:100%; background:#13131c; border:1px solid #1e1e2c; border-radius:9px; padding:10px 12px; font-size:12px; color:#EEEEE8; font-family:'DM Sans'; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .reward-opt { background:#13131c; border:1px solid #1e1e2c; border-radius:10px; padding:10px 12px; font-size:12px; display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:8px; }
+  .reward-opt.sel { border-color:rgba(232,255,71,0.4); background:rgba(232,255,71,0.04); }
+
+  /* AI Copilot */
+  .copilot-grid { display:grid; grid-template-columns:1.3fr 1fr; gap:16px; }
+  .chat-pane { display:flex; flex-direction:column; height:480px; }
+  .chat-scroll { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px; }
+  .chat-bubble { max-width:78%; padding:10px 13px; border-radius:13px; font-size:12px; line-height:1.55; }
+  .chat-bubble.ai { align-self:flex-start; background:#13131c; border:1px solid #1e1e2c; border-radius:13px 13px 13px 4px; }
+  .chat-bubble.user { align-self:flex-end; background:#E8FF47; color:#080810; font-weight:500; border-radius:13px 13px 4px 13px; }
+  .chat-input-row { display:flex; gap:8px; margin-top:12px; }
+  .chat-input-row .ci { flex:1; background:#13131c; border:1px solid #1e1e2c; border-radius:10px; padding:10px 14px; font-size:12px; color:#52526a; }
+  .chat-send { width:38px; height:38px; background:#E8FF47; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#080810; font-size:15px; flex-shrink:0; cursor:pointer; }
+
+  .insight-card { background:#13131c; border:1px solid #1e1e2c; border-radius:12px; padding:14px; margin-bottom:10px; border-left:2px solid #E8FF47; }
+  .insight-card.warn { border-left-color:#E24B4A; }
+  .insight-card .it { font-size:12px; font-weight:600; margin-bottom:4px; }
+  .insight-card .ib { font-size:11px; color:#9999ad; line-height:1.55; margin-bottom:8px; }
+  .insight-card .iact { font-family:'JetBrains Mono'; font-size:10px; color:#E8FF47; cursor:pointer; letter-spacing:.5px; }
+
+  .timeline-item { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid #15151f; font-size:12px; }
+  .timeline-item:last-child { border-bottom:none; }
+  .timeline-dot { width:7px; height:7px; border-radius:50%; background:#E8FF47; margin-top:4px; flex-shrink:0; }
+  .timeline-item .td { color:#52526a; font-size:10px; font-family:'JetBrains Mono'; margin-bottom:2px; }
+
+  .footer-note { max-width:1280px; margin:30px auto 0; }
+  .annot-mini { font-size:11px; color:#9fc4e8; background:rgba(107,174,234,0.06); border:1px dashed rgba(107,174,234,0.35); border-radius:10px; padding:12px 14px; line-height:1.6; max-width:780px; }
+  .annot-mini b { color:#c8e0f8; }
+</style>
+</head>
+<body>
+
+<div class="section">
+  <div class="section-label">DESKTOP FLOW · INTERAKTIV · 3 ROL</div>
+  <div class="section-title">VitaForge Desktop CRM</div>
+  <div class="section-body">Owner, Trainer va SuperAdmin — barchasi o'z chuqur analitikasi va AI Copilot'iga ega. Member desktop'da emas, faqat Telegram Mini App'da qoladi (oldingi UX qarori) — lekin u yerda ham AI Trener xuddi shu Copilot mantig'ida ishlaydi: proaktiv tavsiya + erkin suhbat.</div>
+</div>
+
+<div class="role-tabs" id="roleTabsD"></div>
+
+<div class="browser-frame">
+  <div class="browser-bar">
+    <div class="browser-dot" style="background:#E24B4A;"></div>
+    <div class="browser-dot" style="background:#F2A623;"></div>
+    <div class="browser-dot" style="background:#1D9E75;"></div>
+    <div class="browser-url" id="browserUrl">app.vitaforge.uz/gym/dashboard</div>
+  </div>
+
+  <div class="dash-layout">
+    <div class="dash-sidebar">
+      <div class="dash-logo"><div class="mark">V</div><div class="text">VitaForge</div></div>
+      <div class="role-badge-side" id="roleBadgeSide"></div>
+      <div class="dash-nav" id="dashNav"></div>
+      <div class="dash-divider"></div>
+      <div class="dash-plan-card" id="planCard"></div>
+    </div>
+
+    <div class="dash-main" id="dashMain"></div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <div class="annot-mini">
+    <b>UX qarori — AI Copilot nega har rolda boshqacha?</b> Bitta "chat" komponenti qayta ishlatiladi, lekin proaktiv insight kartalari rolga mos: owner uchun churn/daromad, trainer uchun mijoz risk/dam olish tavsiyasi, SuperAdmin uchun platforma anomaliyalari (masalan, bitta gym'da AI sarfi kutilmagan o'sishi). Copilot hech qachon avtomatik harakat qilmaydi — har doim "Tasdiqlash" tugmasi orqali inson qaror qabul qiladi.
+  </div>
+</div>
+
+<script>
+/* ============== ROLE / NAV CONFIG ============== */
+
+const ROLES_D = {
+  owner: {
+    label: "Gym Owner", icon: "🏢", plan: { label: "JORIY REJA", name: "Pro · $69/oy" },
+    nav: [
+      { id: "dashboard", icon: "📊", label: "Dashboard", url: "/gym/dashboard" },
+      { id: "members", icon: "👥", label: "A'zolar", url: "/gym/members" },
+      { id: "analytics", icon: "📈", label: "Analytics", url: "/gym/analytics" },
+      { id: "challenge", icon: "🎯", label: "Challenge", url: "/gym/challenge" },
+      { id: "copilot", icon: "🤖", label: "AI Copilot", url: "/gym/copilot" },
+      { id: "messages", icon: "📣", label: "Xabar yuborish", url: "/gym/messages" },
+      { id: "settings", icon: "⚙️", label: "Sozlamalar", url: "/gym/settings" },
+    ]
+  },
+  trainer: {
+    label: "Trainer", icon: "🏋️", plan: { label: "DARAJA", name: "👑 Daraja 4 · Professional" },
+    nav: [
+      { id: "today", icon: "📅", label: "Bugun", url: "/trainer/today" },
+      { id: "clients", icon: "👥", label: "Mijozlarim", url: "/trainer/clients" },
+      { id: "schedule", icon: "🗓️", label: "Jadval", url: "/trainer/schedule" },
+      { id: "analytics", icon: "📈", label: "Analytics", url: "/trainer/analytics" },
+      { id: "copilot", icon: "🤖", label: "AI Copilot", url: "/trainer/copilot" },
+      { id: "settings", icon: "⚙️", label: "Sozlamalar", url: "/trainer/settings" },
+    ]
+  },
+  superadmin: {
+    label: "Super Admin", icon: "🛡️", plan: { label: "PLATFORMA", name: "412 gym · $18.4k MRR" },
+    nav: [
+      { id: "overview", icon: "📊", label: "Platforma", url: "/admin/overview" },
+      { id: "gyms", icon: "🏢", label: "Zallar", url: "/admin/gyms" },
+      { id: "billing", icon: "💳", label: "Billing", url: "/admin/billing" },
+      { id: "aiusage", icon: "🧠", label: "AI Usage", url: "/admin/ai-usage" },
+      { id: "copilot", icon: "🤖", label: "AI Copilot", url: "/admin/copilot" },
+      { id: "settings", icon: "⚙️", label: "Sozlamalar", url: "/admin/settings" },
+    ]
+  }
+};
+
+let currentRoleD = "owner";
+let currentPageD = { owner: "dashboard", trainer: "today", superadmin: "overview" };
+let selectedMember = null;
+
+function renderRoleTabsD() {
+  const wrap = document.getElementById("roleTabsD");
+  wrap.innerHTML = "";
+  Object.keys(ROLES_D).forEach(r => {
+    const el = document.createElement("div");
+    el.className = "role-tab" + (r === currentRoleD ? " active" : "");
+    el.textContent = ROLES_D[r].icon + "  " + ROLES_D[r].label;
+    el.onclick = () => { currentRoleD = r; selectedMember = null; render(); };
+    wrap.appendChild(el);
+  });
+}
+
+function renderNav() {
+  const wrap = document.getElementById("dashNav");
+  wrap.innerHTML = "";
+  ROLES_D[currentRoleD].nav.forEach(n => {
+    const el = document.createElement("div");
+    el.className = "dash-nav-item" + (n.id === currentPageD[currentRoleD] && !selectedMember ? " active" : "");
+    el.innerHTML = `<span class="ic">${n.icon}</span> ${n.label}`;
+    el.onclick = () => { currentPageD[currentRoleD] = n.id; selectedMember = null; render(); };
+    wrap.appendChild(el);
+  });
+  document.getElementById("roleBadgeSide").textContent = ROLES_D[currentRoleD].label.toUpperCase();
+  const pc = ROLES_D[currentRoleD].plan;
+  document.getElementById("planCard").innerHTML = `<div class="pl-label">${pc.label}</div><div class="pl-name">${pc.name}</div>`;
+}
+
+function goTo(page) { currentPageD[currentRoleD] = page; selectedMember = null; render(); }
+function openMember(name) { selectedMember = name; render(); }
+function backFromMember() { selectedMember = null; render(); }
+
+/* ============== OWNER PAGES ============== */
+
+function ownerDashboard() {
+  return `
+    <div class="dash-topbar">
+      <div><div class="dash-title">Xush kelibsiz, Botir 👋</div><div class="dash-sub">FitZone Gym · Yunusobod, Toshkent</div></div>
+      <div class="dash-badge">PRO TARIF</div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">RETENTION (30 KUN)</div><div class="kpi-value">73%</div><div class="kpi-delta">↑ 12% o'tgan oydan</div></div>
+      <div class="kpi-card"><div class="kpi-label">JAMI A'ZOLAR</div><div class="kpi-value">214</div><div class="kpi-delta">+18 yangi</div></div>
+      <div class="kpi-card warn"><div class="kpi-label">CHURN RISK</div><div class="kpi-value">9</div><div class="kpi-delta down">↓ kuzatuv kerak</div></div>
+      <div class="kpi-card"><div class="kpi-label">FAOL BUGUN</div><div class="kpi-value">87</div><div class="kpi-delta">41% DAU</div></div>
+    </div>
+    <div class="insight-card warn" style="margin-bottom:16px;">
+      <div class="it">🤖 AI Copilot: 3 ta a'zo bugun ayniqsa xavfli holatda</div>
+      <div class="ib">Doniyor, Sevara va Aziz — barchasi 5+ kun checkin qilmagan va to'lov muddati yaqinlashmoqda. Birgalikda churn ehtimoli ~68%.</div>
+      <span class="iact" onclick="goTo('copilot')">Copilot'da batafsil ko'rish →</span>
+    </div>
+    <div class="dash-grid-2">
+      <div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-title">HAFTALIK FAOLLIK</div>
+          <div class="chart-bars">
+            <div class="bar" style="height:58%"></div><div class="bar" style="height:72%"></div><div class="bar" style="height:65%"></div>
+            <div class="bar peak" style="height:88%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:75%"></div><div class="bar" style="height:70%"></div>
+          </div>
+          <div class="chart-days"><span>Du</span><span>Se</span><span>Ch</span><span>Pa</span><span>Ju</span><span>Sh</span><span>Ya</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">SO'NGGI A'ZOLAR <span style="cursor:pointer; color:#E8FF47;" onclick="goTo('members')">Hammasi →</span></div>
+          <table class="member-table">
+            <tr><th>A'ZO</th><th>STREAK</th><th>BALL</th><th>HOLAT</th></tr>
+            <tr class="clickable" onclick="openMember('Jasur Toshmatov')"><td><span class="avatar">JT</span>Jasur Toshmatov</td><td style="font-family:'JetBrains Mono';">🔥 14 kun</td><td style="font-family:'JetBrains Mono'; color:#E8FF47;">2,340</td><td><span class="pill ok">Faol</span></td></tr>
+            <tr class="clickable" onclick="openMember('Nilufar Mirzaeva')"><td><span class="avatar">NM</span>Nilufar Mirzaeva</td><td style="font-family:'JetBrains Mono';">🔥 7 kun</td><td style="font-family:'JetBrains Mono'; color:#E8FF47;">1,180</td><td><span class="pill ok">Faol</span></td></tr>
+            <tr class="clickable" onclick="openMember('Doniyor Raxmonov')"><td><span class="avatar">DR</span>Doniyor Raxmonov</td><td style="font-family:'JetBrains Mono'; color:#E2807F;">0 kun</td><td style="font-family:'JetBrains Mono'; color:#E8FF47;">340</td><td><span class="pill risk">Risk</span></td></tr>
+            <tr class="clickable" onclick="openMember('Mohira Aliyeva')"><td><span class="avatar">MA</span>Mohira Aliyeva</td><td style="font-family:'JetBrains Mono';">🌱 2 kun</td><td style="font-family:'JetBrains Mono'; color:#E8FF47;">90</td><td><span class="pill new">Yangi</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-title">⚠️ CHURN OGOHLANTIRISH <span style="cursor:pointer; color:#E8FF47;" onclick="goTo('members')">Ko'rish →</span></div>
+          <div class="risk-row"><div class="risk-name" onclick="openMember('Doniyor Raxmonov')" style="cursor:pointer;"><span class="risk-dot"></span>Doniyor R.</div><span class="risk-streak">8 kun yo'q</span></div>
+          <div class="risk-row"><div class="risk-name" onclick="openMember('Sevara Qodirova')" style="cursor:pointer;"><span class="risk-dot"></span>Sevara Q.</div><span class="risk-streak">6 kun yo'q</span></div>
+          <div class="risk-row"><div class="risk-name" onclick="openMember('Aziz Boltayev')" style="cursor:pointer;"><span class="risk-dot"></span>Aziz B.</div><span class="risk-streak">5 kun yo'q</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">🏆 HAFTALIK TOP <span style="cursor:pointer; color:#E8FF47;" onclick="goTo('challenge')">Challenge →</span></div>
+          <div class="risk-row"><div class="risk-name" style="color:#E8FF47;">🥇 Jasur T.</div><span style="font-family:'JetBrains Mono'; color:#E8FF47;">2,340</span></div>
+          <div class="risk-row"><div class="risk-name">🥈 Kamola S.</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">2,110</span></div>
+          <div class="risk-row"><div class="risk-name">🥉 Botir N.</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">1,890</span></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+const MEMBERS_LIST = [
+  { i:"JT", n:"Jasur Toshmatov", plan:"Pro", streak:"🔥 14 kun", score:2340, status:"ok", statusL:"Faol", joined:"12 fev, 2026" },
+  { i:"NM", n:"Nilufar Mirzaeva", plan:"Starter", streak:"🔥 7 kun", score:1180, status:"ok", statusL:"Faol", joined:"3 mar, 2026" },
+  { i:"DR", n:"Doniyor Raxmonov", plan:"Pro", streak:"0 kun", score:340, status:"risk", statusL:"Risk", joined:"20 yan, 2026" },
+  { i:"MA", n:"Mohira Aliyeva", plan:"Scale", streak:"🌱 2 kun", score:90, status:"new", statusL:"Yangi", joined:"24 iyun, 2026" },
+  { i:"SQ", n:"Sevara Qodirova", plan:"Starter", streak:"0 kun", score:210, status:"risk", statusL:"Risk", joined:"8 fev, 2026" },
+  { i:"AB", n:"Aziz Boltayev", plan:"Pro", streak:"0 kun", score:560, status:"risk", statusL:"Risk", joined:"15 yan, 2026" },
+  { i:"BN", n:"Botir Niyozov", plan:"Pro", streak:"🔥 21 kun", score:1890, status:"ok", statusL:"Faol", joined:"2 dek, 2025" },
+];
+
+function ownerMembers() {
+  if (selectedMember) return memberDetail(selectedMember);
+  return `
+    <div class="dash-topbar">
+      <div><div class="dash-title">A'zolar</div><div class="dash-sub">214 ta a'zo · 9 tasi xavf ostida</div></div>
+      <button class="btn primary">+ A'zo qo'shish</button>
+    </div>
+    <div class="toolbar">
+      <div class="search-box">🔍 Ism, telefon yoki ID bo'yicha qidirish...</div>
+      <div class="chip active">Barchasi</div><div class="chip">Faol</div><div class="chip">Risk</div><div class="chip">Yangi</div>
+    </div>
+    <div class="panel">
+      <table class="member-table">
+        <tr><th>A'ZO</th><th>REJA</th><th>STREAK</th><th>BALL</th><th>HOLAT</th><th></th></tr>
+        ${MEMBERS_LIST.map(r => `
+        <tr class="clickable" onclick="openMember('${r.n}')">
+          <td><span class="avatar">${r.i}</span>${r.n}</td>
+          <td style="color:#8888a0;">${r.plan}</td>
+          <td style="font-family:'JetBrains Mono'; ${r.streak === "0 kun" ? "color:#E2807F;" : ""}">${r.streak}</td>
+          <td style="font-family:'JetBrains Mono'; color:#E8FF47;">${r.score}</td>
+          <td><span class="pill ${r.status}">${r.statusL}</span></td>
+          <td style="color:#52526a;">→</td>
+        </tr>`).join("")}
+      </table>
+    </div>`;
+}
+
+function memberDetail(name) {
+  const m = MEMBERS_LIST.find(x => x.n === name) || MEMBERS_LIST[0];
+  const risky = m.status === "risk";
+  return `
+    <span class="back-link" onclick="goTo('members')">← A'zolarga qaytish</span>
+    <div class="dash-topbar">
+      <div style="display:flex; gap:14px; align-items:center;">
+        <div class="avatar lg">${m.i}</div>
+        <div><div class="dash-title">${m.n}</div><div class="dash-sub">${m.plan} reja · a'zo bo'lgan: ${m.joined}</div></div>
+      </div>
+      <div style="display:flex; gap:8px;"><button class="btn outline">📩 Xabar yuborish</button><button class="btn primary">📞 Qo'ng'iroq qilish</button></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">STREAK</div><div class="kpi-value">${m.streak}</div></div>
+      <div class="kpi-card"><div class="kpi-label">BALL</div><div class="kpi-value">${m.score}</div></div>
+      <div class="kpi-card ${risky ? 'warn' : ''}"><div class="kpi-label">HOLAT</div><div class="kpi-value" style="font-size:15px;">${m.statusL}</div></div>
+      <div class="kpi-card"><div class="kpi-label">DARAJA</div><div class="kpi-value" style="font-size:15px;">👑 5 · Usta</div></div>
+    </div>
+    ${risky ? `
+    <div class="insight-card warn" style="margin-bottom:16px;">
+      <div class="it">🤖 AI tahlili: churn ehtimoli yuqori (74%)</div>
+      <div class="ib">${m.n} 8 kundan beri checkin qilmagan, oxirgi 2 haftada AI Trener bilan suhbat ham to'xtagan. O'xshash holatlarda shaxsiy xabar 40% holatda qaytarib kelgan.</div>
+      <span class="iact">🤖 AI orqali shaxsiy xabar yubor →</span>
+    </div>` : ""}
+    <div class="dash-grid-2">
+      <div class="panel">
+        <div class="panel-title">FAOLLIK TARIXI</div>
+        <div class="timeline-item"><div class="timeline-dot" style="background:#E2807F;"></div><div><div class="td">8 KUN OLDIN</div>Oxirgi checkin — keyin faollik to'xtagan</div></div>
+        <div class="timeline-item"><div class="timeline-dot"></div><div><div class="td">16 KUN OLDIN</div>"30 kunlik temir" challenge'ga qo'shildi</div></div>
+        <div class="timeline-item"><div class="timeline-dot"></div><div><div class="td">22 KUN OLDIN</div>AI Trener bilan 4 marta suhbat</div></div>
+        <div class="timeline-item"><div class="timeline-dot"></div><div><div class="td">${m.joined}</div>Gym'ga a'zo bo'ldi</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">TO'LOV TARIXI</div>
+        <div class="campaign-row"><span>14 iyun 2026</span><span class="pill ok">To'landi</span></div>
+        <div class="campaign-row"><span>14 may 2026</span><span class="pill ok">To'landi</span></div>
+        <div class="campaign-row"><span>14 apr 2026</span><span class="pill mid">3 kun kechikkan</span></div>
+        <div class="dash-divider"></div>
+        <div class="panel-title" style="margin-bottom:8px;">YUTUQLAR</div>
+        <div class="badge-grid-d" style="grid-template-columns:repeat(4,1fr);">
+          <div class="badge-card"><div class="bi">✅</div><div class="bl" style="font-size:9px;">Birinchi qadam</div></div>
+          <div class="badge-card"><div class="bi">🔥</div><div class="bl" style="font-size:9px;">7 kunlik olov</div></div>
+          <div class="badge-card locked"><div class="bi">🔒</div><div class="bl" style="font-size:9px;">30 kunlik temir</div></div>
+          <div class="badge-card locked"><div class="bi">🔒</div><div class="bl" style="font-size:9px;">Reyting yulduzi</div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function ownerAnalytics() {
+  return `
+    <div class="dash-topbar">
+      <div><div class="dash-title">Analytics</div><div class="dash-sub">FitZone Gym · Oxirgi 6 oy</div></div>
+      <button class="btn outline">Export CSV</button>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">MRR</div><div class="kpi-value">$6,240</div><div class="kpi-delta">↑ 9.3%</div></div>
+      <div class="kpi-card"><div class="kpi-label">O'RTACHA LTV</div><div class="kpi-value">$184</div><div class="kpi-delta">↑ 4.1%</div></div>
+      <div class="kpi-card warn"><div class="kpi-label">CHURN (OYLIK)</div><div class="kpi-value">4.1%</div><div class="kpi-delta down">↑ 0.6%</div></div>
+      <div class="kpi-card"><div class="kpi-label">AI SARFI</div><div class="kpi-value">$31</div><div class="kpi-delta">Bu oy</div></div>
+    </div>
+    <div class="dash-grid-2">
+      <div class="panel">
+        <div class="panel-title">DAROMAD DINAMIKASI · 6 OY</div>
+        <div class="chart-bars"><div class="bar" style="height:40%"></div><div class="bar" style="height:52%"></div><div class="bar" style="height:48%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:68%"></div><div class="bar peak" style="height:88%"></div></div>
+        <div class="chart-days"><span>Yan</span><span>Fev</span><span>Mar</span><span>Apr</span><span>May</span><span>Iyun</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">A'ZOLAR O'SISHI · 6 OY</div>
+        <div class="chart-bars"><div class="bar" style="height:50%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:62%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:80%"></div><div class="bar peak" style="height:95%"></div></div>
+        <div class="chart-days"><span>Yan</span><span>Fev</span><span>Mar</span><span>Apr</span><span>May</span><span>Iyun</span></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title">FAOLLIK TAQSIMOTI</div>
+      <div class="risk-row"><div class="risk-name">🏠 Bosh sahifa ochilishi</div><span style="font-family:'JetBrains Mono'; color:#E8FF47;">38%</span></div>
+      <div class="risk-row"><div class="risk-name">💪 Plan bajarilishi</div><span style="font-family:'JetBrains Mono'; color:#E8FF47;">27%</span></div>
+      <div class="risk-row"><div class="risk-name">🥗 Ovqat yozish</div><span style="font-family:'JetBrains Mono'; color:#E8FF47;">21%</span></div>
+      <div class="risk-row"><div class="risk-name">🤖 AI Trener bilan suhbat</div><span style="font-family:'JetBrains Mono'; color:#E8FF47;">14%</span></div>
+    </div>`;
+}
+
+let showChallengeForm = false;
+function newChallenge() { showChallengeForm = true; render(); }
+function cancelChallenge() { showChallengeForm = false; render(); }
+
+function ownerChallenge() {
+  if (showChallengeForm) return challengeForm();
+  return `
+    <div class="dash-topbar">
+      <div><div class="dash-title">Challenge & Gamifikatsiya</div><div class="dash-sub">FitZone Gym · Joriy kampaniya</div></div>
+      <button class="btn primary" onclick="newChallenge()">+ Yangi challenge</button>
+    </div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-title">JORIY CHALLENGE</div>
+      <div class="dash-topbar" style="margin-bottom:10px;">
+        <div><div style="font-family:'Unbounded'; font-weight:600; font-size:15px;">🔥 "30 kunlik temir" — Iyun marafoni</div><div class="dash-sub">18 / 30 kun · 64 a'zo ishtirok etmoqda</div></div>
+        <span class="dash-badge">FAOL</span>
+      </div>
+      <div class="progress-track-d"><div class="progress-fill-d" style="width:60%;"></div></div>
+    </div>
+    <div class="dash-grid-2">
+      <div class="panel">
+        <div class="panel-title">🏆 UMUMIY REYTING — IYUN</div>
+        <div class="risk-row"><div class="risk-name" style="color:#E8FF47;">🥇 Jasur Toshmatov</div><span style="font-family:'JetBrains Mono'; color:#E8FF47;">2,340</span></div>
+        <div class="risk-row"><div class="risk-name">🥈 Kamola Sodiqova</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">2,110</span></div>
+        <div class="risk-row"><div class="risk-name">🥉 Botir Niyozov</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">1,890</span></div>
+        <div class="risk-row"><div class="risk-name">4. Nilufar Mirzaeva</div><span style="font-family:'JetBrains Mono'; color:#52526a;">1,180</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">STREAK TAQSIMOTI</div>
+        <div class="streak-hist"><div class="hb" style="height:30%"></div><div class="hb" style="height:55%"></div><div class="hb hi" style="height:90%"></div><div class="hb" style="height:45%"></div><div class="hb" style="height:25%"></div><div class="hb" style="height:15%"></div></div>
+        <div class="hist-labels"><span>0-3</span><span>4-7</span><span>8-14</span><span>15-21</span><span>22-29</span><span>30+</span></div>
+        <div style="font-size:11px; color:#8888a0; margin-top:10px; line-height:1.5;">Eng ko'p a'zo 8-14 kunlik streak guruhida — bu yerda tushib qolish xavfi yuqori.</div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title">GYM BO'YICHA BADGE TAQSIMOTI</div>
+      <div class="badge-grid-d">
+        <div class="badge-card"><div class="bi">✅</div><div class="bl">Birinchi qadam</div><div class="bn">214 / 214</div></div>
+        <div class="badge-card"><div class="bi">🔥</div><div class="bl">7 kunlik olov</div><div class="bn">158 / 214</div></div>
+        <div class="badge-card"><div class="bi">🗓️</div><div class="bl">2 hafta jangchisi</div><div class="bn">96 / 214</div></div>
+        <div class="badge-card"><div class="bi">🛡️</div><div class="bl">30 kunlik temir</div><div class="bn">41 / 214</div></div>
+      </div>
+    </div>`;
+}
+
+function challengeForm() {
+  return `
+    <span class="back-link" onclick="cancelChallenge()">← Challenge sahifasiga qaytish</span>
+    <div class="dash-title" style="margin-bottom:18px;">Yangi challenge yaratish</div>
+    <div class="dash-grid-2">
+      <div class="panel">
+        <div class="form-group"><label class="form-label">CHALLENGE NOMI</label><input class="form-input" value="🔥 30 kunlik yoz marafoni" /></div>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">BOSHLANISH SANASI</label><input class="form-input" value="1 iyul, 2026" /></div>
+          <div class="form-group"><label class="form-label">DAVOMIYLIGI</label><select class="form-select"><option>30 kun</option><option>14 kun</option><option>7 kun</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">MAQSAD TURI</label><select class="form-select"><option>Ketma-ket checkin (streak)</option><option>Jami mashqlar soni</option><option>AI Trener bilan suhbatlar</option></select></div>
+        <div class="form-group"><label class="form-label">AUDITORIYA</label><select class="form-select"><option>Barcha a'zolar (214)</option><option>Faqat Pro reja (96)</option><option>Risk ostidagilar (9)</option></select></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">MUKOFOT</div>
+        <div class="reward-opt sel">🏅 Maxsus badge — "Yoz jangchisi"</div>
+        <div class="reward-opt">🎟️ Keyingi oy uchun 20% chegirma</div>
+        <div class="reward-opt">🎁 Gym sovg'a — protein/sherbet</div>
+        <div class="dash-divider"></div>
+        <div class="panel-title">OLDINDAN KO'RISH</div>
+        <div style="font-size:12px; color:#9999ad; line-height:1.6;">Telegram orqali barcha tanlangan a'zolarga e'lon yuboriladi, mobil ilovada "Challenge" kartasi sifatida ko'rinadi va reytingga avtomatik qo'shiladi.</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:18px;"><button class="btn outline" onclick="cancelChallenge()">Bekor qilish</button><button class="btn primary" onclick="cancelChallenge()">Challenge'ni ishga tushirish</button></div>`;
+}
+
+function ownerMessages() {
+  return `
+    <div class="dash-topbar">
+      <div><div class="dash-title">Xabar yuborish</div><div class="dash-sub">FitZone Gym · Ommaviy xabarlar va eslatmalar</div></div>
+      <button class="btn primary">Yangi kampaniya</button>
+    </div>
+    <div class="dash-grid-2">
+      <div class="panel">
+        <div class="panel-title">XABAR YOZISH</div>
+        <div class="compose-box">"Salom! Bu hafta 30 kunlik challenge yarmiga yetdik 🔥 Hozir to'xtab qolmang — keyingi checkin sizni reytingda yuqoriga olib chiqadi."</div>
+        <div style="display:flex; gap:8px; margin-top:12px;"><button class="btn outline">🤖 AI bilan yozish</button><button class="btn primary" style="margin-left:auto;">Yuborish (64 ta a'zo)</button></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">AUDITORIYA</div>
+        <div class="audience-card sel"><span>🔥 Challenge ishtirokchilari</span><span style="font-family:'JetBrains Mono'; color:#E8FF47;">64</span></div>
+        <div class="audience-card"><span>⚠️ Risk ostidagilar</span><span style="font-family:'JetBrains Mono'; color:#8888a0;">9</span></div>
+        <div class="audience-card"><span>🌱 Yangi a'zolar (7 kun)</span><span style="font-family:'JetBrains Mono'; color:#8888a0;">18</span></div>
+        <div class="audience-card"><span>👥 Barcha a'zolar</span><span style="font-family:'JetBrains Mono'; color:#8888a0;">214</span></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title">YUBORILGAN KAMPANIYALAR</div>
+      <div class="campaign-row"><div><div style="font-weight:500;">Challenge yarim yo'l eslatmasi</div><div style="font-size:10px; color:#52526a;">14 iyun, 09:00 · 64 qabul qiluvchi</div></div><span class="pill ok">96% o'qilgan</span></div>
+      <div class="campaign-row"><div><div style="font-weight:500;">Risk ostidagilarga shaxsiy xabar</div><div style="font-size:10px; color:#52526a;">10 iyun, 18:00 · 9 qabul qiluvchi</div></div><span class="pill mid">67% o'qilgan</span></div>
+    </div>`;
+}
+
+function ownerSettings() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Sozlamalar</div><div class="dash-sub">FitZone Gym · Profil va billing</div></div></div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-title">GYM PROFILI</div>
+      <div class="settings-row"><div><div class="sl">Gym nomi</div><div class="sd">FitZone Gym</div></div><button class="btn outline">Tahrirlash</button></div>
+      <div class="settings-row"><div><div class="sl">Manzil</div><div class="sd">Yunusobod, Toshkent</div></div><button class="btn outline">Tahrirlash</button></div>
+    </div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-title">BILDIRISHNOMALAR</div>
+      <div class="settings-row"><div><div class="sl">Churn ogohlantirishlari</div><div class="sd">AI 5+ kun faol bo'lmagan a'zolarni aniqlaganda</div></div><div class="toggle on"><div class="knob"></div></div></div>
+      <div class="settings-row"><div><div class="sl">Haftalik hisobot</div><div class="sd">Har Yakshanba ertalab email orqali</div></div><div class="toggle on"><div class="knob"></div></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">BILLING</div>
+      <div class="settings-row"><div><div class="sl">Joriy reja</div><div class="sd">Pro · $69/oy · keyingi to'lov 14 iyul</div></div><button class="btn primary">Rejani o'zgartirish</button></div>
+    </div>`;
+}
+
+/* ============== TRAINER PAGES ============== */
+
+function trainerToday() {
+  return `
+    <div class="dash-topbar">
+      <div><div class="dash-title">Bugun, Coach Aziz 👋</div><div class="dash-sub">Dushanba · 6 seans, 2 ta qoldi</div></div>
+      <button class="btn outline">+ Seans qo'shish</button>
+    </div>
+    <div class="insight-card warn" style="margin-bottom:16px;">
+      <div class="it">🤖 AI Copilot: Madina bilan bog'lanish vaqti keldi</div>
+      <div class="ib">3 kundan beri checkin yo'q, oxirgi seansda charchoq belgilari bor edi. Dam olish kuni yoki yengilroq dastur tavsiya qilishni o'ylab ko'ring.</div>
+      <span class="iact" onclick="goTo('copilot')">Copilot bilan xabar tayyorlash →</span>
+    </div>
+    <div class="dash-grid-2">
+      <div class="panel">
+        <div class="panel-title">BUGUNGI SEANSLAR</div>
+        <div class="risk-row"><div class="risk-name" onclick="openMember('Jasur Tashkentov')" style="cursor:pointer;">14:00 · Jasur Tashkentov — Kuch mashqi</div><span class="pill ok">Tayyor</span></div>
+        <div class="risk-row"><div class="risk-name" onclick="openMember('Madina Yusupova')" style="cursor:pointer;">15:30 · Madina Yusupova — Cardio</div><span class="pill risk">3 kun yo'q</span></div>
+        <div class="risk-row"><div class="risk-name">17:00 · Otabek Rashidov — Yelka</div><span class="pill ok">Tayyor</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">BU OYDAGI NATIJA</div>
+        <div class="kpi-card" style="border-left:none; padding:0; margin-bottom:10px;"><div class="kpi-label">FAOL MIJOZLAR</div><div class="kpi-value">22</div></div>
+        <div class="kpi-card" style="border-left:none; padding:0;"><div class="kpi-label">O'RTACHA ADHERENCE</div><div class="kpi-value">81%</div></div>
+      </div>
+    </div>`;
+}
+
+const CLIENTS_LIST = [
+  { i:"JT", n:"Jasur Tashkentov", adh:81, status:"ok", statusL:"Faol" },
+  { i:"DK", n:"Dilnoza Karimova", adh:42, status:"risk", statusL:"Risk" },
+  { i:"OR", n:"Otabek Rashidov", adh:88, status:"ok", statusL:"Faol" },
+  { i:"MY", n:"Madina Yusupova", adh:30, status:"risk", statusL:"Risk" },
+];
+
+function trainerClients() {
+  if (selectedMember) return memberDetail(selectedMember);
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Mijozlarim</div><div class="dash-sub">22 ta faol mijoz</div></div></div>
+    <div class="panel">
+      <table class="member-table">
+        <tr><th>MIJOZ</th><th>ADHERENCE</th><th>HOLAT</th><th></th></tr>
+        ${CLIENTS_LIST.map(c => `
+        <tr class="clickable" onclick="openMember('${c.n}')">
+          <td><span class="avatar">${c.i}</span>${c.n}</td>
+          <td style="font-family:'JetBrains Mono'; color:${c.adh < 50 ? "#E2807F" : "#E8FF47"};">${c.adh}%</td>
+          <td><span class="pill ${c.status}">${c.statusL}</span></td>
+          <td style="color:#52526a;">→</td>
+        </tr>`).join("")}
+      </table>
+    </div>`;
+}
+
+function trainerSchedule() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Jadval</div><div class="dash-sub">Bu hafta</div></div><button class="btn outline">+ Bo'sh vaqt qo'shish</button></div>
+    <div class="panel">
+      <div class="risk-row"><div class="risk-name">Dushanba</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">6 seans</span></div>
+      <div class="risk-row"><div class="risk-name" style="color:#E8FF47;">Seshanba</div><span style="font-family:'JetBrains Mono'; color:#E8FF47;">8 seans</span></div>
+      <div class="risk-row"><div class="risk-name">Chorshanba</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">5 seans</span></div>
+      <div class="risk-row"><div class="risk-name">Payshanba</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">7 seans</span></div>
+    </div>`;
+}
+
+function trainerAnalytics() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Analytics</div><div class="dash-sub">Mijozlarim bo'yicha chuqur tahlil</div></div></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">JAMI SEANSLAR (OY)</div><div class="kpi-value">96</div><div class="kpi-delta">↑ 8%</div></div>
+      <div class="kpi-card"><div class="kpi-label">O'RTACHA ADHERENCE</div><div class="kpi-value">81%</div><div class="kpi-delta">↑ 13%</div></div>
+      <div class="kpi-card warn"><div class="kpi-label">RISK MIJOZLAR</div><div class="kpi-value">2</div></div>
+      <div class="kpi-card"><div class="kpi-label">BU OY DAROMAD</div><div class="kpi-value">$1,840</div><div class="kpi-delta">↑ 7%</div></div>
+    </div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-title">MIJOZLAR ADHERENCE · 6 OY</div>
+      <div class="chart-bars"><div class="bar" style="height:55%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:58%"></div><div class="bar" style="height:65%"></div><div class="bar" style="height:75%"></div><div class="bar peak" style="height:81%"></div></div>
+      <div class="chart-days"><span>Yan</span><span>Fev</span><span>Mar</span><span>Apr</span><span>May</span><span>Iyun</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">MIJOZ BO'YICHA TAQSIMOT</div>
+      ${CLIENTS_LIST.map(c => `<div class="risk-row"><div class="risk-name">${c.n}</div><span style="font-family:'JetBrains Mono'; color:${c.adh<50?'#E2807F':'#E8FF47'};">${c.adh}%</span></div>`).join("")}
+    </div>`;
+}
+
+function trainerSettings() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Sozlamalar</div><div class="dash-sub">Profil va ish vaqti</div></div></div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="settings-row"><div><div class="sl">Ism</div><div class="sd">Coach Aziz</div></div><button class="btn outline">Tahrirlash</button></div>
+      <div class="settings-row"><div><div class="sl">Mutaxassislik</div><div class="sd">Kuch mashqlari</div></div><button class="btn outline">Tahrirlash</button></div>
+    </div>
+    <div class="panel">
+      <div class="settings-row"><div><div class="sl">Risk mijoz ogohlantirishi</div><div class="sd">3+ kun checkin bo'lmaganda</div></div><div class="toggle on"><div class="knob"></div></div></div>
+    </div>`;
+}
+
+/* ============== SUPERADMIN PAGES ============== */
+
+function adminOverview() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Platforma umumiy ko'rinishi</div><div class="dash-sub">VitaForge AI · barcha gym'lar</div></div><button class="btn outline">Export hisobot</button></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">JAMI GYM</div><div class="kpi-value">412</div><div class="kpi-delta">↑ 8.2%</div></div>
+      <div class="kpi-card"><div class="kpi-label">MRR</div><div class="kpi-value">$18,420</div><div class="kpi-delta">↑ 12.5%</div></div>
+      <div class="kpi-card"><div class="kpi-label">CLAUDE API SARFI</div><div class="kpi-value">$1,240</div><div class="kpi-delta">↑ 4.5%</div></div>
+      <div class="kpi-card warn"><div class="kpi-label">CHURNED GYM</div><div class="kpi-value">6</div><div class="kpi-delta down">Oxirgi 30 kun</div></div>
+    </div>
+    <div class="insight-card warn" style="margin-bottom:16px;">
+      <div class="it">🤖 AI Copilot: bitta gym AI sarfi anomal o'sgan</div>
+      <div class="ib">"PowerFit Samarqand" — bu hafta AI chaqiruvlari 3.2x oshgan, lekin a'zolar soni o'zgarmagan. Bot loop yoki suiiste'mol bo'lishi mumkin.</div>
+      <span class="iact" onclick="goTo('copilot')">Copilot'da tekshirish →</span>
+    </div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-title">MRR O'SISHI · 8 OY</div>
+      <div class="chart-bars"><div class="bar" style="height:40%"></div><div class="bar" style="height:48%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:68%"></div><div class="bar" style="height:75%"></div><div class="bar" style="height:85%"></div><div class="bar peak" style="height:95%"></div></div>
+      <div class="chart-days"><span>Noy</span><span>Dek</span><span>Yan</span><span>Fev</span><span>Mar</span><span>Apr</span><span>May</span><span>Iyun</span></div>
+    </div>
+    <div class="dash-grid-2">
+      <div class="panel"><div class="panel-title">YANGI SIGNUPLAR</div><div class="chart-bars"><div class="bar" style="height:50%"></div><div class="bar" style="height:62%"></div><div class="bar" style="height:55%"></div><div class="bar peak" style="height:80%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:65%"></div></div><div class="chart-days"><span>Yan</span><span>Fev</span><span>Mar</span><span>Apr</span><span>May</span><span>Iyun</span></div></div>
+      <div class="panel"><div class="panel-title">TIZIM UPTIME</div><div class="kpi-value" style="font-size:32px; margin:18px 0;">99.94%</div><div class="kpi-delta">Oxirgi 30 kun</div></div>
+    </div>`;
+}
+
+const GYMS_LIST = [
+  { i:"FZ", n:"FitZone Gym", city:"Toshkent", plan:"Pro", members:214, status:"ok" },
+  { i:"PS", n:"PowerFit Samarqand", city:"Samarqand", plan:"Scale", members:340, status:"risk" },
+  { i:"IM", n:"IronMuscle", city:"Buxoro", plan:"Starter", members:58, status:"ok" },
+  { i:"AG", n:"Atlant Gym", city:"Andijon", plan:"Pro", members:126, status:"new" },
+];
+
+function adminGyms() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Zallar</div><div class="dash-sub">412 ta gym · 6 tasi churn xavfida</div></div></div>
+    <div class="toolbar"><div class="search-box">🔍 Gym nomi yoki shahar bo'yicha qidirish...</div><div class="chip active">Barchasi</div><div class="chip">Pro</div><div class="chip">Risk</div></div>
+    <div class="panel">
+      <table class="member-table">
+        <tr><th>GYM</th><th>SHAHAR</th><th>REJA</th><th>A'ZOLAR</th><th>HOLAT</th></tr>
+        ${GYMS_LIST.map(g => `<tr><td><span class="avatar">${g.i}</span>${g.n}</td><td style="color:#8888a0;">${g.city}</td><td style="color:#8888a0;">${g.plan}</td><td style="font-family:'JetBrains Mono';">${g.members}</td><td><span class="pill ${g.status}">${g.status === 'ok' ? 'Faol' : g.status === 'risk' ? 'Risk' : 'Yangi'}</span></td></tr>`).join("")}
+      </table>
+    </div>`;
+}
+
+function adminBilling() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Billing</div><div class="dash-sub">Reja taqsimoti va to'lovlar</div></div></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">STARTER</div><div class="kpi-value">186</div></div>
+      <div class="kpi-card"><div class="kpi-label">PRO</div><div class="kpi-value">158</div></div>
+      <div class="kpi-card"><div class="kpi-label">SCALE</div><div class="kpi-value">58</div></div>
+      <div class="kpi-card"><div class="kpi-label">ENTERPRISE</div><div class="kpi-value">10</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">SO'NGGI TO'LOVLAR</div>
+      <div class="campaign-row"><span>FitZone Gym — Pro</span><span class="pill ok">$69 · to'landi</span></div>
+      <div class="campaign-row"><span>PowerFit Samarqand — Scale</span><span class="pill ok">$149 · to'landi</span></div>
+      <div class="campaign-row"><span>IronMuscle — Starter</span><span class="pill risk">$39 · muvaffaqiyatsiz</span></div>
+    </div>`;
+}
+
+function adminAiUsage() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">AI Usage</div><div class="dash-sub">Claude API sarfi gym kesimida</div></div></div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-title">KUNLIK AI CHAQIRUVLARI</div>
+      <div class="chart-bars"><div class="bar" style="height:45%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:50%"></div><div class="bar" style="height:65%"></div><div class="bar peak" style="height:92%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:58%"></div></div>
+      <div class="chart-days"><span>Du</span><span>Se</span><span>Ch</span><span>Pa</span><span>Ju</span><span>Sh</span><span>Ya</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">GYM BO'YICHA SARF (BU OY)</div>
+      <div class="risk-row"><div class="risk-name" style="color:#E2807F;">⚠️ PowerFit Samarqand</div><span style="font-family:'JetBrains Mono'; color:#E2807F;">$210</span></div>
+      <div class="risk-row"><div class="risk-name">FitZone Gym</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">$31</span></div>
+      <div class="risk-row"><div class="risk-name">Atlant Gym</div><span style="font-family:'JetBrains Mono'; color:#8888a0;">$18</span></div>
+    </div>`;
+}
+
+function adminSettings() {
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">Sozlamalar</div><div class="dash-sub">Platforma darajasidagi sozlamalar</div></div></div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="settings-row"><div><div class="sl">Gym AI limit ogohlantirishi</div><div class="sd">Kunlik $50 dan oshganda</div></div><div class="toggle on"><div class="knob"></div></div></div>
+      <div class="settings-row"><div><div class="sl">Yangi gym moderatsiyasi</div><div class="sd">Ro'yxatdan o'tishni qo'lda tasdiqlash</div></div><div class="toggle"><div class="knob"></div></div></div>
+    </div>`;
+}
+
+/* ============== AI COPILOT (shared shell, role-specific content) ============== */
+
+const COPILOT_DATA = {
+  owner: {
+    chat: [
+      { who: "ai", text: "Salom Botir! Bugun e'tibor talab qiladigan 3 ta narsa bor. Birinchisi haqida gapiraymi?" },
+      { who: "user", text: "Ha, boshla" },
+      { who: "ai", text: "Doniyor, Sevara va Aziz — uchalasi ham 5+ kun checkin qilmagan va to'lov muddati yaqin. Avtomatik shaxsiy xabar yuborishimni xohlaysizmi, yoki avval o'zingiz ko'rib chiqasizmi?" },
+    ],
+    insights: [
+      { tone: "warn", t: "3 ta a'zo yuqori churn xavfida", b: "Birgalikda ehtimollik ~68%. Shaxsiy xabar yuborish tavsiya etiladi.", act: "Xabar tayyorlash →" },
+      { tone: "", t: "Seshanba kunlari faollik eng past", b: "6 oy davomida Seshanba haftaning eng kam faol kuni. Shu kunga maxsus eslatma yoki challenge bonus qo'shish mumkin.", act: "Eslatma sozlash →" },
+      { tone: "", t: "Pro reja konversiyasi yaxshilanmoqda", b: "Starter'dan Pro'ga o'tish darajasi 6 oyda 14% dan 22% ga oshdi — sabab: gamifikatsiya funksiyalari.", act: "To'liq tahlil →" },
+    ]
+  },
+  trainer: {
+    chat: [
+      { who: "ai", text: "Salom Coach! Madina haqida xabar bermoqchiman — 3 kun checkin yo'q." },
+      { who: "user", text: "Nima tavsiya qilasan?" },
+      { who: "ai", text: "Oxirgi seansda charchoq belgilari bor edi. Avval shaxsiy holini so'rab, agar charchagan bo'lsa — 1 kunlik yengil dam olish dasturi taklif qilishni maslahat beraman." },
+    ],
+    insights: [
+      { tone: "warn", t: "Madina bilan bog'lanish kerak", b: "3 kun checkin yo'q + charchoq belgilari. Churn ehtimoli o'rtacha.", act: "Xabar tayyorlash →" },
+      { tone: "", t: "Dilnozaning adherence pasaymoqda", b: "Oxirgi 2 haftada 65% dan 42% ga tushdi. Dastur murakkabligini kamaytirish tavsiya etiladi.", act: "Dasturni ko'rish →" },
+      { tone: "", t: "Sizning eng samarali kuningiz — Seshanba", b: "Seshanba kunlari mijozlar adherence'i 12% yuqori. Yangi mijozlarni shu kunga rejalashtiring.", act: "Jadvalni ko'rish →" },
+    ]
+  },
+  superadmin: {
+    chat: [
+      { who: "ai", text: "Salom! PowerFit Samarqand'da AI sarfi anomal o'sgan — batafsil ko'rib chiqaymi?" },
+      { who: "user", text: "Ha, sabab nima bo'lishi mumkin?" },
+      { who: "ai", text: "Log'larga ko'ra bitta bot foydalanuvchisi soatiga 40+ marta AI Trener'ga murojaat qilgan — bu odatiy emas, ehtimol skript yoki suiiste'mol. Shu hisobni vaqtincha cheklashni tavsiya qilaman." },
+    ],
+    insights: [
+      { tone: "warn", t: "PowerFit Samarqand'da AI sarfi anomal", b: "Bitta foydalanuvchi haddan tashqari ko'p so'rov yubormoqda. Suiiste'mol ehtimoli bor.", act: "Hisobni tekshirish →" },
+      { tone: "", t: "6 gym churn xavfida", b: "Oxirgi 30 kunda to'lov kechikishi + faollik pasayishi kombinatsiyasi aniqlandi.", act: "Ro'yxatni ko'rish →" },
+      { tone: "", t: "Yangi funksiya so'rovlari ko'paymoqda", b: "23 ta gym owner so'nggi oyda 'filiallar' funksiyasini so'ragan — roadmap'ga qo'shish tavsiya etiladi.", act: "Feedback'ni ko'rish →" },
+    ]
+  }
+};
+
+function pageCopilot() {
+  const d = COPILOT_DATA[currentRoleD];
+  return `
+    <div class="dash-topbar"><div><div class="dash-title">🤖 AI Copilot</div><div class="dash-sub">Erkin so'rang yoki proaktiv tavsiyalarni ko'rib chiqing</div></div></div>
+    <div class="copilot-grid">
+      <div class="panel chat-pane">
+        <div class="chat-scroll">
+          ${d.chat.map(m => `<div class="chat-bubble ${m.who}">${m.text}</div>`).join("")}
+        </div>
+        <div class="chat-input-row"><div class="ci">Savol yozing yoki harakatni tasdiqlang...</div><div class="chat-send">↑</div></div>
+      </div>
+      <div>
+        ${d.insights.map(i => `
+        <div class="insight-card ${i.tone}">
+          <div class="it">${i.t}</div>
+          <div class="ib">${i.b}</div>
+          <span class="iact">${i.act}</span>
+        </div>`).join("")}
+      </div>
+    </div>`;
+}
+
+/* ============== PAGE ROUTING ============== */
+
+const PAGES_D = {
+  owner: { dashboard: ownerDashboard, members: ownerMembers, analytics: ownerAnalytics, challenge: ownerChallenge, copilot: pageCopilot, messages: ownerMessages, settings: ownerSettings },
+  trainer: { today: trainerToday, clients: trainerClients, schedule: trainerSchedule, analytics: trainerAnalytics, copilot: pageCopilot, settings: trainerSettings },
+  superadmin: { overview: adminOverview, gyms: adminGyms, billing: adminBilling, aiusage: adminAiUsage, copilot: pageCopilot, settings: adminSettings },
+};
+
+function render() {
+  renderRoleTabsD();
+  renderNav();
+  const page = currentPageD[currentRoleD];
+  document.getElementById("dashMain").innerHTML = PAGES_D[currentRoleD][page]();
+  const navItem = ROLES_D[currentRoleD].nav.find(n => n.id === page);
+  document.getElementById("browserUrl").textContent = "app.vitaforge.uz" + (navItem ? navItem.url : "");
+}
+
+render();
+</script>
+
+</body>
+</html>
