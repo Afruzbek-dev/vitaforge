@@ -1,374 +1,198 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/store/auth";
-import { getSupabase } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
-import { getLevel, BADGES, UNIT } from "@/lib/gamification";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useToast } from "@/components/ui/toast";
-import { Badge } from "@/components/ui/badge";
-import { 
-  User, Shield, Bell, Globe, Moon, Sun, 
-  HelpCircle, LogOut, Pencil, Save, Phone, 
-  Mail, Calendar, Activity, Flame, ChevronRight, Check
-} from "lucide-react";
+
+import { useState } from "react";
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user, clearAuth } = useAuthStore();
-  const sb = getSupabase();
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("main");
 
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [streak, setStreak] = useState<any>(null);
-  const [membership, setMembership] = useState<any>(null);
-  const [attendanceCount, setAttendanceCount] = useState(0);
+  const tabs = [
+    { id: "main", label: "UMUMIY" },
+    { id: "pay", label: "TO'LOVLAR" },
+    { id: "stats", label: "ANALITIKA" },
+    { id: "alerts", label: "BILDIRISHNOMA" },
+  ];
 
-  // Edit state
-  const [editMode, setEditMode] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", phone: "", email: "" });
-  const [saving, setSaving] = useState(false);
-
-  // Settings state
-  const [theme, setTheme] = useState("dark");
-  const [lang, setLang] = useState("uz");
-  const [notifications, setNotifications] = useState({ payments: true, reminders: true, news: false });
-
-  // Logout modal
-  const [logoutOpen, setLogoutOpen] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const u = await getUser();
-      if (!u) return;
-
-      const [{ data: p }, { data: s }, { data: m }, { count: ac }] = await Promise.all([
-        sb.from("users").select("*").eq("id", u.id).single(),
-        sb.from("member_streaks").select("*").eq("member_id", u.id).single(),
-        sb.from("memberships").select("*").eq("member_id", u.id).order("created_at", { ascending: false }).limit(1).single(),
-        sb.from("attendance").select("*", { count: "exact", head: true }).eq("member_id", u.id)
-      ]);
-
-      setProfile(p);
-      setStreak(s);
-      setMembership(m);
-      setAttendanceCount(ac ?? 0);
-      setEditForm({ name: p?.full_name ?? "", phone: p?.phone ?? "", email: p?.email ?? "" });
-
-      // Settings
-      if (p?.settings) {
-        if (p.settings.theme) setTheme(p.settings.theme);
-        if (p.settings.language) setLang(p.settings.language);
-        if (p.settings.notifications) setNotifications(p.settings.notifications);
-      }
-
-      setLoading(false);
-    })();
-  }, []);
-
-  const handleSaveProfile = async () => {
-    setSaving(true);
-    const u = await getUser();
-    const { error } = await sb.from("users").update({
-      full_name: editForm.name,
-      phone: editForm.phone,
-      email: editForm.email
-    }).eq("id", u!.id);
-
-    if (error) {
-      toast("Xatolik yuz berdi", "error");
-    } else {
-      toast("Profil saqlandi", "success");
-      setProfile({ ...profile, full_name: editForm.name, phone: editForm.phone, email: editForm.email });
-      setEditMode(false);
-    }
-    setSaving(false);
-  };
-
-  const handleThemeChange = (newTheme: "dark" | "light") => {
-    setTheme(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('zenfit_theme', newTheme);
-    saveSettings({ theme: newTheme });
-  };
-
-  const handleLangChange = (newLang: string) => {
-    setLang(newLang);
-    localStorage.setItem('zenfit_lang', newLang);
-    saveSettings({ language: newLang });
-  };
-
-  const toggleNotif = (key: keyof typeof notifications) => {
-    const newNotifs = { ...notifications, [key]: !notifications[key] };
-    setNotifications(newNotifs);
-    saveSettings({ notifications: newNotifs });
-  };
-
-  const saveSettings = async (updates: any) => {
-    const u = await getUser();
-    const currentSettings = profile?.settings ?? {};
-    await sb.from("users").update({
-      settings: { ...currentSettings, ...updates }
-    }).eq("id", u!.id);
-  };
-
-  const handleLogout = () => {
-    clearAuth();
-    localStorage.removeItem("zenfit_user");
-    localStorage.removeItem("access_token");
-    router.push("/login");
-  };
-
-  if (loading) return <div className="p-8 text-center animate-pulse text-muted">Yuklanmoqda...</div>;
-
-  const daysActive = profile?.created_at ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / 86400000) : 0;
-  const level = getLevel(streak?.total_points ?? 0);
-  const earnedBadges = (streak?.badges ?? []) as string[];
-  const userBadges = BADGES.filter((b) => earnedBadges.includes(b.id));
+  const badges = [
+    { icon: "✅", label: "Birinchi qadam", unlocked: true },
+    { icon: "🔥", label: "7 kunlik olov", unlocked: true },
+    { icon: "🗓️", label: "2 hafta jangchisi", unlocked: true },
+    { icon: "🛡️", label: "30 kunlik temir", unlocked: false, hint: "16 kun qoldi" },
+    { icon: "🤖", label: "AI do'sti", unlocked: true },
+    { icon: "🌅", label: "Tong qahramoni", unlocked: false, hint: "5tadan 2tasi" },
+    { icon: "⚖️", label: "Ozish ustasi", unlocked: true },
+    { icon: "🏆", label: "Reyting yulduzi", unlocked: false, hint: "Top-3, 4 hafta" },
+  ];
 
   return (
-    <div className="max-w-md md:max-w-2xl mx-auto space-y-6 animate-fadeUp pb-24">
-      {/* Header */}
-      <div className="flex items-center gap-4 bg-surface p-5 rounded-2xl border border-border shadow-sm">
-        <div className="w-16 h-16 rounded-full bg-accent text-white flex items-center justify-center text-3xl font-display font-bold shadow-md shrink-0">
-          {profile?.full_name?.[0]?.toUpperCase() ?? "?"}
+    <div className="animate-fadeIn pb-4 pt-[4px]">
+      <div className="bg-[rgba(232,255,71,0.04)] border border-[rgba(232,255,71,0.3)] rounded-[13px] p-[18px] text-center">
+        <div className="w-[40px] h-[40px] rounded-[8px] mx-auto mb-[8px] bg-[rgba(232,255,71,0.15)] text-[#E8FF47] flex items-center justify-center font-display font-bold text-[14px]">
+          JT
         </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-display font-bold text-xl text-vtext truncate">{profile?.full_name ?? "Foydalanuvchi"}</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant={
-              user?.role === "member" ? "default" : 
-              user?.role === "trainer" ? "success" : 
-              user?.role === "gym_owner" ? "warning" : "danger"
-            } className="capitalize">
-              {user?.role.replace("_", " ")}
-            </Badge>
-            {profile?.gym_id && <span className="text-sm text-muted truncate">{profile?.gym_id}</span>}
-          </div>
+        <div className="font-display font-bold text-[14px]">Jasur Tashkentov</div>
+        <div className="text-[10px] text-[#8888a0] mt-[2px]">Pro reja · Powerhouse Gym</div>
+        <div className="inline-flex items-center gap-[4px] mt-[8px] bg-[rgba(232,255,71,0.12)] px-[10px] py-[4px] rounded-full">
+          <span className="text-[11px]">👑</span>
+          <span className="text-[10px] text-[#E8FF47] font-mono tracking-tight">DARAJA 5 · Usta</span>
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-3 text-center flex flex-col items-center justify-center">
-            <Calendar size={18} className="text-muted mb-1" />
-            <p className="font-display font-bold text-lg text-vtext">{daysActive}</p>
-            <p className="text-[10px] text-muted uppercase tracking-wider">Kun</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-3 text-center flex flex-col items-center justify-center">
-            <Activity size={18} className="text-blue-500 mb-1" />
-            <p className="font-display font-bold text-lg text-vtext">{attendanceCount}</p>
-            <p className="text-[10px] text-muted uppercase tracking-wider">Mashq</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border shadow-sm bg-gradient-to-br from-surface to-orange-500/5">
-          <CardContent className="p-3 text-center flex flex-col items-center justify-center">
-            <Flame size={18} className="text-orange-500 mb-1" />
-            <p className="font-display font-bold text-lg text-orange-500">{streak?.current_streak ?? 0}</p>
-            <p className="text-[10px] text-orange-500/80 uppercase tracking-wider">Streak</p>
-          </CardContent>
-        </Card>
+      <div className="flex gap-[6px] py-[10px] overflow-x-auto no-scrollbar">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`font-mono text-[9px] tracking-[1px] px-[12px] py-[7px] rounded-full border shrink-0 transition-colors ${
+              activeTab === t.id
+                ? "bg-[#E8FF47] text-[#080810] border-[#E8FF47] font-bold"
+                : "bg-[#13131c] border-[#1e1e2c] text-[#8888a0]"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* Level & Badges (Preserved from old page) */}
-      <Card className="border-accent-border/30 shadow-sm">
-        <CardContent className="p-5">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent">
-              <Shield size={24} />
+      <div className="mt-1">
+        {activeTab === "main" && (
+          <div className="animate-fadeIn">
+            {/* Streak Card */}
+            <div className="bg-[rgba(232,255,71,0.04)] border border-[rgba(232,255,71,0.3)] rounded-[13px] p-[14px] mb-[9px]">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-[8px]">
+                  <span className="text-[22px]">🔥</span>
+                  <div>
+                    <div className="text-[14px] font-bold font-display">15</div>
+                    <div className="text-[8px] text-[#8888a0]">kunlik streak</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[11px] text-[#E8FF47] font-mono tracking-tight">REKORD</div>
+                  <div className="text-[12px] font-semibold">21</div>
+                </div>
+              </div>
+              <div className="flex justify-between mt-[10px]">
+                {["D","S","C","P","J","S","Y"].map((d, i, arr) => (
+                  <div key={i} className={`w-[22px] h-[22px] rounded-full flex items-center justify-center text-[8px] font-mono shrink-0 ${
+                    i < 3 || i > 3 ? "bg-[#E8FF47] text-[#080810] font-bold" : "bg-[#1a1a26] text-muted"
+                  } ${i === arr.length - 1 ? "shadow-[0_0_0_2px_rgba(232,255,71,0.4)]" : ""}`}>
+                    {d}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm text-muted font-medium">Joriy daraja</p>
-              <h3 className="font-display font-bold text-xl text-vtext">{level.name}</h3>
+
+            {/* Next Level */}
+            <div className="m-card mb-[9px]">
+              <div className="flex justify-between items-center mb-[6px]">
+                <span className="font-mono text-[8px] tracking-[1px] text-muted m-0">KEYINGI DARAJAGACHA</span>
+                <span className="font-mono text-[10px] text-[#E8FF47]">2340 / 2500</span>
+              </div>
+              <div className="h-[6px] bg-[#1a1a26] rounded-[4px] overflow-hidden">
+                <div className="h-full bg-[#E8FF47] rounded-[4px]" style={{ width: "84%" }} />
+              </div>
             </div>
-            <div className="text-right">
-              <p className="font-mono text-accent font-bold text-lg">{streak?.total_points ?? 0} <span className="text-xs">XP</span></p>
-            </div>
-          </div>
-          {userBadges.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border flex flex-wrap gap-2">
-              {userBadges.map((b) => (
-                <div key={b.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface2 border border-border text-xs" title={b.description}>
-                  <span className="text-base">{b.emoji}</span>
-                  <span className="font-medium text-vtext">{b.name}</span>
+
+            <div className="font-mono text-[8px] tracking-[1px] text-muted my-[10px]">YUTUQLAR</div>
+            <div className="grid grid-cols-4 gap-[7px] mb-[9px]">
+              {badges.map((b, i) => (
+                <div key={i} className={`bg-surface border border-border rounded-[12px] p-[10px_3px_8px] flex flex-col items-center gap-[3px] text-center ${b.unlocked ? "" : "opacity-40 grayscale"}`}>
+                  <span className="text-[17px]">{b.unlocked ? b.icon : "🔒"}</span>
+                  <span className={`text-[7px] leading-[1.25] ${b.unlocked ? "text-[#c8c8d8]" : "text-muted"}`}>{b.label}</span>
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Personal Info */}
-      <Card className="shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg flex items-center gap-2"><User size={18} className="text-accent" /> Shaxsiy ma'lumotlar</CardTitle>
-          <Button variant="ghost" size="icon" onClick={() => setEditMode(!editMode)} className="h-8 w-8 text-muted">
-            <Pencil size={16} />
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!editMode ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <User size={16} className="text-muted" />
-                <span className="text-vtext">{profile?.full_name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone size={16} className="text-muted" />
-                <span className="text-vtext">{profile?.phone || "Kiritilmagan"}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Mail size={16} className="text-muted" />
-                <span className="text-vtext">{profile?.email || "Kiritilmagan"}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="space-y-2">
-                <Label>Ism familiya</Label>
-                <Input value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="rounded-xl" />
-              </div>
-              <div className="space-y-2">
-                <Label>Telefon raqam</Label>
-                <Input value={editForm.phone} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} className="rounded-xl" />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="rounded-xl" />
-              </div>
-              <Button onClick={handleSaveProfile} disabled={saving} className="w-full rounded-xl mt-2">
-                <Save size={16} className="mr-2" /> Saqlash
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="m-card mt-[9px] flex justify-between items-center"><span className="text-[12px]">Maqsad</span><span className="text-[12px]">Vazn yo'qotish</span></div>
+            <div className="m-card mt-[9px] flex justify-between items-center"><span className="text-[12px]">Treneri</span><span className="text-[12px]">Coach Aziz</span></div>
+            <div className="m-card mt-[9px] flex justify-between items-center"><span className="text-[12px]">A'zo bo'lgan sana</span><span className="text-[12px]">12 fev, 2026</span></div>
+            <button className="w-full border border-[#2a2a3a] text-[#EEEEE8] text-[12px] py-[11px] rounded-[12px] mt-[9px] text-center">Profilni tahrirlash</button>
+          </div>
+        )}
 
-      {/* Membership (if applicable) */}
-      {membership && (
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2"><Activity size={18} className="text-accent" /> Obuna</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between items-center py-1 border-b border-border/50">
-              <span className="text-muted text-sm">Tur</span>
-              <Badge variant="info" className="capitalize">{membership.membership_type}</Badge>
+        {activeTab === "pay" && (
+          <div className="animate-fadeIn">
+            <div className="bg-[rgba(232,255,71,0.04)] border border-[rgba(232,255,71,0.3)] rounded-[13px] p-[14px] flex justify-between items-center mb-[9px]">
+              <div>
+                <div className="text-[12px] font-semibold font-display">Pro reja</div>
+                <div className="text-[10px] text-[#8888a0]">Oylik obuna</div>
+              </div>
+              <span className="font-mono text-[13px] text-[#E8FF47]">$69/oy</span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-border/50">
-              <span className="text-muted text-sm">Boshlanish</span>
-              <span className="text-sm text-vtext font-medium">{membership.start_date}</span>
+            <div className="m-card flex justify-between items-center mb-[9px]">
+              <span className="text-[11px] text-[#8888a0]">Keyingi to'lov</span>
+              <span className="text-[11px]">14 iyul, 2026</span>
             </div>
-            <div className="flex justify-between items-center py-1">
-              <span className="text-muted text-sm">Tugash</span>
-              <span className="text-sm text-vtext font-medium">{membership.end_date}</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Settings Sections */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Theme */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2"><Moon size={16} className="text-muted" /> Mavzu</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex p-1 bg-surface2 rounded-xl border border-border">
-              <button 
-                onClick={() => handleThemeChange("light")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition ${theme === "light" ? "bg-white text-black shadow-sm" : "text-muted hover:text-vtext"}`}
-              >
-                <Sun size={16} /> Yorug'
-              </button>
-              <button 
-                onClick={() => handleThemeChange("dark")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition ${theme === "dark" ? "bg-accent text-white shadow-sm" : "text-muted hover:text-vtext"}`}
-              >
-                <Moon size={16} /> Qorong'u
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Language */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2"><Globe size={16} className="text-muted" /> Til</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex p-1 bg-surface2 rounded-xl border border-border">
-              {["uz", "ru", "en"].map((l) => (
-                <button 
-                  key={l}
-                  onClick={() => handleLangChange(l)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition uppercase ${lang === l ? "bg-accent text-white shadow-sm" : "text-muted hover:text-vtext"}`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notifications */}
-        <Card className="shadow-sm sm:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2"><Bell size={16} className="text-muted" /> Bildirishnomalar</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            <div className="font-mono text-[8px] tracking-[1px] text-muted my-[10px]">TO'LOV TARIXI</div>
             {[
-              { id: "payments", label: "To'lov eslatmalari" },
-              { id: "reminders", label: "Mashq eslatmalari" },
-              { id: "news", label: "Yangiliklar va aksiyalar" }
-            ].map((item) => (
-              <div key={item.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 last:pb-0">
-                <span className="text-sm text-vtext">{item.label}</span>
-                <button 
-                  onClick={() => toggleNotif(item.id as keyof typeof notifications)}
-                  className={`w-11 h-6 rounded-full transition-colors relative ${notifications[item.id as keyof typeof notifications] ? "bg-accent" : "bg-surface2 border border-border"}`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${notifications[item.id as keyof typeof notifications] ? "translate-x-5.5 left-0.5" : "translate-x-0.5"}`} />
-                </button>
+              { date: "14 iyun 2026", status: "To'landi" },
+              { date: "14 may 2026", status: "To'landi" },
+              { date: "14 apr 2026", status: "To'landi" },
+            ].map((p, i) => (
+              <div key={i} className="m-card flex justify-between items-center mb-[9px]">
+                <span className="text-[11px]">{p.date}</span>
+                <div className="bg-[rgba(93,202,165,0.12)] text-[#5DCAA5] font-mono text-[10px] px-[9px] py-[4px] rounded-full">
+                  {p.status}
+                </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-      </div>
+            <button className="w-full border border-[#2a2a3a] text-[#EEEEE8] text-[12px] py-[11px] rounded-[12px] mt-[9px] text-center">To'lov usulini o'zgartirish</button>
+          </div>
+        )}
 
-      {/* Support & Logout */}
-      <div className="space-y-3 pt-4 border-t border-border">
-        <Button variant="outline" className="w-full justify-start rounded-xl h-12 bg-surface">
-          <HelpCircle size={18} className="mr-3 text-muted" />
-          Yordam va qoidalar
-          <ChevronRight size={16} className="ml-auto text-muted" />
-        </Button>
-        
-        <Button variant="outline" className="w-full justify-start rounded-xl h-12 bg-surface border-vred/30 text-vred hover:bg-vred/10 hover:text-vred" onClick={() => setLogoutOpen(true)}>
-          <LogOut size={18} className="mr-3" />
-          Tizimdan chiqish
-        </Button>
-      </div>
+        {activeTab === "stats" && (
+          <div className="animate-fadeIn">
+            <div className="font-mono text-[8px] tracking-[1px] text-muted mb-[10px]">VAZN DINAMIKASI · 6 OY</div>
+            <div className="flex items-end gap-[5px] h-[60px] mb-[6px]">
+              {[58, 55, 52, 50, 48, 46].map((v, i) => (
+                <div key={i} className={`flex-1 rounded-t-[4px] relative ${i === 5 ? "bg-[#E8FF47]" : "bg-[#1a1a26]"}`} style={{ height: `${v}%` }} />
+              ))}
+            </div>
+            <div className="flex gap-[5px]">
+              {["Yan","Fev","Mar","Apr","May","Iyun"].map((m, i) => (
+                <span key={i} className="flex-1 text-center text-[7px] text-muted font-mono">{m}</span>
+              ))}
+            </div>
 
-      <ConfirmDialog 
-        open={logoutOpen}
-        onClose={() => setLogoutOpen(false)}
-        onConfirm={handleLogout}
-        title="Tizimdan chiqish"
-        description="Haqiqatan ham profilingizdan chiqmoqchimisiz?"
-        confirmText="Chiqish"
-        variant="danger"
-      />
+            <div className="bg-[rgba(232,255,71,0.04)] border border-[rgba(232,255,71,0.3)] rounded-[13px] p-[14px] mt-[12px] mb-[9px]">
+              <div className="text-[11px] text-[#c8c8d8] leading-[1.5]">
+                📉 6 oyda <b className="text-[#E8FF47]">-7.2 kg</b>. Maqsadgacha 3.8 kg qoldi.
+              </div>
+            </div>
+
+            <div className="m-card flex justify-between items-center mb-[9px]">
+              <span className="text-[11px]">O'rtacha kunlik kaloriya</span>
+              <span className="font-mono text-[11px]">1,790</span>
+            </div>
+            <div className="m-card flex justify-between items-center mb-[9px]">
+              <span className="text-[11px]">Bajarilgan mashqlar</span>
+              <span className="font-mono text-[11px]">38 / 42</span>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "alerts" && (
+          <div className="animate-fadeIn flex flex-col gap-[9px]">
+            <div className="bg-[rgba(232,255,71,0.04)] border border-[rgba(232,255,71,0.3)] rounded-[13px] p-[14px]">
+              <div className="font-mono text-[11px] text-[#E8FF47] mb-[3px]">BUGUN</div>
+              <div className="text-[12px] leading-[1.5]">🔥 15-kun streak! Top 10%dasiz.</div>
+            </div>
+            <div className="m-card">
+              <div className="font-mono text-[11px] text-muted mb-[3px]">KECHA</div>
+              <div className="text-[12px] leading-[1.5]">🤖 AI: Bugungi protein normangizga 18g qoldi.</div>
+            </div>
+            <div className="m-card">
+              <div className="font-mono text-[11px] text-muted mb-[3px]">2 KUN OLDIN</div>
+              <div className="text-[12px] leading-[1.5]">💪 Coach Aziz yangi haftalik plan yukladi.</div>
+            </div>
+            <div className="m-card">
+              <div className="font-mono text-[11px] text-muted mb-[3px]">5 KUN OLDIN</div>
+              <div className="text-[12px] leading-[1.5]">💳 To'lov muvaffaqiyatli amalga oshirildi — $69.</div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth";
@@ -8,20 +7,16 @@ import { api, SUPABASE_MODE } from "@/lib/api";
 import { getSession } from "@/lib/auth";
 import { isTelegramWebApp, getTelegramInitData, expandWebApp } from "@/lib/telegram";
 import Sidebar from "@/components/shared/sidebar";
-import { Home, Dumbbell, Utensils, Trophy, Bot, BarChart3, Users, Wallet, CalendarCheck, Settings, Package, Download, MoreHorizontal, UserPlus, Target, User, ClipboardList } from "lucide-react";
+import { Search, Bell, Menu, LayoutGrid } from "lucide-react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, setAuth, clearAuth } = useAuthStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      if (user.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
-      else if ((user.role === "gym_owner" || user.role === "trainer" || user.role === "admin") && pathname.startsWith("/dashboard")) router.replace("/gym");
-      else if (user.role === "gym_owner" && !user.gym_id && !pathname.startsWith("/gym-onboarding")) router.replace("/gym-onboarding");
-      return;
-    }
+    if (user) return;
     (async () => {
       try {
         if (isTelegramWebApp()) {
@@ -58,112 +53,87 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         localStorage.setItem("zenfit_user", JSON.stringify(userData));
         setAuth(userData, "session");
 
-        if (userData.role === "member" && !pathname.startsWith("/onboarding") && !pathname.includes("/settings")) {
-          try {
-            const os = await api.onboarding.status();
-            if (!os?.data?.onboarding_done) { router.replace("/onboarding"); return; }
-          } catch {}
-        }
-        if (userData.role === "gym_owner" && !userData.gym_id && !pathname.startsWith("/gym-onboarding")) {
-          router.replace("/gym-onboarding"); return;
-        }
-        if (userData.role === "member" && pathname.startsWith("/gym")) router.replace("/dashboard");
-        else if ((userData.role === "gym_owner" || userData.role === "trainer" || userData.role === "admin") && pathname.startsWith("/dashboard")) router.replace("/gym");
       } catch { clearAuth(); localStorage.removeItem("zenfit_user"); router.push("/login"); }
     })();
   }, [pathname]);
 
   if (!user) return (
-    <div className="min-h-screen bg-bg flex items-center justify-center">
+    <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="flex gap-1.5">
-        {[0, 1, 2].map((i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />)}
+        {[0, 1, 2].map((i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />)}
       </div>
     </div>
   );
 
   return (
-    <div className="flex min-h-screen bg-bg">
-      <div className="hidden md:block"><Sidebar role={user.role} /></div>
-      <MobileNav role={user.role} />
-      <main className="flex-1 p-4 md:p-6 overflow-y-auto max-h-screen pb-28 md:pb-6 safe-top">{children}</main>
-    </div>
-  );
-}
+    <div className="flex min-h-screen bg-[#FAFAFA] md:p-6 md:gap-6 relative">
+      {/* Desktop Sidebar Wrapper */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-[#E5E5E5] overflow-hidden shrink-0">
+        <Sidebar role={user.role} />
+      </div>
 
-function MobileNav({ role }: { role: string }) {
-  const pathname = usePathname();
-  const [showMore, setShowMore] = useState(false);
-  const memberLinks = [
-    { href: "/dashboard", icon: Home, label: "Bosh" },
-    { href: "/dashboard/plan", icon: ClipboardList, label: "Plan" },
-    { href: "/dashboard/food", icon: Utensils, label: "Ovqat" },
-    { href: "/dashboard/chat", icon: Bot, label: "AI" },
-    { href: "/dashboard/profile", icon: User, label: "Profil" },
-  ];
-  const ownerMain = [
-    { href: "/gym", icon: BarChart3, label: "Asosiy" },
-    { href: "/gym/members", icon: Users, label: "A'zolar" },
-    { href: "/gym/payments", icon: Wallet, label: "To'lovlar" },
-    { href: "/gym/analytics", icon: BarChart3, label: "Analitika" },
-  ];
-  const ownerMore = [
-    { href: "/gym/attendance", icon: CalendarCheck, label: "Davomat" },
-    { href: "/gym/leaderboard", icon: Trophy, label: "Reyting" },
-    { href: "/gym/challenges", icon: Target, label: "Challenge" },
-    { href: "/gym/inventory", icon: Package, label: "Inventar" },
-    { href: "/gym/invite", icon: UserPlus, label: "Qo'shish" },
-    { href: "/gym/import", icon: Download, label: "Import" },
-    { href: "/gym/settings", icon: Settings, label: "Sozlamalar" },
-  ];
-  const links = role === "member" ? memberLinks : ownerMain;
-  return (
-    <>
-      {showMore && role !== "member" && (
-        <div className="md:hidden fixed inset-0 z-[60]" onClick={() => setShowMore(false)}>
-          <div className="absolute inset-0 bg-bg/60" />
-          <div className="absolute bottom-16 left-2 right-2 glass border border-border rounded-2xl p-4 animate-slideUp" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[10px] font-mono text-muted mb-3">KO&apos;PROQ</p>
-            <div className="grid grid-cols-4 gap-3">
-              {ownerMore.map((l) => {
-                const Icon = l.icon;
-                return (
-                  <Link key={l.href} href={l.href} onClick={() => setShowMore(false)} className="flex flex-col items-center gap-1 py-2 press">
-                    <Icon size={20} className="text-muted" />
-                    <span className="text-[9px] text-muted">{l.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <div className="relative bg-white h-full w-[255px] shadow-xl">
+            <Sidebar role={user.role} />
           </div>
         </div>
       )}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d16]/95 backdrop-blur-md border-t border-[#1a1a26] safe-bottom">
-        <div className="flex justify-around">
-          {links.map((l) => {
-            const active = pathname === l.href;
-            const Icon = l.icon;
-            return (
-              <Link 
-                key={l.href} 
-                href={l.href} 
-                className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-0 press transition-colors ${active ? "text-accent" : "text-[#52526a]"}`}
-              >
-                <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-                <span className="text-[9px] font-mono tracking-wide">{l.label}</span>
-              </Link>
-            );
-          })}
-          {role !== "member" && (
-            <button 
-              onClick={() => setShowMore(!showMore)} 
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-0 press transition-colors ${showMore ? "text-accent" : "text-[#52526a]"}`}
-            >
-              <MoreHorizontal size={22} strokeWidth={showMore ? 2.5 : 2} />
-              <span className="text-[9px] font-mono tracking-wide">Ko&apos;proq</span>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 pr-0 md:pr-2">
+        {/* Header */}
+        <header className="h-[64px] flex items-center justify-between px-4 md:px-0 mb-4 md:mb-0 shrink-0">
+          <div className="flex items-center gap-4">
+            <button className="md:hidden p-2 -ml-2" onClick={() => setMobileMenuOpen(true)}>
+              <Menu size={24} />
             </button>
-          )}
-        </div>
-      </nav>
-    </>
+            <div className="hidden md:flex items-center gap-3">
+              <div className="w-7 h-7 flex items-center justify-center">
+                <Menu size={20} className="text-gray-800" />
+              </div>
+              <div className="w-[1px] h-4 bg-gray-300" />
+              <h1 className="text-[20px] font-medium text-[#171717]">Actify</h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Search */}
+            <div className="hidden lg:flex w-[300px] h-[36px] bg-white border border-[#E5E5E5] rounded-md items-center px-3 gap-2">
+              <Search size={16} className="text-[#737373]" />
+              <input type="text" placeholder="Type to search..." className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#737373]" />
+            </div>
+
+            {/* Header Icons */}
+            <div className="flex items-center gap-2">
+              <button className="w-[36px] h-[36px] bg-white border border-[#E5E5E5] rounded-md flex items-center justify-center text-[#0A0A0A] hover:bg-gray-50">
+                <LayoutGrid size={18} />
+              </button>
+              <button className="w-[36px] h-[36px] bg-white border border-[#E5E5E5] rounded-md flex items-center justify-center text-[#0A0A0A] hover:bg-gray-50">
+                <Bell size={18} />
+              </button>
+            </div>
+
+            {/* User Profile */}
+            <div className="flex items-center gap-3 ml-2">
+              <div className="w-10 h-10 rounded-lg bg-gray-200 overflow-hidden shrink-0">
+                <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.full_name}&backgroundColor=2563EB`} alt="avatar" className="w-full h-full object-cover" />
+              </div>
+              <div className="hidden md:flex flex-col">
+                <span className="text-[14px] font-semibold text-[#0A0A0A] leading-tight">{user.full_name}</span>
+                <span className="text-[12px] text-[#0A0A0A] opacity-70 leading-tight">Student</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto pb-safe">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }

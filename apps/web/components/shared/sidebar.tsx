@@ -1,117 +1,83 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { LayoutDashboard, Users, Wallet, BarChart3, Trophy, Settings, LogOut, Dumbbell, Utensils, Bot, Camera, CalendarCheck, Target, Sun, Moon, MessageCircle, UserCog, Building2, ShieldCheck, UsersRound, User, UserPlus } from "lucide-react";
-import { useTheme } from "@/components/theme-provider";
-
-const memberLinks = [
-  { group: "ASOSIY", items: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/today", label: "Bugun", icon: CalendarCheck },
-    { href: "/dashboard/plan", label: "Plan", icon: Dumbbell },
-  ]},
-  { group: "KUZATUV", items: [
-    { href: "/dashboard/food", label: "Ovqat/Kaloriya", icon: Utensils },
-    { href: "/dashboard/photos", label: "Progress", icon: Camera },
-    { href: "/dashboard/chat", label: "Chat", icon: MessageCircle },
-  ]},
-  { group: "BOSHQA", items: [
-    { href: "/dashboard/challenges", label: "Challenge", icon: Target },
-    { href: "/dashboard/profile", label: "Profil", icon: User },
-    { href: "/dashboard/settings", label: "Sozlamalar", icon: Settings },
-  ]},
-];
-
-const ownerLinks = [
-  { group: "BOSHQARISH", items: [
-    { href: "/gym", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/gym/members", label: "A'zolar (CRM)", icon: Users },
-    { href: "/gym/payments", label: "To'lovlar", icon: Wallet },
-    { href: "/gym/analytics", label: "Analitika", icon: BarChart3 },
-    { href: "/gym/trainers", label: "Trenerlar", icon: UserCog },
-    { href: "/gym/groups", label: "Guruhlar", icon: UsersRound },
-  ]},
-  { group: "ALOQA", items: [
-    { href: "/gym/notify", label: "Chat", icon: MessageCircle },
-    { href: "/gym/challenges", label: "Challengelar", icon: Target },
-    { href: "/gym/leaderboard", label: "Reyting", icon: Trophy },
-    { href: "/gym/settings", label: "Sozlamalar", icon: Settings },
-  ]},
-];
-
-const trainerLinks = [
-  { group: "ISH", items: [
-    { href: "/gym", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/gym/trainer", label: "A'zolarim", icon: Users },
-    { href: "/gym/attendance", label: "Davomat", icon: CalendarCheck },
-    { href: "/gym/notify", label: "Chat", icon: MessageCircle },
-    { href: "/gym/leaderboard", label: "Reyting", icon: Trophy },
-  ]},
-];
-
-const adminLinks = [
-  { group: "BOSHQARUV", items: [
-    { href: "/gym", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/gym/all", label: "Gymlar", icon: Building2 },
-    { href: "/gym/contracts", label: "Kontraktlar", icon: Wallet },
-    { href: "/gym/users", label: "Userlar", icon: Users },
-  ]},
-  { group: "TAHLIL", items: [
-    { href: "/gym/analytics", label: "Analitika", icon: BarChart3 },
-    { href: "/gym/create", label: "Gym yaratish", icon: UserPlus },
-    { href: "/gym/settings", label: "Sozlamalar", icon: Settings },
-  ]},
-];
+import { LayoutDashboard, Box, Trophy, FileText, Info, HelpCircle, Phone, Building, ChevronRight, ChevronDown } from "lucide-react";
+import { useState } from "react";
 
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const clearAuth = useAuthStore((s) => s.clearAuth);
-  const { theme, toggle } = useTheme();
-  const groups = role === "member" ? memberLinks : role === "trainer" ? trainerLinks : role === "admin" ? adminLinks : ownerLinks;
-
-  const logout = () => { localStorage.removeItem("access_token"); localStorage.removeItem("zenfit_user"); clearAuth(); router.push("/login"); };
+  const user = useAuthStore((s) => s.user);
+  const [appsOpen, setAppsOpen] = useState(true);
 
   return (
-    <aside className="w-56 bg-sidebar border-r border-border flex flex-col py-5 px-3 shrink-0 min-h-screen transition-colors">
-      <div className="flex items-center gap-2.5 px-2.5 mb-4">
-        <div className="w-7 h-7 rounded-[7px] bg-accent flex items-center justify-center font-display font-bold text-[13px] text-bg">Z</div>
-        <span className="font-display font-bold text-[14px] text-vtext">ZenFit</span>
+    <aside className="w-[255px] min-h-[calc(100vh-48px)] h-full bg-white flex flex-col p-2">
+      {/* Logo */}
+      <div className="p-2 flex items-center gap-2.5 mb-2">
+        <div className="bg-blue-600 rounded-lg p-1.5 flex items-center justify-center shrink-0">
+          <div className="w-3.5 h-3.5 border-2 border-white rounded-sm" />
+        </div>
+        <span className="font-semibold text-[18px] text-[#0A0A0A] flex-1 tracking-tight">Actify</span>
       </div>
 
-      <nav className="flex-1 space-y-1">
-        {groups.map((g) => (
-          <div key={g.group}>
-            <p className="font-mono text-[9px] tracking-[2px] text-muted px-2.5 mt-4 mb-2">{g.group}</p>
-            {g.items.map((l) => {
-              const active = pathname === l.href;
-              const Icon = l.icon;
-              return (
-                <Link key={l.href} href={l.href}
-                  className={`flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg text-[13px] mb-[1px] transition-colors ${
-                    active
-                      ? "bg-accent/[0.09] text-accent font-medium"
-                      : "text-muted hover:bg-card hover:text-vtext"
-                  }`}
-                >
-                  <Icon size={15} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" />
-                  <span className="flex-1">{l.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+      {/* Main Nav */}
+      <nav className="flex-1 flex flex-col gap-1 mt-2">
+        <div className="px-2 py-1 mb-1">
+          <span className="text-[14px] font-medium text-[#0A0A0A] opacity-70">Main</span>
+        </div>
+        
+        <Link href="/dashboard" className="flex items-center gap-2.5 px-2.5 py-2 bg-blue-500 rounded-md text-white">
+          <LayoutDashboard size={18} strokeWidth={2} />
+          <span className="text-[16px] font-normal">Dashboard</span>
+        </Link>
+        
+        <div className="flex flex-col gap-1 mt-1">
+          <button 
+            onClick={() => setAppsOpen(!appsOpen)}
+            className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-100 text-[#0A0A0A] transition-colors"
+          >
+            <Box size={18} strokeWidth={2} />
+            <span className="text-[16px] font-normal flex-1 text-left">My applications</span>
+            {appsOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
+          
+          {/* Sub menu */}
+          {appsOpen && (
+            <div className="pl-8 flex flex-col gap-1 border-l-2 border-[#D4D4D4] ml-5 mb-1 py-0.5">
+              <button className="px-3 py-1.5 text-[#737373] hover:text-[#0A0A0A] text-left text-[16px] transition-colors rounded-md hover:bg-gray-50">Educational grant</button>
+              <button className="px-3 py-1.5 text-[#737373] hover:text-[#0A0A0A] text-left text-[16px] transition-colors rounded-md hover:bg-gray-50">Additional state grant</button>
+            </div>
+          )}
+
+          <Link href="#" className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-100 text-[#0A0A0A] transition-colors">
+            <Trophy size={18} strokeWidth={2} />
+            <span className="text-[16px] font-normal flex-1">Ranking</span>
+          </Link>
+          <Link href="#" className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-100 text-[#0A0A0A] transition-colors">
+            <FileText size={18} strokeWidth={2} />
+            <span className="text-[16px] font-normal flex-1">Report</span>
+          </Link>
+          <Link href="#" className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-100 text-[#0A0A0A] transition-colors">
+            <Info size={18} strokeWidth={2} />
+            <span className="text-[16px] font-normal flex-1">Information</span>
+          </Link>
+        </div>
       </nav>
 
-      <div className="border-t border-border pt-3 mt-2">
-        <button onClick={toggle} className="flex items-center gap-2.5 px-2.5 py-2 text-[12px] text-muted hover:text-accent transition-colors w-full mb-1">
-          {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-          {theme === "dark" ? "Light mode" : "Dark mode"}
-        </button>
-        <button onClick={logout} className="flex items-center gap-2.5 px-2.5 py-2 text-[12px] text-muted hover:text-vred transition-colors w-full">
-          <LogOut size={14} /> Chiqish
-        </button>
+      {/* Footer Nav */}
+      <div className="flex flex-col gap-1 mt-auto pt-4 border-t border-transparent">
+        <Link href="#" className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-100 text-[#0A0A0A] transition-colors">
+          <Building size={18} strokeWidth={2} />
+          <span className="text-[16px] font-normal">About us</span>
+        </Link>
+        <Link href="#" className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-100 text-[#0A0A0A] transition-colors">
+          <HelpCircle size={18} strokeWidth={2} />
+          <span className="text-[16px] font-normal">Support</span>
+        </Link>
+        <Link href="#" className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-100 text-[#0A0A0A] transition-colors">
+          <Phone size={18} strokeWidth={2} />
+          <span className="text-[16px] font-normal">Contact us</span>
+        </Link>
       </div>
     </aside>
   );

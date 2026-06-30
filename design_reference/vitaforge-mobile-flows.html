@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>VitaForge — Mobile UX Flows (Member / Trainer / Owner)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080810;
+    color: #EEEEE8;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 60px;
+  }
+
+  .intro { max-width: 980px; margin: 0 auto; padding: 48px 24px 24px; }
+  .intro-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 3px; color: #E8FF47; margin-bottom: 10px; }
+  .intro-title { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -0.5px; margin-bottom: 14px; }
+  .intro-body { color: #9999ad; font-size: 14px; line-height: 1.7; max-width: 680px; }
+
+  /* role switcher */
+  .role-tabs { max-width: 980px; margin: 0 auto 36px; padding: 0 24px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .role-tab {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px;
+    padding: 10px 18px; border-radius: 30px; border: 1px solid #1e1e2c; color: #8888a0;
+    cursor: pointer; background: #0d0d16; transition: all .15s ease;
+  }
+  .role-tab.active { background: #E8FF47; color: #080810; border-color: #E8FF47; font-weight: 600; }
+  .role-tab:hover:not(.active) { border-color: #3a3a4a; color: #c8c8d8; }
+
+  .stage { max-width: 980px; margin: 0 auto; padding: 0 24px; display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; }
+
+  /* phone */
+  .phone-frame {
+    background: #050508; border: 8px solid #1a1a26; border-radius: 36px;
+    overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.5); position: relative; flex-shrink:0;
+  }
+  .phone-notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 90px; height: 18px; background: #1a1a26; border-radius: 12px; z-index: 10; }
+  .phone-screen { width: 280px; height: 580px; background: #080810; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+
+  .status-bar { height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 10px; color: #b8b8c8; font-family: 'JetBrains Mono'; flex-shrink: 0; }
+  .m-topbar { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px 10px; flex-shrink: 0; }
+  .m-logo { display: flex; align-items: center; gap: 6px; }
+  .m-logo .mark { width: 18px; height: 18px; background: #E8FF47; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-family: 'Unbounded'; font-weight: 900; font-size: 9px; color: #080810; }
+  .m-logo .text { font-family: 'Unbounded'; font-weight: 700; font-size: 11px; }
+
+  .m-content { flex: 1; padding: 0 14px; overflow-y: auto; }
+  .m-content::-webkit-scrollbar { display: none; }
+
+  .m-nav { display: flex; border-top: 1px solid #1a1a26; background: rgba(13,13,22,0.97); flex-shrink: 0; }
+  .m-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 10px; font-size: 8px; color: #52526a; cursor: pointer; user-select: none; transition: color .12s ease; }
+  .m-nav-item.active { color: #E8FF47; }
+  .m-nav-item .nic { font-size: 16px; }
+
+  .m-label { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 1px; color: #52526a; margin-bottom: 5px; }
+  .m-h1 { font-family: 'Unbounded'; font-weight: 700; font-size: 17px; line-height: 1.2; }
+
+  .m-card { background: #0d0d16; border: 1px solid #1e1e2c; border-radius: 13px; padding: 13px 14px; margin-bottom: 9px; }
+  .m-card.accent { border-color: rgba(232,255,71,0.3); background: rgba(232,255,71,0.04); }
+  .m-card.bad { border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.05); }
+
+  .big-btn { width: 100%; background: #E8FF47; color: #080810; font-family: 'DM Sans'; font-weight: 600; font-size: 13px; text-align: center; padding: 13px; border-radius: 12px; box-shadow: 0 0 18px rgba(232,255,71,0.25); cursor:pointer; }
+  .outline-btn { width: 100%; border: 1px solid #2a2a3a; color: #EEEEE8; font-size: 12px; text-align: center; padding: 11px; border-radius: 12px; cursor:pointer; }
+
+  .progress-track { height: 6px; background: #1a1a26; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #E8FF47; border-radius: 4px; }
+
+  .quick-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .quick-item { background: #0d0d16; border: 1px solid #1e1e2c; border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor:pointer; }
+  .quick-item .qi { font-size: 18px; }
+  .quick-item .ql { font-size: 10px; color: #c8c8d8; text-align: center; }
+
+  .avatar-sm { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Unbounded'; font-weight: 700; font-size: 10px; flex-shrink: 0; }
+
+  .row-between { display:flex; justify-content:space-between; align-items:center; }
+  .pill { font-size:10px; padding:4px 9px; border-radius:20px; font-family:'JetBrains Mono'; }
+  .pill.good { background:rgba(93,202,165,0.12); color:#5DCAA5; }
+  .pill.bad { background:rgba(255,107,107,0.12); color:#FF6B6B; }
+  .pill.mid { background:rgba(232,197,71,0.12); color:#E8C547; }
+
+  /* side panel notes */
+  .notes { flex: 1; min-width: 260px; padding-top: 6px; }
+  .note-block { margin-bottom: 18px; }
+  .note-tag { font-family:'JetBrains Mono'; font-size:10px; letter-spacing:1px; color:#E8FF47; margin-bottom:5px; }
+  .note-title { font-family:'Unbounded'; font-weight:600; font-size:13px; margin-bottom:5px; }
+  .note-body { font-size:12px; color:#9999ad; line-height:1.6; }
+
+  /* profile sheet */
+  .sheet-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.55); z-index:20; opacity:0; pointer-events:none; transition:opacity .18s ease; }
+  .sheet-backdrop.open { opacity:1; pointer-events:auto; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; max-height:88%; background:#0b0b13; border-top:1px solid #1e1e2c; border-radius:22px 22px 0 0; z-index:21; transform:translateY(100%); transition:transform .22s ease; display:flex; flex-direction:column; }
+  .sheet.open { transform:translateY(0); }
+  .sheet-handle { width:36px; height:4px; background:#2a2a3a; border-radius:3px; margin:10px auto 6px; flex-shrink:0; }
+  .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:4px 16px 10px; flex-shrink:0; }
+  .sheet-close { font-size:14px; color:#8888a0; cursor:pointer; }
+  .sheet-tabs { display:flex; gap:6px; padding:0 14px 10px; flex-shrink:0; }
+  .sheet-tab { font-family:'JetBrains Mono'; font-size:9px; letter-spacing:1px; padding:7px 12px; border-radius:20px; background:#13131c; border:1px solid #1e1e2c; color:#8888a0; cursor:pointer; }
+  .sheet-tab.active { background:#E8FF47; color:#080810; border-color:#E8FF47; }
+  .sheet-body { padding:0 14px 16px; overflow-y:auto; }
+
+  .bar-row { display:flex; align-items:flex-end; gap:5px; height:60px; margin-bottom:6px; }
+  .bar-col { flex:1; background:#1a1a26; border-radius:4px 4px 0 0; position:relative; }
+  .bar-col.hi { background:#E8FF47; }
+  .bar-labels { display:flex; gap:5px; }
+  .bar-labels span { flex:1; text-align:center; font-size:7px; color:#52526a; font-family:'JetBrains Mono'; }
+
+  .level-chip { display:inline-flex; align-items:center; gap:4px; margin-top:8px; background:rgba(232,255,71,0.12); padding:4px 10px; border-radius:20px; }
+
+  .week-dots { display:flex; gap:5px; justify-content:space-between; margin-top:10px; }
+  .week-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:8px; background:#1a1a26; color:#52526a; font-family:'JetBrains Mono'; flex-shrink:0; }
+  .week-dot.done { background:#E8FF47; color:#080810; font-weight:700; }
+  .week-dot.today { box-shadow:0 0 0 2px rgba(232,255,71,0.4); }
+
+  .badge-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin:8px 0 4px; }
+  .badge-item { background:#0d0d16; border:1px solid #1e1e2c; border-radius:12px; padding:10px 3px 8px; display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; }
+  .badge-item .bi { font-size:17px; }
+  .badge-item .bl { font-size:7px; color:#c8c8d8; line-height:1.25; }
+  .badge-item.locked { opacity:.4; filter:grayscale(1); }
+  .badge-item.locked .bl { color:#52526a; }
+
+  .footer-note { max-width: 980px; margin: 50px auto 0; padding: 0 24px; }
+  .annot-mini { font-size: 11px; color: #9fc4e8; background: rgba(107,174,234,0.06); border: 1px dashed rgba(107,174,234,0.35); border-radius: 10px; padding: 12px 14px; line-height: 1.6; max-width: 680px; }
+  .annot-mini b { color: #c8e0f8; }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <div class="intro-label">INTERAKTIV PROTOTIP</div>
+  <div class="intro-title">3 rol, bitta dizayn tizimi</div>
+  <div class="intro-body">
+    Pastdagi tugmalar bilan rolni tanlang (Member / Trainer / Owner), keyin telefon ekranidagi bottom nav orqali sahifalar orasida real navigatsiya qiling. Har bir rol — o'z chastotasiga mos tuzilgan: member uchun harakat-markazli, trainer uchun kun-markazli, owner uchun nazorat-markazli.
+  </div>
+</div>
+
+<div class="role-tabs" id="roleTabs"></div>
+<div class="role-tabs" style="margin-top:-26px;">
+  <div class="role-tab" id="onboardBtn" onclick="startOnboarding()" style="border-style:dashed;">▶ Onboarding namoyishi</div>
+</div>
+
+<div class="stage">
+  <div class="phone-frame">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><span>●●●●</span></div>
+      <div class="m-topbar">
+        <div class="m-logo"><div class="mark">V</div><div class="text">VitaForge</div></div>
+        <span id="topbarRight" style="font-size:14px; cursor:pointer; position:relative;">⚙️</span>
+      </div>
+      <div class="m-content" id="screenContent"></div>
+      <div class="m-nav" id="bottomNav"></div>
+
+      <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSheet()"></div>
+      <div class="sheet" id="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-head">
+          <span id="sheetTitle" style="font-family:'Unbounded'; font-weight:600; font-size:12px;">AI Trener</span>
+          <span class="sheet-close" onclick="closeSheet()">✕</span>
+        </div>
+        <div class="sheet-body" id="sheetBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes" id="sideNotes"></div>
+</div>
+
+<div class="footer-note">
+  <div class="annot-mini">
+    <b>UX qarori — nega 3 ta rol bir xil "qobiqda"?</b> Brand tanish bo'lishi uchun status bar, topbar va card uslubi barchasida bir xil qoladi. Farq faqat bottom nav tarkibida va har bir ekranning <i>asosiy harakatida</i> — member uchun "checkin/yozish", trainer uchun "tasdiqlash/javob berish", owner uchun "ko'rib chiqish/qaror qabul qilish".
+  </div>
+</div>
+
+<script>
+const ROLES = {
+  member: {
+    label: "Member",
+    icon: "🧑",
+    tabs: [
+      { id: "home", icon: "🏠", label: "Bosh" },
+      { id: "plan", icon: "💪", label: "Plan" },
+      { id: "food", icon: "🥗", label: "Ovqat" },
+      { id: "top", icon: "🏆", label: "Top" },
+      { id: "profile", icon: "👤", label: "Profil" },
+    ],
+    note: {
+      tag: "MEMBER · HARAKAT-MARKAZLI",
+      title: "Profil — nav barda, lekin ichida hammasi bor",
+      body: "5 ta tab kuniga ishlatiladigan harakatlar. Profil alohida tab — chunki daraja/badge/streak ko'rish ham odat bo'lishi kerak. To'lov, analitika, bildirishnoma — bularning barchasi Profil ichida segment sifatida, alohida tab band qilmaydi. AI Trener esa istalgan ekrandan ⚡ tugma orqali ochiladi — tez-tez kerak, lekin doimiy joy egallashi shart emas."
+    }
+  },
+  trainer: {
+    label: "Trainer",
+    icon: "🏋️",
+    tabs: [
+      { id: "today", icon: "📅", label: "Bugun" },
+      { id: "clients", icon: "👥", label: "Mijozlar" },
+      { id: "schedule", icon: "🗓️", label: "Jadval" },
+      { id: "chat", icon: "💬", label: "Xabar" },
+      { id: "profile", icon: "👤", label: "Profil" },
+    ],
+    note: {
+      tag: "TRAINER · KUN-MARKAZLI",
+      title: "\"Bugun\" — standart ochiladigan ekran",
+      body: "Trener kuniga 5-10 marta ochadi, asosan keyingi seans kim ekanligini bilish uchun. Profil tabida daromad, analitika va bildirishnoma segment sifatida joylashgan — alohida sahifalar emas."
+    }
+  },
+  owner: {
+    label: "Owner",
+    icon: "🏢",
+    tabs: [
+      { id: "dash", icon: "📊", label: "Bosh" },
+      { id: "members", icon: "👥", label: "A'zolar" },
+      { id: "risk", icon: "🔥", label: "Risk" },
+      { id: "trainers", icon: "🏋️", label: "Trenerlar" },
+      { id: "profile", icon: "👤", label: "Profil" },
+    ],
+    note: {
+      tag: "OWNER · NAZORAT-MARKAZLI",
+      title: "Billing endi Profil ichida",
+      body: "Owner Telegram'da tezroq tekshirish uchun ochadi: bugun necha kishi keldi, kim ketib qolishi mumkin. Billing/to'lov kamdan-kam tekshiriladi, shu sabab alohida tab band qilmay Profil ichiga ko'chirildi — nav barda faqat eng tez-tez kerak bo'ladigan 5 narsa qoladi."
+    }
+  }
+};
+
+let currentRole = "member";
+let currentTab = { member: "home", trainer: "today", owner: "dash" };
+
+function renderRoleTabs() {
+  const wrap = document.getElementById("roleTabs");
+  wrap.innerHTML = "";
+  Object.keys(ROLES).forEach(r => {
+    const btn = document.createElement("div");
+    btn.className = "role-tab" + (r === currentRole ? " active" : "");
+    btn.textContent = ROLES[r].icon + "  " + ROLES[r].label;
+    btn.onclick = () => { currentRole = r; render(); };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderBottomNav() {
+  const nav = document.getElementById("bottomNav");
+  nav.innerHTML = "";
+  ROLES[currentRole].tabs.forEach(t => {
+    const item = document.createElement("div");
+    item.className = "m-nav-item" + (t.id === currentTab[currentRole] ? " active" : "");
+    item.innerHTML = `<span class="nic">${t.icon}</span>${t.label}`;
+    item.onclick = () => { currentTab[currentRole] = t.id; render(); };
+    nav.appendChild(item);
+  });
+}
+
+function renderNotes() {
+  const n = ROLES[currentRole].note;
+  document.getElementById("sideNotes").innerHTML = `
+    <div class="note-block">
+      <div class="note-tag">${n.tag}</div>
+      <div class="note-title">${n.title}</div>
+      <div class="note-body">${n.body}</div>
+    </div>
+  `;
+}
+
+/* ---------------- screen templates ---------------- */
+
+const SCREENS = {
+  member: {
+    home: () => `
+      <div class="row-between" style="padding-top:4px;">
+        <div>
+          <div class="m-label">XUSH KELIBSIZ</div>
+          <div class="m-h1">Salom, Jasur 👋</div>
+        </div>
+        <div onclick="openAIChat()" style="width:30px; height:30px; border-radius:10px; background:rgba(232,255,71,0.12); border:1px solid rgba(232,255,71,0.3); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;">🤖</div>
+      </div>
+      <div class="m-card accent" style="text-align:center; padding:16px; margin-top:8px;">
+        <div style="font-size:11px; color:#E8FF47; margin-bottom:6px; font-family:'JetBrains Mono';">BUGUN HALI CHECKIN QILMADINGIZ</div>
+        <div class="big-btn">📍 Gym ga keldim</div>
+      </div>
+      <div class="m-card">
+        <div class="row-between" style="margin-bottom:8px;">
+          <span class="m-label" style="margin:0;">BUGUNGI KALORIYA</span>
+          <span style="font-family:'JetBrains Mono'; font-size:11px;"><b style="color:#E8FF47;">340</b><span style="color:#52526a;"> / 1840</span></span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:18%;"></div></div>
+      </div>
+      <div class="quick-grid">
+        <div class="quick-item"><span class="qi">🥗</span><span class="ql">Ovqat qo'shish</span></div>
+        <div class="quick-item"><span class="qi">📸</span><span class="ql">Foto yuklash</span></div>
+      </div>
+      <div class="m-card" style="border-left:2px solid #E8FF47; cursor:pointer;" onclick="openAIChat()">
+        <div style="font-size:10px; color:#E8FF47; font-family:'JetBrains Mono'; margin-bottom:4px;">🤖 AI TAVSIYASI</div>
+        <div style="font-size:11px; color:#c8c8d8; line-height:1.5;">Kecha protein normangizdan 22g kam yedingiz. Bugun tushlikka tuxum yoki tovuq ko'shing — Coach Aziz ham shu haqida yozgan edi.</div>
+      </div>`,
+    plan: () => `
+      <div class="row-between" style="padding:4px 0 8px;">
+        <div class="m-label" style="margin:0;">3-HAFTA PLANI</div><span style="font-size:11px; color:#E8FF47;">🔄</span>
+      </div>
+      <div class="m-card accent">
+        <div style="font-size:10px; color:#E8FF47; font-family:'JetBrains Mono'; margin-bottom:4px;">BUGUN · DUSHANBA</div>
+        <div style="font-weight:600; font-size:13px;">💪 Kuch mashqi</div>
+        <div style="font-size:10px; color:#8888a0;">45 daqiqa · 6 mashq</div>
+      </div>
+      <div class="m-card row-between"><div><div style="font-size:12px; font-weight:500;">Squat</div><div style="font-size:10px; color:#52526a;">Dam: 60s</div></div><span style="font-family:'JetBrains Mono'; font-size:12px; color:#E8FF47;">4×12</span></div>
+      <div class="m-card row-between"><div><div style="font-size:12px; font-weight:500;">Bench press</div><div style="font-size:10px; color:#52526a;">Dam: 90s</div></div><span style="font-family:'JetBrains Mono'; font-size:12px; color:#E8FF47;">4×10</span></div>
+      <div class="m-card row-between" style="opacity:.5;"><div><div style="font-size:12px; font-weight:500;">Deadlift</div><div style="font-size:10px; color:#52526a;">Dam: 90s</div></div><span style="font-family:'JetBrains Mono'; font-size:12px;">3×8</span></div>
+      <div class="big-btn" style="margin-top:6px;">✓ Mashqni tugatdim</div>`,
+    food: () => `
+      <div class="m-label" style="padding-top:4px;">OVQAT QO'SHISH</div>
+      <div class="m-card accent" style="margin-top:8px;">
+        <div style="font-size:10px; color:#E8FF47; font-family:'JetBrains Mono'; margin-bottom:8px;">🤖 NIMA YEDINGIZ?</div>
+        <div style="background:#13131c; border:1px solid #2a2a3a; border-radius:10px; padding:10px 12px; font-size:12px; color:#c8c8d8;">"bir piyola osh va salat"</div>
+      </div>
+      <div class="m-card" style="border-color:rgba(232,255,71,0.3);">
+        <div class="row-between" style="margin-bottom:6px;"><span style="font-size:13px; font-weight:600;">O'zbek oshi</span><span style="font-family:'JetBrains Mono'; font-size:12px; color:#E8FF47;">540 kcal</span></div>
+        <div style="font-size:10px; color:#52526a;">≈ 300g porsiya</div>
+      </div>
+      <div class="m-card"><div class="row-between"><span style="font-size:13px; font-weight:600;">Ko'k salat</span><span style="font-family:'JetBrains Mono'; font-size:12px; color:#E8FF47;">45 kcal</span></div></div>
+      <div class="big-btn" style="margin-top:6px;">+ Qo'shish (585 kcal)</div>`,
+    top: () => `
+      <div class="m-label" style="padding-top:4px;">HAFTALIK REYTING</div>
+      <div class="m-card accent" style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+        <div class="avatar-sm" style="background:#E8FF47; color:#080810;">#3</div>
+        <div style="flex:1;"><div style="font-size:12px; font-weight:600;">Siz</div><div style="font-size:10px; color:#8888a0;">2,340 ball</div></div>
+      </div>
+      <div class="m-card" style="display:flex; align-items:center; gap:10px;"><span style="font-size:16px;">🥇</span><div class="avatar-sm" style="background:rgba(232,255,71,0.12); color:#E8FF47;">NM</div><div style="flex:1; font-size:12px;">Nilufar M.</div><span style="font-family:'JetBrains Mono'; font-size:11px; color:#52526a;">3,120</span></div>
+      <div class="m-card" style="display:flex; align-items:center; gap:10px;"><span style="font-size:16px;">🥈</span><div class="avatar-sm" style="background:rgba(107,174,234,0.12); color:#6BAEEA;">KS</div><div style="flex:1; font-size:12px;">Kamola S.</div><span style="font-family:'JetBrains Mono'; font-size:11px; color:#52526a;">2,890</span></div>
+      <div class="m-card" style="display:flex; align-items:center; gap:10px;"><span style="font-size:16px;">🥉</span><div class="avatar-sm" style="background:rgba(232,255,71,0.12); color:#E8FF47;">JT</div><div style="flex:1; font-size:12px; font-weight:600;">Siz</div><span style="font-family:'JetBrains Mono'; font-size:11px; color:#E8FF47;">2,340</span></div>`,
+    profile: () => renderProfileScreen("member"),
+  },
+
+  trainer: {
+    today: () => `
+      <div class="m-label" style="padding-top:4px;">BUGUN · DUSHANBA</div>
+      <div class="m-h1" style="margin-bottom:10px;">6 seans, 2 ta qoldi</div>
+      <div class="m-card accent row-between">
+        <div><div style="font-size:12px; font-weight:600;">Jasur Tashkentov</div><div style="font-size:10px; color:#8888a0;">14:00 · Kuch mashqi</div></div>
+        <div class="pill good">Tayyor</div>
+      </div>
+      <div class="m-card row-between">
+        <div><div style="font-size:12px; font-weight:600;">Madina Yusupova</div><div style="font-size:10px; color:#8888a0;">15:30 · Cardio</div></div>
+        <div class="pill bad">3 kun yo'q</div>
+      </div>
+      <div class="m-card bad">
+        <div style="font-size:10px; color:#FF6B6B; font-family:'JetBrains Mono'; margin-bottom:4px;">⚠️ AI OGOHLANTIRISH</div>
+        <div style="font-size:11px; color:#c8c8d8; line-height:1.5;">Madina 3 kundan beri checkin qilmagan. Churn xavfi yuqori.</div>
+      </div>
+      <div class="big-btn">📩 Madinaga xabar yuborish</div>`,
+    clients: () => `
+      <div class="m-label" style="padding-top:4px;">MIJOZLARIM (22)</div>
+      <div class="m-card row-between" style="margin-top:8px;"><div><div style="font-size:12px; font-weight:600;">Jasur Tashkentov</div><div style="font-size:10px; color:#52526a;">Adherence: 81%</div></div><div class="pill good">Faol</div></div>
+      <div class="m-card row-between"><div><div style="font-size:12px; font-weight:600;">Dilnoza Karimova</div><div style="font-size:10px; color:#52526a;">Adherence: 42%</div></div><div class="pill bad">Risk</div></div>
+      <div class="m-card row-between"><div><div style="font-size:12px; font-weight:600;">Otabek Rashidov</div><div style="font-size:10px; color:#52526a;">Adherence: 88%</div></div><div class="pill good">Faol</div></div>
+      <div class="m-card row-between"><div><div style="font-size:12px; font-weight:600;">Madina Yusupova</div><div style="font-size:10px; color:#52526a;">Adherence: 30%</div></div><div class="pill bad">Risk</div></div>`,
+    schedule: () => `
+      <div class="m-label" style="padding-top:4px;">BU HAFTA</div>
+      <div class="m-card"><div class="row-between"><span style="font-size:11px; font-weight:600;">Dushanba</span><span style="font-size:10px; color:#52526a;">6 seans</span></div></div>
+      <div class="m-card accent"><div class="row-between"><span style="font-size:11px; font-weight:600;">Seshanba</span><span style="font-size:10px; color:#E8FF47;">8 seans</span></div></div>
+      <div class="m-card"><div class="row-between"><span style="font-size:11px; font-weight:600;">Chorshanba</span><span style="font-size:10px; color:#52526a;">5 seans</span></div></div>
+      <div class="m-card"><div class="row-between"><span style="font-size:11px; font-weight:600;">Payshanba</span><span style="font-size:10px; color:#52526a;">7 seans</span></div></div>
+      <div class="outline-btn" style="margin-top:6px;">+ Bo'sh vaqt qo'shish</div>`,
+    chat: () => `
+      <div class="m-label" style="padding-top:4px;">XABARLAR</div>
+      <div class="m-card row-between" style="margin-top:8px;"><div><div style="font-size:12px; font-weight:600;">Jasur Tashkentov</div><div style="font-size:10px; color:#8888a0;">Ertaga vaqt bormi?</div></div><span style="font-size:9px; color:#52526a;">5d</span></div>
+      <div class="m-card row-between"><div><div style="font-size:12px; font-weight:600;">Otabek Rashidov</div><div style="font-size:10px; color:#8888a0;">Rahmat, bugun zo'r o'tdi 💪</div></div><span style="font-size:9px; color:#52526a;">1s</span></div>
+      <div class="m-card bad row-between"><div><div style="font-size:12px; font-weight:600;">Madina Yusupova</div><div style="font-size:10px; color:#FF6B6B;">AI: javob kutilmoqda</div></div><span style="font-size:9px; color:#52526a;">3k</span></div>`,
+    profile: () => renderProfileScreen("trainer")
+  },
+
+  owner: {
+    dash: () => `
+      <div class="m-label" style="padding-top:4px;">BUGUN · POWERHOUSE GYM</div>
+      <div class="m-h1" style="margin-bottom:10px;">248 faol a'zo</div>
+      <div class="m-card accent row-between"><span style="font-size:12px;">Bugun checkin</span><span style="font-family:'JetBrains Mono'; font-size:13px; color:#E8FF47;">36</span></div>
+      <div class="m-card row-between"><span style="font-size:12px;">Bu oy daromad</span><span style="font-family:'JetBrains Mono'; font-size:13px;">$6,240</span></div>
+      <div class="m-card bad">
+        <div style="font-size:10px; color:#FF6B6B; font-family:'JetBrains Mono'; margin-bottom:4px;">⚠️ 34 A'ZO XAVF OSTIDA</div>
+        <div style="font-size:11px; color:#c8c8d8; line-height:1.5;">AI 7 kundan ortiq checkin qilmagan a'zolarni aniqladi.</div>
+      </div>
+      <div class="big-btn">Risk ro'yxatini ko'rish →</div>`,
+    members: () => `
+      <div class="m-label" style="padding-top:4px;">A'ZOLAR (248)</div>
+      <div class="m-card row-between" style="margin-top:8px;"><span style="font-size:12px;">Ikromjonov Afruzbek</span><div class="pill good">Pro</div></div>
+      <div class="m-card row-between"><span style="font-size:12px;">Dilnoza Karimova</span><div class="pill mid">Starter</div></div>
+      <div class="m-card row-between"><span style="font-size:12px;">Jasur Tashkentov</span><div class="pill good">Scale</div></div>
+      <div class="outline-btn" style="margin-top:6px;">+ A'zo qo'shish</div>`,
+    risk: () => `
+      <div class="m-label" style="padding-top:4px;">CHURN RISK · AI</div>
+      <div class="m-card bad row-between" style="margin-top:8px;"><div><div style="font-size:12px; font-weight:600;">Madina Yusupova</div><div style="font-size:10px; color:#8888a0;">9 kun checkin yo'q</div></div><div class="pill bad">Yuqori</div></div>
+      <div class="m-card bad row-between"><div><div style="font-size:12px; font-weight:600;">Dilnoza Karimova</div><div style="font-size:10px; color:#8888a0;">To'lov muddati o'tgan</div></div><div class="pill bad">Yuqori</div></div>
+      <div class="m-card row-between"><div><div style="font-size:12px; font-weight:600;">Jasur Tashkentov</div><div style="font-size:10px; color:#8888a0;">Faollik pasaygan</div></div><div class="pill mid">O'rta</div></div>
+      <div class="big-btn">🤖 Hammasiga xabar yubor</div>`,
+    trainers: () => `
+      <div class="m-label" style="padding-top:4px;">TRENERLAR (4)</div>
+      <div class="m-card row-between" style="margin-top:8px;"><div><div style="font-size:12px; font-weight:600;">Coach Aziz</div><div style="font-size:10px; color:#52526a;">22 mijoz · 81% adherence</div></div><div class="pill good">Top</div></div>
+      <div class="m-card row-between"><div><div style="font-size:12px; font-weight:600;">Coach Diyora</div><div style="font-size:10px; color:#52526a;">18 mijoz · 74% adherence</div></div><div class="pill good">Faol</div></div>
+      <div class="outline-btn" style="margin-top:6px;">+ Trener qo'shish</div>`,
+    profile: () => renderProfileScreen("owner")
+  }
+};
+
+/* ============== GAMIFICATION DATA ============== */
+
+const PROFILE_IDENTITY = {
+  member: { initials: "JT", name: "Jasur Tashkentov", sub: "Pro reja · Powerhouse Gym",
+    level: { num: 5, title: "Usta", icon: "👑", xp: 2340, xpMin: 1500, xpMax: 2500 } },
+  trainer: { initials: "CA", name: "Coach Aziz", sub: "Powerhouse Gym · Trener",
+    level: { num: 4, title: "Professional", icon: "🏅", xp: 880, xpMin: 600, xpMax: 1200 } },
+  owner: { initials: "PG", name: "Powerhouse Gym", sub: "Toshkent · VitaForge Pro",
+    level: { num: 3, title: "Rivojlanayotgan gym", icon: "🚀", xp: 1620, xpMin: 1000, xpMax: 2000 } },
+};
+
+const STREAKS = {
+  member: { current: 15, longest: 21, label: "kunlik streak", week: [1,1,1,0,1,1,1], dayLabels: ["D","S","C","P","J","S","Y"] },
+  trainer: { current: 6, longest: 9, label: "hafta ketma-ket 90%+ adherence" },
+  owner: { current: 4, longest: 7, label: "oy ketma-ket MRR o'sishi" },
+};
+
+const BADGES = {
+  member: [
+    { icon: "✅", label: "Birinchi qadam", unlocked: true },
+    { icon: "🔥", label: "7 kunlik olov", unlocked: true },
+    { icon: "🗓️", label: "2 hafta jangchisi", unlocked: true },
+    { icon: "🛡️", label: "30 kunlik temir", unlocked: false, hint: "16 kun qoldi" },
+    { icon: "🤖", label: "AI do'sti", unlocked: true },
+    { icon: "🌅", label: "Tong qahramoni", unlocked: false, hint: "5tadan 2tasi" },
+    { icon: "⚖️", label: "Ozish ustasi", unlocked: true },
+    { icon: "🏆", label: "Reyting yulduzi", unlocked: false, hint: "Top-3, 4 hafta" },
+  ],
+  trainer: [
+    { icon: "🥇", label: "Oyning treneri", unlocked: true },
+    { icon: "📈", label: "Adherence ustasi", unlocked: true },
+    { icon: "💬", label: "Tez javob", unlocked: false, hint: "<1soat, 30 kun" },
+    { icon: "🎓", label: "50+ mijoz", unlocked: false, hint: "22 / 50" },
+  ],
+  owner: [
+    { icon: "🚀", label: "Birinchi 100 a'zo", unlocked: true },
+    { icon: "📊", label: "Past churn <5%", unlocked: true },
+    { icon: "💎", label: "6 oy faol", unlocked: true },
+    { icon: "🏢", label: "2-filial ochish", unlocked: false, hint: "Rejada" },
+  ],
+};
+
+function renderBadgeGrid(role) {
+  return `<div class="badge-grid">${BADGES[role].map(b => `
+    <div class="badge-item${b.unlocked ? "" : " locked"}" title="${b.unlocked ? "Ochilgan" : (b.hint || "Qulflangan")}">
+      <span class="bi">${b.unlocked ? b.icon : "🔒"}</span>
+      <span class="bl">${b.label}</span>
+    </div>`).join("")}</div>`;
+}
+
+function renderStreakCard(role) {
+  const s = STREAKS[role];
+  let weekHtml = "";
+  if (s.week) {
+    weekHtml = `<div class="week-dots">${s.week.map((d, i) => `
+      <div class="week-dot${d ? " done" : ""}${i === s.week.length - 1 ? " today" : ""}">${s.dayLabels[i]}</div>`).join("")}</div>`;
+  }
+  return `
+    <div class="m-card accent" style="padding:14px;">
+      <div class="row-between">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:22px;">🔥</span>
+          <div><div style="font-size:14px; font-weight:700; font-family:'Unbounded';">${s.current}</div><div style="font-size:8px; color:#8888a0;">${s.label}</div></div>
+        </div>
+        <div style="text-align:right;"><div style="font-size:11px; color:#E8FF47; font-family:'JetBrains Mono';">REKORD</div><div style="font-size:12px; font-weight:600;">${s.longest}</div></div>
+      </div>
+      ${weekHtml}
+    </div>`;
+}
+
+function renderLevelBar(role) {
+  const lv = PROFILE_IDENTITY[role].level;
+  const pct = Math.round(((lv.xp - lv.xpMin) / (lv.xpMax - lv.xpMin)) * 100);
+  return `
+    <div class="m-card">
+      <div class="row-between" style="margin-bottom:6px;">
+        <span class="m-label" style="margin:0;">KEYINGI DARAJAGACHA</span>
+        <span style="font-family:'JetBrains Mono'; font-size:10px; color:#E8FF47;">${lv.xp} / ${lv.xpMax}</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div>
+    </div>`;
+}
+
+const PROFILE_EXTRA = {
+  member: () => `
+    <div class="m-card row-between"><span style="font-size:12px;">Maqsad</span><span style="font-size:12px;">Vazn yo'qotish</span></div>
+    <div class="m-card row-between"><span style="font-size:12px;">Treneri</span><span style="font-size:12px;">Coach Aziz</span></div>
+    <div class="m-card row-between"><span style="font-size:12px;">A'zo bo'lgan sana</span><span style="font-size:12px;">12 fev, 2026</span></div>
+    <div class="outline-btn">Profilni tahrirlash</div>`,
+  trainer: () => `
+    <div class="m-card row-between"><span style="font-size:12px;">Mutaxassislik</span><span style="font-size:12px;">Kuch mashqlari</span></div>
+    <div class="m-card row-between"><span style="font-size:12px;">Ish boshlagan</span><span style="font-size:12px;">3 yil oldin</span></div>
+    <div class="outline-btn">Sozlamalar</div>`,
+  owner: () => `
+    <div class="m-card row-between"><span style="font-size:12px;">Egasi</span><span style="font-size:12px;">Ikromjonov Afruzbek</span></div>
+    <div class="m-card row-between"><span style="font-size:12px;">Filiallar</span><span style="font-size:12px;">1</span></div>
+    <div class="outline-btn">Gym sozlamalari</div>`,
+};
+
+const PROFILE_SEG = {
+  member: {
+    tabs: [
+      { id: "main", label: "UMUMIY" },
+      { id: "pay", label: "TO'LOVLAR" },
+      { id: "stats", label: "ANALITIKA" },
+      { id: "alerts", label: "BILDIRISHNOMA" },
+    ],
+    main: () => `
+      ${renderStreakCard("member")}
+      ${renderLevelBar("member")}
+      <div class="m-label" style="margin:10px 0 2px;">YUTUQLAR</div>
+      ${renderBadgeGrid("member")}
+      ${PROFILE_EXTRA.member()}`,
+    pay: () => `
+      <div class="m-card accent row-between"><div><div style="font-size:12px; font-weight:600;">Pro reja</div><div style="font-size:10px; color:#8888a0;">Oylik obuna</div></div><span style="font-family:'JetBrains Mono'; font-size:13px; color:#E8FF47;">$69/oy</span></div>
+      <div class="m-card row-between"><span style="font-size:11px; color:#8888a0;">Keyingi to'lov</span><span style="font-size:11px;">14 iyul, 2026</span></div>
+      <div class="m-label" style="margin:10px 0 6px;">TO'LOV TARIXI</div>
+      <div class="m-card row-between"><span style="font-size:11px;">14 iyun 2026</span><div class="pill good">To'landi</div></div>
+      <div class="m-card row-between"><span style="font-size:11px;">14 may 2026</span><div class="pill good">To'landi</div></div>
+      <div class="m-card row-between"><span style="font-size:11px;">14 apr 2026</span><div class="pill good">To'landi</div></div>
+      <div class="outline-btn">To'lov usulini o'zgartirish</div>`,
+    stats: () => `
+      <div class="m-label">VAZN DINAMIKASI · 6 OY</div>
+      <div class="bar-row">${[58,55,52,50,48,46].map((v,i)=>`<div class="bar-col${i===5?' hi':''}" style="height:${v}%;"></div>`).join("")}</div>
+      <div class="bar-labels"><span>Yan</span><span>Fev</span><span>Mar</span><span>Apr</span><span>May</span><span>Iyun</span></div>
+      <div class="m-card accent" style="margin-top:12px;"><div style="font-size:11px; color:#c8c8d8; line-height:1.5;">📉 6 oyda <b style="color:#E8FF47;">-7.2 kg</b>. Maqsadgacha 3.8 kg qoldi.</div></div>
+      <div class="m-card row-between"><span style="font-size:11px;">O'rtacha kunlik kaloriya</span><span style="font-family:'JetBrains Mono'; font-size:11px;">1,790</span></div>
+      <div class="m-card row-between"><span style="font-size:11px;">Bajarilgan mashqlar</span><span style="font-family:'JetBrains Mono'; font-size:11px;">38 / 42</span></div>`,
+    alerts: () => `
+      <div class="m-card accent"><div style="font-size:11px; color:#E8FF47; font-family:'JetBrains Mono'; margin-bottom:3px;">BUGUN</div><div style="font-size:12px; line-height:1.5;">🔥 15-kun streak! Top 10%dasiz.</div></div>
+      <div class="m-card"><div style="font-size:11px; color:#52526a; font-family:'JetBrains Mono'; margin-bottom:3px;">KECHA</div><div style="font-size:12px; line-height:1.5;">🤖 AI: Bugungi protein normangizga 18g qoldi.</div></div>
+      <div class="m-card"><div style="font-size:11px; color:#52526a; font-family:'JetBrains Mono'; margin-bottom:3px;">2 KUN OLDIN</div><div style="font-size:12px; line-height:1.5;">💪 Coach Aziz yangi haftalik plan yukladi.</div></div>
+      <div class="m-card"><div style="font-size:11px; color:#52526a; font-family:'JetBrains Mono'; margin-bottom:3px;">5 KUN OLDIN</div><div style="font-size:12px; line-height:1.5;">💳 To'lov muvaffaqiyatli amalga oshirildi — $69.</div></div>`
+  },
+  trainer: {
+    tabs: [
+      { id: "main", label: "UMUMIY" },
+      { id: "pay", label: "DAROMAD" },
+      { id: "stats", label: "ANALITIKA" },
+      { id: "alerts", label: "BILDIRISHNOMA" },
+    ],
+    main: () => `
+      ${renderStreakCard("trainer")}
+      ${renderLevelBar("trainer")}
+      <div class="m-label" style="margin:10px 0 2px;">YUTUQLAR</div>
+      ${renderBadgeGrid("trainer")}
+      ${PROFILE_EXTRA.trainer()}`,
+    pay: () => `
+      <div class="m-card accent row-between"><div><div style="font-size:12px; font-weight:600;">Bu oy daromad</div><div style="font-size:10px; color:#8888a0;">22 mijoz · 96 seans</div></div><span style="font-family:'JetBrains Mono'; font-size:13px; color:#E8FF47;">$1,840</span></div>
+      <div class="m-label" style="margin:10px 0 6px;">TO'LOV TARIXI</div>
+      <div class="m-card row-between"><span style="font-size:11px;">May 2026</span><div class="pill good">$1,720</div></div>
+      <div class="m-card row-between"><span style="font-size:11px;">Aprel 2026</span><div class="pill good">$1,650</div></div>
+      <div class="outline-btn">Hisob ma'lumotlari</div>`,
+    stats: () => `
+      <div class="m-label">MIJOZLAR ADHERENCE · 6 OY</div>
+      <div class="bar-row">${[68,72,70,75,78,81].map((v,i)=>`<div class="bar-col${i===5?' hi':''}" style="height:${v}%;"></div>`).join("")}</div>
+      <div class="bar-labels"><span>Yan</span><span>Fev</span><span>Mar</span><span>Apr</span><span>May</span><span>Iyun</span></div>
+      <div class="m-card accent" style="margin-top:12px;"><div style="font-size:11px; color:#c8c8d8; line-height:1.5;">📈 O'rtacha adherence 6 oyda <b style="color:#E8FF47;">+13%</b> o'sdi.</div></div>
+      <div class="m-card row-between"><span style="font-size:11px;">Jami seanslar (oy)</span><span style="font-family:'JetBrains Mono'; font-size:11px;">96</span></div>
+      <div class="m-card row-between"><span style="font-size:11px;">Risk ostidagi mijozlar</span><span style="font-family:'JetBrains Mono'; font-size:11px; color:#FF6B6B;">2</span></div>`,
+    alerts: () => `
+      <div class="m-card bad"><div style="font-size:11px; color:#FF6B6B; font-family:'JetBrains Mono'; margin-bottom:3px;">BUGUN</div><div style="font-size:12px; line-height:1.5;">⚠️ Madina 3 kun checkin qilmadi.</div></div>
+      <div class="m-card accent"><div style="font-size:11px; color:#E8FF47; font-family:'JetBrains Mono'; margin-bottom:3px;">BUGUN</div><div style="font-size:12px; line-height:1.5;">📅 Jasur 14:00 seansni tasdiqladi.</div></div>
+      <div class="m-card"><div style="font-size:11px; color:#52526a; font-family:'JetBrains Mono'; margin-bottom:3px;">KECHA</div><div style="font-size:12px; line-height:1.5;">💬 Otabekdan yangi xabar keldi.</div></div>
+      <div class="m-card"><div style="font-size:11px; color:#52526a; font-family:'JetBrains Mono'; margin-bottom:3px;">3 KUN OLDIN</div><div style="font-size:12px; line-height:1.5;">💰 May oyi daromadi hisoblandi — $1,720.</div></div>`
+  },
+  owner: {
+    tabs: [
+      { id: "main", label: "UMUMIY" },
+      { id: "pay", label: "TO'LOVLAR" },
+      { id: "stats", label: "ANALITIKA" },
+      { id: "alerts", label: "BILDIRISHNOMA" },
+    ],
+    main: () => `
+      ${renderStreakCard("owner")}
+      ${renderLevelBar("owner")}
+      <div class="m-label" style="margin:10px 0 2px;">YUTUQLAR</div>
+      ${renderBadgeGrid("owner")}
+      ${PROFILE_EXTRA.owner()}`,
+    pay: () => `
+      <div class="m-card accent row-between"><div><div style="font-size:12px; font-weight:600;">Pro reja</div><div style="font-size:10px; color:#8888a0;">Oylik obuna</div></div><span style="font-family:'JetBrains Mono'; font-size:13px; color:#E8FF47;">$69/oy</span></div>
+      <div class="m-card row-between"><span style="font-size:11px; color:#8888a0;">Bu oy AI sarfi</span><span style="font-size:11px;">$31</span></div>
+      <div class="m-label" style="margin:10px 0 6px;">TO'LOV TARIXI</div>
+      <div class="m-card row-between"><span style="font-size:11px;">14 iyun 2026</span><div class="pill good">To'landi</div></div>
+      <div class="m-card row-between"><span style="font-size:11px;">14 may 2026</span><div class="pill good">To'landi</div></div>
+      <div class="outline-btn">Hisob-fakturalar</div>`,
+    stats: () => `
+      <div class="m-label">DAROMAD · 6 OY</div>
+      <div class="bar-row">${[40,52,48,60,68,75].map((v,i)=>`<div class="bar-col${i===5?' hi':''}" style="height:${v}%;"></div>`).join("")}</div>
+      <div class="bar-labels"><span>Yan</span><span>Fev</span><span>Mar</span><span>Apr</span><span>May</span><span>Iyun</span></div>
+      <div class="m-card accent" style="margin-top:12px;"><div style="font-size:11px; color:#c8c8d8; line-height:1.5;">📈 MRR 6 oyda <b style="color:#E8FF47;">+34%</b> o'sdi.</div></div>
+      <div class="m-card row-between"><span style="font-size:11px;">Jami a'zolar</span><span style="font-family:'JetBrains Mono'; font-size:11px;">248</span></div>
+      <div class="m-card row-between"><span style="font-size:11px;">Churn (oylik)</span><span style="font-family:'JetBrains Mono'; font-size:11px; color:#FF6B6B;">4.1%</span></div>`,
+    alerts: () => `
+      <div class="m-card bad"><div style="font-size:11px; color:#FF6B6B; font-family:'JetBrains Mono'; margin-bottom:3px;">BUGUN</div><div style="font-size:12px; line-height:1.5;">⚠️ AI: 34 a'zo churn xavfi ostida.</div></div>
+      <div class="m-card accent"><div style="font-size:11px; color:#E8FF47; font-family:'JetBrains Mono'; margin-bottom:3px;">BUGUN</div><div style="font-size:12px; line-height:1.5;">💳 Oylik to'lov muvaffaqiyatli yechildi — $69.</div></div>
+      <div class="m-card"><div style="font-size:11px; color:#52526a; font-family:'JetBrains Mono'; margin-bottom:3px;">KECHA</div><div style="font-size:12px; line-height:1.5;">👤 5 ta yangi a'zo qo'shildi.</div></div>
+      <div class="m-card"><div style="font-size:11px; color:#52526a; font-family:'JetBrains Mono'; margin-bottom:3px;">4 KUN OLDIN</div><div style="font-size:12px; line-height:1.5;">🏋️ Coach Diyora yangi trener sifatida qo'shildi.</div></div>`
+  }
+};
+
+/* ---- Profil tab: shared screen shell + segmented control ---- */
+
+let profileSeg = { member: "main", trainer: "main", owner: "main" };
+
+function renderProfileScreen(role) {
+  const id = PROFILE_IDENTITY[role];
+  return `
+    <div class="m-card accent" style="text-align:center; padding:18px;">
+      <div class="avatar-sm" style="margin:0 auto 8px; width:40px; height:40px; font-size:14px; background:rgba(232,255,71,0.15); color:#E8FF47;">${id.initials}</div>
+      <div style="font-family:'Unbounded'; font-weight:700; font-size:14px;">${id.name}</div>
+      <div style="font-size:10px; color:#8888a0; margin-top:2px;">${id.sub}</div>
+      <div class="level-chip"><span style="font-size:11px;">${id.level.icon}</span><span style="font-size:10px; color:#E8FF47; font-family:'JetBrains Mono';">DARAJA ${id.level.num} · ${id.level.title}</span></div>
+    </div>
+    <div class="sheet-tabs" id="profileSegTabs" style="padding:0 0 8px;"></div>
+    <div id="profileBody"></div>`;
+}
+
+function initProfileTab(role) {
+  const tabsWrap = document.getElementById("profileSegTabs");
+  if (!tabsWrap) return;
+  tabsWrap.innerHTML = "";
+  PROFILE_SEG[role].tabs.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "sheet-tab" + (t.id === profileSeg[role] ? " active" : "");
+    el.textContent = t.label;
+    el.onclick = () => { profileSeg[role] = t.id; initProfileTab(role); };
+    tabsWrap.appendChild(el);
+  });
+  document.getElementById("profileBody").innerHTML = PROFILE_SEG[role][profileSeg[role]]();
+}
+
+/* ---- AI chat — reachable from anywhere via floating button, lives in the sheet ---- */
+
+function aiChatHtml() {
+  return `
+    <div style="display:flex; align-items:center; gap:8px; padding:0 0 10px;">
+      <div style="width:24px; height:24px; border-radius:50%; background:rgba(232,255,71,0.12); display:flex; align-items:center; justify-content:center; font-size:13px;">🤖</div>
+      <div><div style="font-size:11px; font-weight:600;">AI Trener</div><div style="font-size:8px; color:#5DCAA5;">● online</div></div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div style="align-self:flex-start; max-width:80%; background:#13131c; border:1px solid #1e1e2c; border-radius:12px 12px 12px 4px; padding:9px 12px; font-size:11px; line-height:1.4;">Salom! Bugun nima haqida yordam bera olaman?</div>
+      <div style="align-self:flex-end; max-width:80%; background:#E8FF47; color:#080810; border-radius:12px 12px 4px 12px; padding:9px 12px; font-size:11px; font-weight:500;">Osh necha kaloriya?</div>
+      <div style="align-self:flex-start; max-width:85%; background:#13131c; border:1px solid #1e1e2c; border-radius:12px 12px 12px 4px; padding:9px 12px; font-size:11px; line-height:1.4;">O'rtacha porsiya osh (300g) — taxminan <b style="color:#E8FF47;">540 kcal</b>. Kunlik normangizning 30% i.</div>
+    </div>
+    <div style="display:flex; gap:6px; margin-top:10px;">
+      <div style="flex:1; background:#13131c; border:1px solid #1e1e2c; border-radius:10px; padding:8px 10px; font-size:11px; color:#52526a;">Savol yozing...</div>
+      <div style="width:30px; height:30px; background:#E8FF47; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#080810; font-size:13px;">↑</div>
+    </div>`;
+}
+
+function openAIChat() {
+  document.getElementById("sheetTitle").textContent = "AI Trener";
+  document.getElementById("sheetBody").innerHTML = aiChatHtml();
+  sheetOpen = true;
+  document.getElementById("sheetBackdrop").classList.add("open");
+  document.getElementById("sheet").classList.add("open");
+}
+
+
+let onboardingStep = 0;
+const ONBOARD_SCREENS = [
+  () => `
+    <div style="height:3px; background:#1a1a26; border-radius:2px; margin:4px 0 14px;"><div style="height:100%; width:20%; background:#E8FF47; border-radius:2px;"></div></div>
+    <div class="m-label">1 / 2</div>
+    <div class="m-h1" style="margin-bottom:4px;">Asosiy maqsadingiz nima?</div>
+    <div style="font-size:11px; color:#8888a0; margin-bottom:14px;">Barchasi shunga qarab sozlanadi</div>
+    <div class="m-card accent" style="display:flex; align-items:center; gap:10px; padding:14px;" onclick="nextOnboard()"><span style="font-size:22px;">🔥</span><div><div style="font-size:13px; font-weight:600;">Vazn yo'qotish</div><div style="font-size:10px; color:#8a8a9a;">Yog'larni eritish</div></div></div>
+    <div class="m-card" style="display:flex; align-items:center; gap:10px; padding:14px;" onclick="nextOnboard()"><span style="font-size:22px;">💪</span><div><div style="font-size:13px; font-weight:600;">Mushak o'stirish</div><div style="font-size:10px; color:#8a8a9a;">Kuch va hajm</div></div></div>
+    <div class="m-card" style="display:flex; align-items:center; gap:10px; padding:14px;" onclick="nextOnboard()"><span style="font-size:22px;">❤️</span><div><div style="font-size:13px; font-weight:600;">Sog'lom turmush</div><div style="font-size:10px; color:#8a8a9a;">Umumiy energiya</div></div></div>`,
+  () => `
+    <div style="height:3px; background:#1a1a26; border-radius:2px; margin:4px 0 14px;"><div style="height:100%; width:60%; background:#E8FF47; border-radius:2px;"></div></div>
+    <div class="m-label">2 / 2</div>
+    <div class="m-h1" style="margin-bottom:4px;">Hozirgi vazningiz?</div>
+    <div style="font-size:11px; color:#8888a0; margin-bottom:14px;">Kunlik kaloriya normasini hisoblash uchun</div>
+    <div style="background:#13131c; border:1px solid #2a2a3a; border-radius:12px; padding:16px; text-align:center; margin-bottom:14px;">
+      <span style="font-family:'JetBrains Mono'; font-size:28px; color:#E8FF47;">78</span><span style="font-size:13px; color:#8888a0;"> kg</span>
+    </div>
+    <div class="big-btn" onclick="nextOnboard()">Davom etish →</div>`,
+  () => `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; padding:0 6px;">
+      <div style="font-size:52px; margin-bottom:16px;">🎯</div>
+      <div class="m-h1" style="font-size:19px; margin-bottom:8px;">Profilingiz tayyor!</div>
+      <div style="font-size:12px; color:#8888a0; line-height:1.6; margin-bottom:20px;">AI sizning maqsadingiz va vazningizga mos haftalik plan yaratdi</div>
+      <div class="m-card accent" style="width:100%; text-align:left; margin-bottom:16px;">
+        <div class="row-between" style="font-size:11px; padding:4px 0;"><span style="color:#8888a0;">Maqsad</span><span>Vazn yo'qotish</span></div>
+        <div class="row-between" style="font-size:11px; padding:4px 0;"><span style="color:#8888a0;">Kunlik norma</span><span style="color:#E8FF47;">1,840 kcal</span></div>
+      </div>
+      <div class="big-btn" onclick="endOnboarding()">🤖 Planimni ko'rish →</div>
+    </div>`
+];
+
+function startOnboarding() {
+  onboardingStep = 0;
+  document.getElementById("sheetBackdrop").classList.remove("open");
+  document.getElementById("sheet").classList.remove("open");
+  renderOnboard();
+}
+function nextOnboard() { onboardingStep++; renderOnboard(); }
+function endOnboarding() { currentRole = "member"; currentTab.member = "home"; render(); }
+function renderOnboard() {
+  document.getElementById("screenContent").innerHTML = ONBOARD_SCREENS[onboardingStep]();
+  document.getElementById("bottomNav").innerHTML = "";
+  document.getElementById("topbarRight").innerHTML = "✕";
+  document.getElementById("topbarRight").onclick = () => render();
+}
+
+
+
+let sheetOpen = false;
+function closeSheet() {
+  sheetOpen = false;
+  document.getElementById("sheetBackdrop").classList.remove("open");
+  document.getElementById("sheet").classList.remove("open");
+}
+
+function openNotifications(role) {
+  currentTab[role] = "profile";
+  profileSeg[role] = "alerts";
+  render();
+}
+
+function render() {
+  closeSheet();
+  renderRoleTabs();
+  renderBottomNav();
+  renderNotes();
+  const tab = currentTab[currentRole];
+  document.getElementById("screenContent").innerHTML = SCREENS[currentRole][tab]();
+  if (tab === "profile") initProfileTab(currentRole);
+
+  const tb = document.getElementById("topbarRight");
+  if (currentRole === "member") {
+    tb.innerHTML = "🤖";
+    tb.onclick = openAIChat;
+  } else {
+    tb.innerHTML = "🔔";
+    tb.onclick = () => openNotifications(currentRole);
+  }
+}
+
+render();
+</script>
+
+</body>
+</html>
