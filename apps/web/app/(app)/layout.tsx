@@ -1,19 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth";
 import { api, SUPABASE_MODE } from "@/lib/api";
 import { getSession } from "@/lib/auth";
 import { isTelegramWebApp, getTelegramInitData, expandWebApp } from "@/lib/telegram";
-import Sidebar from "@/components/shared/sidebar";
-import { Search, Bell, Menu, LayoutGrid } from "lucide-react";
+import DesktopSidebar from "@/components/shared/desktop-sidebar";
+import MobileBottomNav from "@/components/shared/mobile-bottom-nav";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, setAuth, clearAuth } = useAuthStore();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (user) return;
@@ -58,82 +56,53 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   if (!user) return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="flex gap-1.5">
-        {[0, 1, 2].map((i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />)}
+    <div className="min-h-screen bg-bg flex items-center justify-center">
+      <div className="text-center space-y-3">
+        <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center font-display font-black text-bg text-lg mx-auto animate-pulse">V</div>
+        <p className="text-muted text-xs font-mono">Yuklanmoqda...</p>
       </div>
     </div>
   );
 
-  return (
-    <div className="flex min-h-screen bg-[#FAFAFA] md:p-6 md:gap-6 relative">
-      {/* Desktop Sidebar Wrapper */}
-      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-[#E5E5E5] overflow-hidden shrink-0">
-        <Sidebar role={user.role} />
-      </div>
+  // Member → mobile layout with bottom nav
+  const isMember = user.role === "member";
+  // Desktop roles: gym_owner, trainer, superadmin
+  const isDesktop = !isMember;
 
-      {/* Mobile Sidebar Overlay */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative bg-white h-full w-[255px] shadow-xl">
-            <Sidebar role={user.role} />
-          </div>
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 pr-0 md:pr-2">
-        {/* Header */}
-        <header className="h-[64px] flex items-center justify-between px-4 md:px-0 mb-4 md:mb-0 shrink-0">
-          <div className="flex items-center gap-4">
-            <button className="md:hidden p-2 -ml-2" onClick={() => setMobileMenuOpen(true)}>
-              <Menu size={24} />
-            </button>
-            <div className="hidden md:flex items-center gap-3">
-              <div className="w-7 h-7 flex items-center justify-center">
-                <Menu size={20} className="text-gray-800" />
-              </div>
-              <div className="w-[1px] h-4 bg-gray-300" />
-              <h1 className="text-[20px] font-medium text-[#171717]">Actify</h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="hidden lg:flex w-[300px] h-[36px] bg-white border border-[#E5E5E5] rounded-md items-center px-3 gap-2">
-              <Search size={16} className="text-[#737373]" />
-              <input type="text" placeholder="Type to search..." className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#737373]" />
-            </div>
-
-            {/* Header Icons */}
-            <div className="flex items-center gap-2">
-              <button className="w-[36px] h-[36px] bg-white border border-[#E5E5E5] rounded-md flex items-center justify-center text-[#0A0A0A] hover:bg-gray-50">
-                <LayoutGrid size={18} />
-              </button>
-              <button className="w-[36px] h-[36px] bg-white border border-[#E5E5E5] rounded-md flex items-center justify-center text-[#0A0A0A] hover:bg-gray-50">
-                <Bell size={18} />
-              </button>
-            </div>
-
-            {/* User Profile */}
-            <div className="flex items-center gap-3 ml-2">
-              <div className="w-10 h-10 rounded-lg bg-gray-200 overflow-hidden shrink-0">
-                <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.full_name}&backgroundColor=2563EB`} alt="avatar" className="w-full h-full object-cover" />
-              </div>
-              <div className="hidden md:flex flex-col">
-                <span className="text-[14px] font-semibold text-[#0A0A0A] leading-tight">{user.full_name}</span>
-                <span className="text-[12px] text-[#0A0A0A] opacity-70 leading-tight">Student</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto pb-safe">
+  if (isDesktop) {
+    return (
+      <div className="flex min-h-screen bg-bg">
+        <DesktopSidebar role={user.role} />
+        <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>
       </div>
+    );
+  }
+
+  // Mobile member layout
+  return (
+    <div className="min-h-screen bg-bg">
+      {/* Topbar */}
+      <div className="flex items-center justify-between px-4 py-2 pt-3">
+        <div className="flex items-center gap-2">
+          <div className="w-[18px] h-[18px] bg-accent rounded-[5px] flex items-center justify-center font-display font-black text-[9px] text-bg">V</div>
+          <span className="font-display font-bold text-[11px] text-vtext">VitaForge</span>
+        </div>
+        <button
+          onClick={() => router.push("/dashboard/chat")}
+          className="w-8 h-8 rounded-full bg-[rgba(232,255,71,0.12)] flex items-center justify-center text-accent text-sm"
+        >
+          🤖
+        </button>
+      </div>
+
+      {/* Content */}
+      <main className="px-4 pb-20 overflow-y-auto">
+        {children}
+      </main>
+
+      <MobileBottomNav />
     </div>
   );
 }
