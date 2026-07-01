@@ -71,6 +71,17 @@ const backendApi = {
     member: (id: string) => request<any>(`/gym/members/${id}`),
     retention: () => request<any>("/gym/analytics/retention"),
     churnRisk: () => request<any>("/gym/analytics/churn-risk"),
+    analyticsSummary: () => request<any>("/gym/analytics/summary"),
+    revenueDynamics: () => request<any>("/gym/analytics/revenue"),
+    memberGrowth: () => request<any>("/gym/analytics/growth"),
+    activityDistribution: () => request<any>("/gym/analytics/activity"),
+    challenge: () => request<any>("/gym/challenge"),
+    createChallenge: (data: any) => request<any>("/gym/challenge", { method: "POST", body: JSON.stringify(data) }),
+    copilotMessages: () => request<any>("/gym/copilot/messages"),
+    sendCopilotMessage: (msg: string) => request<any>("/gym/copilot/messages", { method: "POST", body: JSON.stringify({ message: msg }) }),
+    settings: () => request<any>("/gym/settings"),
+    updateSettings: (data: any) => request<any>("/gym/settings", { method: "PUT", body: JSON.stringify(data) }),
+    sendMessage: (data: any) => request<any>("/gym/messages", { method: "POST", body: JSON.stringify(data) }),
   },
   leaderboard: {
     get: () => request<any>("/leaderboard"),
@@ -80,7 +91,24 @@ const backendApi = {
     list: () => request<any>("/notifications"),
     markRead: (id: string) => request<any>(`/notifications/${id}/read`, { method: "PUT" }),
   },
+  trainer: {
+    today: () => request<any>("/trainer/today"),
+    clients: () => request<any>("/trainer/clients"),
+    schedule: () => request<any>("/trainer/schedule"),
+    analytics: () => request<any>("/trainer/analytics"),
+    copilot: () => request<any>("/trainer/copilot"),
+    sendMessage: (data: any) => request<any>("/trainer/copilot", { method: "POST", body: JSON.stringify(data) }),
+    addSession: () => request<any>("/trainer/schedule", { method: "POST" }),
+  },
+  admin: {
+    overview: () => request<any>("/admin/overview"),
+    gyms: () => request<any>("/admin/gyms"),
+    billing: () => request<any>("/admin/billing"),
+    aiUsage: () => request<any>("/admin/ai-usage"),
+    copilot: () => request<any>("/admin/copilot"),
+    exportReport: () => request<any>("/admin/export", { method: "POST" }),
+  }
 };
 
 // Priority: DEMO > SUPABASE > BACKEND
-export const api = DEMO_MODE ? mockApi : SUPABASE_MODE ? supabaseApi : backendApi;
+export const api: typeof backendApi = (DEMO_MODE ? mockApi : SUPABASE_MODE ? supabaseApi : backendApi) as any;

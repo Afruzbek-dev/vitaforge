@@ -1,11 +1,25 @@
 "use client";
 import { Panel, ChartBars } from "@/components/vf";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
 export default function AdminAiUsage() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["admin", "aiUsage"],
+    queryFn: async () => {
+      const res = await api.admin.aiUsage();
+      return res.data;
+    }
+  });
+
+  if (isLoading) return <div className="text-vtext">Yuklanmoqda...</div>;
+  if (isError || !data) return <div className="text-vred">Xatolik yuz berdi</div>;
+
   return (
     <div className="space-y-4">
       <h1 className="font-display font-bold text-[20px] text-vtext mb-6">AI Usage</h1>
       <Panel title="KUNLIK AI CHAQIRUVLARI">
-        <ChartBars data={[{ label: "Du", value: 1200 }, { label: "Juma", value: 2500, peak: true }]} height={120} />
+        <ChartBars data={data.chart || []} height={120} />
       </Panel>
     </div>
   );

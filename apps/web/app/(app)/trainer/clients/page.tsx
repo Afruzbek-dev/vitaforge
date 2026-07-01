@@ -1,13 +1,26 @@
 "use client";
 import { Panel, Pill } from "@/components/vf";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 export default function TrainerClients() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["trainer", "clients"],
+    queryFn: async () => {
+      const res = await api.trainer.clients();
+      return res.data;
+    }
+  });
+
+  if (isLoading) return <div className="text-vtext">Yuklanmoqda...</div>;
+  if (isError || !data) return <div className="text-vred">Xatolik yuz berdi</div>;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display font-bold text-[20px] text-vtext">Mijozlarim</h1>
-          <p className="text-muted text-xs mt-1">22 ta faol mijoz</p>
+          <p className="text-muted text-xs mt-1">{data.length} ta faol mijoz</p>
         </div>
       </div>
       <Panel>
@@ -20,12 +33,7 @@ export default function TrainerClients() {
             </tr>
           </thead>
           <tbody>
-            {[
-              { name: "Jasur Toshmatov", adh: 81, status: "ok" },
-              { name: "Dilnoza Karimova", adh: 42, status: "risk" },
-              { name: "Otabek Rustamov", adh: 88, status: "ok" },
-              { name: "Madina Yuldasheva", adh: 30, status: "risk" },
-            ].map((m, i) => (
+            {data.map((m: any, i: number) => (
               <tr key={i} className="hover:bg-surface2/50 transition-colors">
                 <td className="py-2.5 border-b border-[#15151f] text-xs text-vtext font-medium">{m.name}</td>
                 <td className={`py-2.5 border-b border-[#15151f] text-xs font-mono ${m.adh >= 50 ? 'text-accent' : 'text-vred'}`}>{m.adh}%</td>
@@ -34,6 +42,9 @@ export default function TrainerClients() {
                 </td>
               </tr>
             ))}
+            {data.length === 0 && (
+              <tr><td colSpan={3} className="py-4 text-center text-muted text-xs">Mijozlar yo'q</td></tr>
+            )}
           </tbody>
         </table>
       </Panel>

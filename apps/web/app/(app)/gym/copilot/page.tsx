@@ -1,7 +1,36 @@
 "use client";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { Panel, InsightCard } from "@/components/vf";
+import { useToast } from "@/components/ui/toast";
 
 export default function Copilot() {
+  const [msg, setMsg] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: msgsRes, isLoading, isError } = useQuery({ 
+    queryKey: ["gym", "copilotMessages"], 
+    queryFn: () => api.gym.copilotMessages() 
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: (text: string) => api.gym.sendCopilotMessage(text),
+    onSuccess: (newMsg) => {
+      queryClient.setQueryData(["gym", "copilotMessages"], (old: any) => {
+        return { ...old, data: [...(old?.data || []), newMsg.data] };
+      });
+      setMsg("");
+    },
+    onError: () => toast("Xabar yuborishda xatolik", "error")
+  });
+
+  if (isLoading) return <div className="p-4 text-muted">Yuklanmoqda...</div>;
+  if (isError) return <div className="p-4 text-red-500">Xatolik yuz berdi</div>;
+
+  const messages = msgsRes?.data || [];
+
   return (
     <div className="space-y-4 h-full flex flex-col">
       <h1 className="font-display font-bold text-[20px] text-vtext mb-2">🤖 AI Copilot</h1>
@@ -12,28 +41,43 @@ export default function Copilot() {
             <span className="font-bold text-[13px] text-vtext">Copilot Chat</span>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <div className="flex flex-col self-start max-w-[80%] bg-surface2 border border-border rounded-[12px_12px_12px_4px] p-3 text-[12px] text-vtext">
-              Salom, Botir! Men VitaForge AI. Gymingiz bo'yicha qanday ma'lumot kerak?
-            </div>
-            <div className="flex flex-col self-end max-w-[80%] ml-auto bg-accent text-bg font-medium rounded-[12px_12px_4px_12px] p-3 text-[12px]">
-              Kechagi kun bo'yicha kimlar xavf ostida?
-            </div>
-            <div className="flex flex-col self-start max-w-[80%] bg-surface2 border border-border rounded-[12px_12px_12px_4px] p-3 text-[12px] text-vtext">
-              Oxirgi 7 kunda 3 ta a'zo umuman kelmadi: Doniyor, Sevara, Aziz. Ularga avtomatik SMS yuboraymi?
-            </div>
+            {messages.map((m: any) => (
+              m.sender === 'ai' ? (
+                <div key={m.id} className="flex flex-col self-start max-w-[80%] bg-surface2 border border-border rounded-[12px_12px_12px_4px] p-3 text-[12px] text-vtext">
+                  {m.text}
+                </div>
+              ) : (
+                <div key={m.id} className="flex flex-col self-end max-w-[80%] ml-auto bg-accent text-bg font-medium rounded-[12px_12px_4px_12px] p-3 text-[12px]">
+                  {m.text}
+                </div>
+              )
+            ))}
           </div>
           <div className="p-3 border-t border-border bg-[#0d0d16]">
              <div className="flex gap-2">
-                <input type="text" placeholder="Xabar yozing..." className="flex-1 bg-surface2 border border-border rounded-[9px] px-3.5 py-2.5 text-xs text-vtext outline-none" />
-                <button className="bg-accent text-bg px-4 rounded-[9px] font-semibold">Yuborish</button>
+                <input 
+                  type="text" 
+                  value={msg}
+                  onChange={(e) => setMsg(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && msg.trim()) sendMutation.mutate(msg); }}
+                  placeholder="Xabar yozing..." 
+                  className="flex-1 bg-surface2 border border-border rounded-[9px] px-3.5 py-2.5 text-xs text-vtext outline-none" 
+                />
+                <button 
+                  onClick={() => msg.trim() && sendMutation.mutate(msg)}
+                  disabled={sendMutation.isPending || !msg.trim()}
+                  className="bg-accent text-bg px-4 rounded-[9px] font-semibold disabled:opacity-50"
+                >
+                  {sendMutation.isPending ? "..." : "Yuborish"}
+                </button>
              </div>
           </div>
         </Panel>
 
         <div className="space-y-4 overflow-y-auto h-[600px] pr-1">
-          <InsightCard warn title="Churn Xavfi (3)" body="Doniyor, Sevara, Aziz oxirgi 7 kunda kelmadi. Ular 'Pro' tarifida, daromad yo'qotilishi xavfi bor." action="XABAR YUBORISH" />
-          <InsightCard title="Seshanba passivligi" body="Odatda seshanba kunlari tashriflar 20% ga kamayadi. Shu kuni maxsus mini-musobaqa o'tkazishni tavsiya qilaman." action="KO'RISH" />
-          <InsightCard title="Pro tarifiga o'tish" body="5 ta Starter a'zosi deyarli har kuni kelmoqda. Ularga Pro tarifni taklif qilsangiz, konversiya ehtimoli yuqori." action="RO'YXATNI KO'RISH" />
+          <InsightCard warn title="Churn Xavfi (3)" body="Doniyor, Sevara, Aziz oxirgi 7 kunda kelmadi. Ular 'Pro' tarifida, daromad yo'qotilishi xavfi bor." action="XABAR YUBORISH" onAction={() => toast("Xabar yuborildi", "success")} />
+          <InsightCard title="Seshanba passivligi" body="Odatda seshanba kunlari tashriflar 20% ga kamayadi. Shu kuni maxsus mini-musobaqa o'tkazishni tavsiya qilaman." action="KO'RISH" onAction={() => toast("Musobaqa yaratildi", "success")} />
+          <InsightCard title="Pro tarifiga o'tish" body="5 ta Starter a'zosi deyarli har kuni kelmoqda. Ularga Pro tarifni taklif qilsangiz, konversiya ehtimoli yuqori." action="RO'YXATNI KO'RISH" onAction={() => toast("Ro'yxat ochildi", "success")} />
         </div>
       </div>
     </div>

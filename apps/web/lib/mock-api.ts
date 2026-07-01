@@ -83,6 +83,17 @@ export const mockApi = {
     },
     retention: async () => { await delay(); return ok(DEMO_RETENTION); },
     churnRisk: async () => { await delay(); return ok(DEMO_CHURN); },
+    analyticsSummary: async () => { await delay(); return ok({ mrr: 6240, mrr_delta: "↑ 9.3%", ltv: 184, ltv_delta: "↑ 4.1%", churn_rate: "4.1%", churn_delta: "↑ 0.6%", ai_spend: 31 }); },
+    revenueDynamics: async () => { await delay(); return ok([ { label: "Yan", value: 4100 }, { label: "Fev", value: 4800 }, { label: "Mar", value: 5200 }, { label: "Apr", value: 5600 }, { label: "May", value: 5900 }, { label: "Iyun", value: 6240, peak: true } ]); },
+    memberGrowth: async () => { await delay(); return ok([ { label: "Yan", value: 120 }, { label: "Fev", value: 145 }, { label: "Mar", value: 168 }, { label: "Apr", value: 189 }, { label: "May", value: 202 }, { label: "Iyun", value: 214, peak: true } ]); },
+    activityDistribution: async () => { await delay(); return ok([ { name: "3+ marta keluvchilar (Haftasiga)", pct: "42%" }, { name: "1-2 marta keluvchilar", pct: "38%" }, { name: "Xavf ostida (0 marta)", pct: "15%" }, { name: "Muzlatilgan", pct: "5%" } ]); },
+    challenge: async () => { await delay(); return ok({ title: "30 kunlik temir — Iyun marafoni", days_passed: 18, total_days: 30, progress: 60, participants: 64 }); },
+    createChallenge: async () => { await delay(500); return ok({ success: true }); },
+    copilotMessages: async () => { await delay(); return ok([ { id: 1, sender: 'ai', text: "Salom, Botir! Men VitaForge AI. Gymingiz bo'yicha qanday ma'lumot kerak?" }, { id: 2, sender: 'user', text: "Kechagi kun bo'yicha kimlar xavf ostida?" }, { id: 3, sender: 'ai', text: "Oxirgi 7 kunda 3 ta a'zo umuman kelmadi: Doniyor, Sevara, Aziz. Ularga avtomatik SMS yuboraymi?" } ]); },
+    sendCopilotMessage: async (msg: string) => { await delay(500); return ok({ id: Date.now(), sender: 'user', text: msg }); },
+    settings: async () => { await delay(); return ok({ name: "FitZone Gym", location: "Yunusobod, Toshkent", churn_alerts: true, weekly_reports: true }); },
+    updateSettings: async (data: any) => { await delay(500); return ok(data); },
+    sendMessage: async () => { await delay(500); return ok({ success: true }); },
   },
   leaderboard: {
     get: async () => { await delay(); return ok(DEMO_LEADERBOARD); },
@@ -92,4 +103,21 @@ export const mockApi = {
     list: async () => { await delay(); return ok(DEMO_NOTIFICATIONS); },
     markRead: async () => { await delay(200); return ok(null); },
   },
+  trainer: {
+    today: async () => { await delay(); return ok({ sessions: [{ time: "14:00", name: "Jasur", workout: "Kuch", status: "ok" }, { time: "15:30", name: "Madina", workout: "Cardio", status: "risk" }, { time: "17:00", name: "Otabek", workout: "Yelka", status: "ok" }], activeClients: 22, avgAdherence: 81 }); },
+    clients: async () => { await delay(); return ok([{ id: 1, name: "Jasur Toshmatov", adh: 81, status: "ok" }, { id: 2, name: "Dilnoza Karimova", adh: 42, status: "risk" }, { id: 3, name: "Otabek Rustamov", adh: 88, status: "ok" }, { id: 4, name: "Madina Yuldasheva", adh: 30, status: "risk" }]); },
+    schedule: async () => { await delay(); return ok([{ day: "Dushanba", sessions: 6 }, { day: "Seshanba", sessions: 8, active: true }, { day: "Chorshanba", sessions: 5 }, { day: "Payshanba", sessions: 7 }]); },
+    analytics: async () => { await delay(); return ok({ totalSessions: 96, avgAdherence: 81, riskClients: 2, revenue: 1840 }); },
+    copilot: async () => { await delay(); return ok({ messages: [{ id: 1, sender: "ai", text: "Salom, Coach Aziz! Madina Yuldashevada oxirgi kunlarda charchoq alomatlari sezilmoqda." }] }); },
+    sendMessage: async (data: any) => { await delay(500); return ok({ id: Date.now(), sender: 'user', text: data.message }); },
+    addSession: async () => { await delay(500); return ok({ success: true }); }
+  },
+  admin: {
+    overview: async () => { await delay(); return ok({ totalGyms: 412, mrr: 18420, apiCost: 1240, churnedGyms: 6, mrrChart: [{ label: "Yan", value: 12 }, { label: "Fev", value: 14 }, { label: "Mar", value: 15 }, { label: "Apr", value: 16 }, { label: "May", value: 17 }, { label: "Iyun", value: 18.4, peak: true }] }); },
+    gyms: async () => { await delay(); return ok([{ name: "FitZone", plan: "Pro", status: "ok" }, { name: "PowerFit", plan: "Scale", status: "risk" }]); },
+    billing: async () => { await delay(); return ok({ starter: 186, pro: 158, scale: 58, enterprise: 10 }); },
+    aiUsage: async () => { await delay(); return ok({ chart: [{ label: "Du", value: 1200 }, { label: "Juma", value: 2500, peak: true }] }); },
+    copilot: async () => { await delay(); return ok({ messages: [{ id: 1, sender: "ai", text: "Salom! Men VitaForge Admin Copilotman." }] }); },
+    exportReport: async () => { await delay(1000); return ok({ success: true }); }
+  }
 };

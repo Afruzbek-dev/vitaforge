@@ -1,15 +1,16 @@
+"use client";
+
+import React from "react";
 import { cn } from "@/lib/utils";
 
-interface ProgressBarProps {
-  value: number; // 0-100
-  className?: string;
-}
-
-export default function ProgressBar({ value, className }: ProgressBarProps) {
+export function ProgressBar({ value, height = 6, className }: { value: number; height?: number; className?: string }) {
   return (
-    <div className={cn("h-1.5 bg-[#1a1a26] rounded overflow-hidden", className)}>
+    <div
+      className={cn("bg-surface2 rounded overflow-hidden", className)}
+      style={{ height }}
+    >
       <div
-        className="h-full bg-accent rounded transition-all duration-500"
+        className="h-full bg-accent rounded transition-[width] duration-400 ease-out"
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>

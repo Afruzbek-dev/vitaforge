@@ -1,29 +1,35 @@
 "use client";
 
-interface KpiCardProps {
+import React from "react";
+import { cn } from "@/lib/utils";
+
+export interface KpiCardData {
   label: string;
-  value: string | number;
+  value: string;
   delta?: string;
-  deltaDown?: boolean;
+  tone?: "default" | "warn" | "good";
   warn?: boolean;
 }
 
-export default function KpiCard({ label, value, delta, deltaDown, warn }: KpiCardProps) {
+export function KpiCard({ label, value, delta, tone, warn, className }: KpiCardData & { className?: string }) {
+  const finalTone = tone ?? (warn ? "warn" : "default");
+
   return (
     <div
-      className={`bg-surface border border-border rounded-xl px-5 py-4 ${
-        warn ? "border-l-2 border-l-vred" : "border-l-2 border-l-accent"
-      }`}
+      className={cn(
+        "bg-surface border border-border rounded-xl px-[18px] py-[16px] border-l-2",
+        finalTone === "warn" ? "border-l-vred" : "border-l-accent",
+        className
+      )}
     >
-      <div className="font-mono text-[10px] tracking-widest text-muted mb-2 uppercase">
-        {label}
-      </div>
+      <div className="font-mono text-[10px] text-muted tracking-[1px] mb-2">{label}</div>
       <div className="font-display font-bold text-[22px] text-vtext">{value}</div>
       {delta && (
         <div
-          className={`text-[11px] font-mono mt-1 ${
-            deltaDown ? "text-vred" : "text-vgreen"
-          }`}
+          className={cn(
+            "font-mono text-[11px] mt-1",
+            delta.startsWith("↑") ? "text-vgreen" : delta.startsWith("↓") ? "text-vred" : "text-muted"
+          )}
         >
           {delta}
         </div>

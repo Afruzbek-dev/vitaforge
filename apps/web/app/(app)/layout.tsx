@@ -5,9 +5,9 @@ import { useAuthStore } from "@/lib/store/auth";
 import { api, SUPABASE_MODE } from "@/lib/api";
 import { getSession } from "@/lib/auth";
 import { isTelegramWebApp, getTelegramInitData, expandWebApp } from "@/lib/telegram";
-import DesktopSidebar from "@/components/shared/desktop-sidebar";
-import MobileBottomNav from "@/components/shared/mobile-bottom-nav";
-import ThemeToggle from "@/components/shared/theme-toggle";
+import { DesktopSidebar } from "@/components/shared/desktop-sidebar";
+import { MobileBottomNav } from "@/components/shared/mobile-bottom-nav";
+import { MobileTopBar } from "@/components/shared/mobile-topbar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -73,7 +73,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isDesktop) {
     return (
       <div className="flex min-h-screen bg-bg">
-        <DesktopSidebar role={user.role} />
+        <DesktopSidebar role={user.role as "owner" | "trainer" | "superadmin"} />
         <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>
@@ -83,26 +83,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Mobile member layout
   return (
-    <div className="min-h-screen bg-bg">
-      {/* Topbar */}
-      <div className="flex items-center justify-between px-4 py-2 pt-3">
-        <div className="flex items-center gap-2">
-          <div className="w-[18px] h-[18px] bg-accent rounded-[5px] flex items-center justify-center font-display font-black text-[9px] text-bg">V</div>
-          <span className="font-display font-bold text-[11px] text-vtext">VitaForge</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <button
-            onClick={() => router.push("/dashboard/chat")}
-            className="w-8 h-8 rounded-full bg-[rgba(232,255,71,0.12)] flex items-center justify-center text-accent text-sm"
-          >
-            🤖
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-bg flex flex-col">
+      <MobileTopBar onAction={() => router.push("/dashboard/chat")} />
 
-      {/* Content */}
-      <main className="px-4 pb-20 overflow-y-auto">
+      <main className="flex-1 px-4 py-4 overflow-y-auto pb-safe">
         {children}
       </main>
 
