@@ -82,6 +82,7 @@ const backendApi = {
     settings: () => request<any>("/gym/settings"),
     updateSettings: (data: any) => request<any>("/gym/settings", { method: "PUT", body: JSON.stringify(data) }),
     sendMessage: (data: any) => request<any>("/gym/messages", { method: "POST", body: JSON.stringify(data) }),
+    checkIn: (memberId: string) => request<any>(`/gym/members/${memberId}/check-in`, { method: "POST" }),
   },
   leaderboard: {
     get: () => request<any>("/leaderboard"),
