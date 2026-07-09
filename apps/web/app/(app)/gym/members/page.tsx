@@ -21,7 +21,7 @@ export default function MembersList() {
 
   const members = membersRes?.data || [];
   
-  const filteredMembers = members.filter((m: { full_name: string; id: string }) => {
+  const filteredMembers = members.filter((m: { full_name: string; id: string; churn_risk?: boolean }) => {
     if (search && !m.full_name.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === "Risk" && !m.churn_risk) return false;
     if (filter === "Faol" && m.churn_risk) return false;
