@@ -21,19 +21,19 @@ export default function AdminCopilot() {
       <div className="grid grid-cols-[1.3fr_1fr] gap-4 flex-1 min-h-0">
         <Panel className="flex flex-col h-[600px] p-0 overflow-hidden">
           <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {data.messages?.map((m: any, i: number) => (
+            {(data as any).messages?.map((m: any, i: number) => (
               <div key={i} className="text-vtext text-xs border border-border p-3 bg-surface2 rounded-[12px_12px_12px_4px] self-start max-w-[80%]">
                  {m.text}
               </div>
             ))}
-            {(!data.messages || data.messages.length === 0) && <div className="text-vtext text-xs">Xabarlar yo'q</div>}
+            {(!(data as any).messages || (data as any).messages.length === 0) && <div className="text-vtext text-xs">Xabarlar yo'q</div>}
           </div>
         </Panel>
         <div className="space-y-4 overflow-y-auto h-[600px] pr-1">
-          {data.alerts?.map((a: any, i: number) => (
+          {(data as any).alerts?.map((a: any, i: number) => (
             <InsightCard key={i} warn title={a.title} body={a.body} />
           ))}
-          {(!data.alerts || data.alerts.length === 0) && <InsightCard warn title="Anomal sarf" body="PowerFit Samarqand" />}
+          {(!(data as any).alerts || (data as any).alerts.length === 0) && <InsightCard warn title="Anomal sarf" body="PowerFit Samarqand" />}
         </div>
       </div>
     </div>
