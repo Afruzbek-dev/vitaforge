@@ -17,7 +17,7 @@ export default function Copilot() {
 
   const sendMutation = useMutation({
     mutationFn: (text: string) => api.gym.sendCopilotMessage(text),
-    onSuccess: (newMsg) => {
+    onSuccess: (newMsg: any) => {
       queryClient.setQueryData(["gym", "copilotMessages"], (old: any) => {
         return { ...old, data: [...(old?.data || []), newMsg.data] };
       });
