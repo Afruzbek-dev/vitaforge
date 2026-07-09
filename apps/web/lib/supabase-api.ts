@@ -102,14 +102,8 @@ export const supabaseApi = {
       const data = await GymService.getMemberDetails(id);
       return { data };
     },
-    retention: async () => {
-      const data = await GymService.getRetentionAnalytics();
-      return { data };
-    },
-    churnRisk: async () => {
-      const data = await GymService.getDeepChurnAnalysis();
-      return { data };
-    },
+    retention: async () => { const data = await GymService.getRetentionAnalytics(); return { data }; },
+    churnRisk: async () => { const data = await GymService.getDeepChurnAnalysis(); return { data: data.at_risk_members }; },
     analyticsSummary: async () => { const data = await GymService.getAnalyticsSummary(); return { data }; },
     revenueDynamics: async () => { const data = await GymService.getRevenueDynamics(); return { data }; },
     memberGrowth: async () => { const data = await GymService.getMemberGrowth(); return { data }; },
