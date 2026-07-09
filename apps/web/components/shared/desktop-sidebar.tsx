@@ -5,8 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import ThemeToggle from "./theme-toggle";
 
-const DESKTOP_NAV: Record<"owner" | "trainer" | "superadmin", { id: string; icon: string; label: string; href: string }[]> = {
-  owner: [
+const DESKTOP_NAV: Record<"gym_owner" | "trainer" | "superadmin", { id: string; icon: string; label: string; href: string }[]> = {
+  gym_owner: [
     { id: "dashboard", icon: "📊", label: "Dashboard", href: "/gym" }, 
     { id: "members", icon: "👥", label: "A'zolar", href: "/gym/members" },
     { id: "analytics", icon: "📈", label: "Analytics", href: "/gym/analytics" }, 
@@ -33,13 +33,13 @@ const DESKTOP_NAV: Record<"owner" | "trainer" | "superadmin", { id: string; icon
   ],
 };
 
-const PLAN_CARD: Record<"owner" | "trainer" | "superadmin", { label: string; value: string }> = {
-  owner: { label: "JORIY REJA", value: "Pro · $69/oy" },
+const PLAN_CARD: Record<"gym_owner" | "trainer" | "superadmin", { label: string; value: string }> = {
+  gym_owner: { label: "JORIY REJA", value: "Pro · $69/oy" },
   trainer: { label: "DARAJA", value: "👑 Daraja 4 · Professional" },
   superadmin: { label: "PLATFORMA", value: "412 gym · $18.4k MRR" },
 };
 
-export function DesktopSidebar({ role }: { role: "owner" | "trainer" | "superadmin" }) {
+export function DesktopSidebar({ role }: { role: "gym_owner" | "trainer" | "superadmin" }) {
   const pathname = usePathname();
   const nav = DESKTOP_NAV[role];
   const plan = PLAN_CARD[role];
@@ -48,7 +48,7 @@ export function DesktopSidebar({ role }: { role: "owner" | "trainer" | "superadm
     queryKey: ["gym", "churnRisk"],
     queryFn: () => api.gym.churnRisk(),
     refetchInterval: 30000,
-    enabled: role === "owner",
+    enabled: role === "gym_owner",
   });
   const churnCount = churnRes?.data?.count || churnRes?.data?.at_risk_members?.length || 0;
 
@@ -66,7 +66,7 @@ export function DesktopSidebar({ role }: { role: "owner" | "trainer" | "superadm
             <Link key={item.id} href={item.href} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors ${active ? "text-accent bg-[var(--accent-dim)] font-medium" : "text-muted hover:text-vtext hover:bg-surface2"}`}>
               <span className="w-4 text-center">{item.icon}</span>
               <span className="flex-1">{item.label}</span>
-              {item.id === "members" && role === "owner" && churnCount > 0 && (
+              {item.id === "members" && role === "gym_owner" && churnCount > 0 && (
                 <span className="bg-vred text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
                   {churnCount}
                 </span>

@@ -73,7 +73,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isDesktop) {
     return (
       <div className="flex min-h-screen bg-bg">
-        <DesktopSidebar role={user.role as "owner" | "trainer" | "superadmin"} />
+        <DesktopSidebar role={user.role as "gym_owner" | "trainer" | "superadmin"} />
         <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>
