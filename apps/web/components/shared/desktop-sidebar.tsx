@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import ThemeToggle from "./theme-toggle";
 
 const DESKTOP_NAV: Record<"owner" | "trainer" | "superadmin", { id: string; icon: string; label: string; href: string }[]> = {
@@ -42,6 +44,14 @@ export function DesktopSidebar({ role }: { role: "owner" | "trainer" | "superadm
   const nav = DESKTOP_NAV[role];
   const plan = PLAN_CARD[role];
 
+  const { data: churnRes } = useQuery({
+    queryKey: ["gym", "churnRisk"],
+    queryFn: () => api.gym.churnRisk(),
+    refetchInterval: 30000,
+    enabled: role === "owner",
+  });
+  const churnCount = churnRes?.data?.count || churnRes?.data?.at_risk_members?.length || 0;
+
   return (
     <aside className="w-[220px] bg-sidebar border-r border-border p-5 flex flex-col shrink-0 min-h-screen">
       <div className="flex items-center gap-2.5 mb-5 px-1">
@@ -54,7 +64,13 @@ export function DesktopSidebar({ role }: { role: "owner" | "trainer" | "superadm
           const active = pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/gym" && item.href !== "/trainer" && item.href !== "/admin");
           return (
             <Link key={item.id} href={item.href} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] transition-colors ${active ? "text-accent bg-[var(--accent-dim)] font-medium" : "text-muted hover:text-vtext hover:bg-surface2"}`}>
-              <span className="w-4 text-center">{item.icon}</span>{item.label}
+              <span className="w-4 text-center">{item.icon}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.id === "members" && role === "owner" && churnCount > 0 && (
+                <span className="bg-vred text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                  {churnCount}
+                </span>
+              )}
             </Link>
           );
         })}

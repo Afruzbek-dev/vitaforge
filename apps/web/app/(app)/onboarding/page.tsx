@@ -37,7 +37,15 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       await api.onboarding.saveProfile({ ...form, age: +form.age, height_cm: +form.height_cm, weight_kg: +form.weight_kg });
-      router.push("/dashboard");
+      setStep(3); // Wow moment screen
+      try {
+        await api.plans.generate();
+      } catch (e) {
+        // even if it fails, proceed so user doesn't get stuck
+      }
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2500);
     } catch { setLoading(false); }
   };
 
@@ -134,6 +142,21 @@ export default function OnboardingPage() {
                 </Button>
               </div>
             </>
+          )}
+
+          {step === 3 && (
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-6 animate-fadeUp">
+              <div className="w-16 h-16 rounded-2xl bg-accent/20 flex items-center justify-center text-accent text-3xl animate-bounce shadow-[0_0_15px_rgba(213,255,69,0.5)]">
+                🧠
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-vtext">AI siz uchun ideal plan tuzmoqda...</h3>
+                <p className="text-sm text-muted">Bunga bir necha soniya ketishi mumkin. Iltimos, kuting.</p>
+              </div>
+              <div className="w-full max-w-xs h-1.5 bg-surface2 rounded-full overflow-hidden mt-4">
+                <div className="h-full bg-accent rounded-full w-1/2 animate-[pulse_1s_ease-in-out_infinite] blur-[1px]" />
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

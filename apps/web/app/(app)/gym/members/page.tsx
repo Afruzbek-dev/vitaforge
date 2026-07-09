@@ -21,7 +21,7 @@ export default function MembersList() {
 
   const members = membersRes?.data || [];
   
-  const filteredMembers = members.filter((m: any) => {
+  const filteredMembers = members.filter((m: { full_name: string; id: string }) => {
     if (search && !m.full_name.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === "Risk" && !m.churn_risk) return false;
     if (filter === "Faol" && m.churn_risk) return false;
@@ -75,8 +75,8 @@ export default function MembersList() {
             </tr>
           </thead>
           <tbody>
-            {filteredMembers.map((m: any) => (
-              <tr key={m.id} className="hover:bg-surface2/50 transition-colors">
+            {filteredMembers.map((m: { id: string; full_name: string; goal?: string; joined_at?: string; churn_risk?: boolean; churn_probability?: number }) => (
+              <tr key={m.id} className="border-b border-border hover:bg-surface2/50 transition-colors">
                 <td className="py-2.5 border-b border-[#15151f] text-xs">
                   <Link href={`/gym/members/${m.id}`} className="flex items-center gap-3 w-full">
                     <Avatar initials={m.full_name.substring(0,2).toUpperCase()} size="sm" />

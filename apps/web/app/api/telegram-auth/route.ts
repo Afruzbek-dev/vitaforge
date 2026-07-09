@@ -22,12 +22,29 @@ export async function POST(req: NextRequest) {
   const { initData, register, name, phone, role } = await req.json();
   if (!initData) return NextResponse.json({ error: "No initData" }, { status: 400 });
 
-  const tgUser = validateInitData(initData);
+  const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  let tgUser = validateInitData(initData);
+  
+  // Fallback for DEMO_MODE or missing BOT_TOKEN testing
+  if (!tgUser && isDemo) {
+    const params = new URLSearchParams(initData);
+    const userStr = params.get("user");
+    tgUser = userStr ? JSON.parse(userStr) : { id: 12345, first_name: "Demo", username: "demo_user" };
+  }
+  
   if (!tgUser) return NextResponse.json({ error: "Invalid initData" }, { status: 401 });
 
   const telegramId = (tgUser as any).id;
   const fullName = name || `${(tgUser as any).first_name ?? ""} ${(tgUser as any).last_name ?? ""}`.trim();
   const username = (tgUser as any).username ?? "";
+
+  if (isDemo) {
+    return NextResponse.json({ 
+      success: true, 
+      access_token: "demo-token", 
+      user: { id: "demo-member-1", full_name: fullName, role: role || "member", telegram_id: telegramId } 
+    });
+  }
 
   // Check if telegram user already linked
   const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/telegram_sessions?telegram_id=eq.${telegramId}&select=user_id`, {

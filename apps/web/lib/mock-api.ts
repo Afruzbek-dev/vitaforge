@@ -94,6 +94,7 @@ export const mockApi = {
     settings: async () => { await delay(); return ok({ name: "FitZone Gym", location: "Yunusobod, Toshkent", churn_alerts: true, weekly_reports: true }); },
     updateSettings: async (data: any) => { await delay(500); return ok(data); },
     sendMessage: async () => { await delay(500); return ok({ success: true }); },
+    checkIn: async () => { await delay(500); return ok({ success: true, streak: 8, points: 350 }); },
   },
   leaderboard: {
     get: async () => { await delay(); return ok(DEMO_LEADERBOARD); },

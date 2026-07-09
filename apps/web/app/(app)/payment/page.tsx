@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 import { 
-  Upload, CheckCircle, CreditCard, Clock, XCircle, 
+  Upload, CheckCircle, CreditCard, Clock, 
   ArrowRight, ShieldAlert, Image, Calendar, Check, X
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";

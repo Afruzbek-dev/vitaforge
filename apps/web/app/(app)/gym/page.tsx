@@ -52,10 +52,17 @@ export default function OwnerDashboard() {
         <InsightCard 
           warn 
           title="🤖 AI Copilot" 
-          body={`${churnList.length} ta a'zo xavfli holatda (oxirgi 7 kunda umuman kelmagan). Ular bilan bog'lanish tavsiya etiladi: ${churnList.slice(0,3).map((c: any) => c.full_name.split(" ")[0]).join(", ")}.`} 
+          body={`${churnList.length} ta a'zo xavfli holatda (oxirgi 7 kunda umuman kelmagan). Ular bilan bog'lanish tavsiya etiladi: ${churnList.slice(0,3).map((c: { full_name: string }) => c.full_name.split(" ")[0]).join(", ")}.`} 
           action="XABAR YUBORISH"
-          onAction={() => {
-            toast("AI orqali xavf ostidagi mijozlarga xabar yuborildi.", "success");
+          onAction={async () => {
+            try {
+              for (const c of churnList) {
+                await api.gym.sendMessage({ userId: c.id, message: "Sizni zalda kutyapmiz! Qaytishingiz uchun 10% chegirma taqdim etamiz." });
+              }
+              toast("Xavf ostidagi barcha mijozlarga xabar yuborildi.", "success");
+            } catch (e) {
+              toast("Xabar yuborishda xatolik yuz berdi.", "error");
+            }
           }}
         />
       )}
@@ -79,7 +86,7 @@ export default function OwnerDashboard() {
                 <tbody>
                   {membersLoading ? (
                     <tr><td colSpan={3} className="py-4 text-center text-xs text-muted">Yuklanmoqda...</td></tr>
-                  ) : members.slice(0, 4).map((m: any) => (
+                  ) : members.slice(0, 4).map((m: { id: string; full_name: string; goal?: string; churn_risk?: boolean }) => (
                     <tr key={m.id} className="hover:bg-surface2/50 transition-colors">
                       <td className="py-2.5 border-b border-[#15151f] text-xs">
                         <Link href={`/gym/members/${m.id}`} className="hover:text-accent transition-colors flex items-center gap-2">
@@ -102,7 +109,7 @@ export default function OwnerDashboard() {
         <div className="space-y-4">
           <Panel title="CHURN OGOHLANTIRISH">
             <div className="space-y-2">
-              {churnList.slice(0, 4).map((c: any, i: number) => (
+              {churnList.slice(0, 4).map((c: { full_name: string; churn_probability: number }, i: number) => (
                 <div key={i} className="flex justify-between items-center py-2.5 border-b border-[#15151f] text-xs">
                   <span className="text-vtext">{c.full_name}</span>
                   <Pill variant="risk">xavf ({Math.round(c.churn_probability * 100)}%)</Pill>
@@ -114,7 +121,7 @@ export default function OwnerDashboard() {
 
           <Panel title="HAFTALIK TOP (LEADERBOARD)">
             <div className="space-y-2">
-              {leaderboard.slice(0, 5).map((m: any, i: number) => (
+              {leaderboard.slice(0, 5).map((m: { full_name: string; total_points: number }, i: number) => (
                 <div key={i} className="flex justify-between items-center py-2.5 border-b border-[#15151f] text-xs">
                   <div className="flex items-center gap-2">
                     <span className="text-[14px]">

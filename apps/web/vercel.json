@@ -2,6 +2,10 @@
   "framework": "nextjs",
   "crons": [
     {
+      "path": "/api/cron/churn",
+      "schedule": "0 2 * * *"
+    },
+    {
       "path": "/api/cron?secret=zenfit-cron-2025",
       "schedule": "0 13 * * *"
     }

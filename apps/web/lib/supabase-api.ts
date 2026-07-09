@@ -1,4 +1,5 @@
 // Direct Supabase data layer — now refactored as a facade over deep domain services
+import { mockApi } from "./mock-api";
 import { AuthService } from "./services/AuthService";
 import { UserService } from "./services/UserService";
 import { OnboardingService } from "./services/OnboardingService";
@@ -8,6 +9,8 @@ import { ProgressPhotoService } from "./services/ProgressPhotoService";
 import { GymService } from "./services/GymService";
 import { LeaderboardService } from "./services/LeaderboardService";
 import { NotificationService } from "./services/NotificationService";
+import { TrainerService } from "./services/TrainerService";
+import { AdminService } from "./services/AdminService";
 
 export const supabaseApi = {
   auth: {
@@ -107,6 +110,18 @@ export const supabaseApi = {
       const data = await GymService.getDeepChurnAnalysis();
       return { data };
     },
+    analyticsSummary: async () => { const data = await GymService.getAnalyticsSummary(); return { data }; },
+    revenueDynamics: async () => { const data = await GymService.getRevenueDynamics(); return { data }; },
+    memberGrowth: async () => { const data = await GymService.getMemberGrowth(); return { data }; },
+    activityDistribution: async () => { const data = await GymService.getActivityDistribution(); return { data }; },
+    challenge: async () => { const data = await GymService.getChallenge(); return { data }; },
+    createChallenge: async (body: any) => { const data = await GymService.createChallenge(body); return { data }; },
+    copilotMessages: async () => { const data = await GymService.getCopilotMessages(); return { data }; },
+    sendCopilotMessage: async (msg: string) => { const data = await GymService.sendCopilotMessage(msg); return { data }; },
+    settings: async () => { const data = await GymService.getSettings(); return { data }; },
+    updateSettings: async (body: any) => { const data = await GymService.updateSettings(body); return { data }; },
+    sendMessage: async (body: any) => { const data = await GymService.sendMessage(body); return { data }; },
+    checkIn: async (memberId: string) => { const data = await GymService.checkIn(memberId); return { data }; },
   },
 
   leaderboard: {
@@ -126,5 +141,23 @@ export const supabaseApi = {
       return { data };
     },
     markRead: async (id: string) => await NotificationService.markAsRead(id),
+  },
+  
+  trainer: {
+    today: async () => { const data = await TrainerService.getToday(); return { data }; },
+    clients: async () => { const data = await TrainerService.getClients(); return { data }; },
+    schedule: async () => { const data = await TrainerService.getSchedule(); return { data }; },
+    analytics: async () => { const data = await TrainerService.getAnalytics(); return { data }; },
+    copilot: async () => { const data = await TrainerService.getCopilot(); return { data }; },
+    sendMessage: async (body: any) => { const data = await TrainerService.sendMessage(body); return { data }; },
+    addSession: async () => { const data = await TrainerService.addSession(); return { data }; },
+  },
+  admin: {
+    overview: async () => { const data = await AdminService.getOverview(); return { data }; },
+    gyms: async () => { const data = await AdminService.getGyms(); return { data }; },
+    billing: async () => { const data = await AdminService.getBilling(); return { data }; },
+    aiUsage: async () => { const data = await AdminService.getAiUsage(); return { data }; },
+    copilot: async () => { const data = await AdminService.getCopilot(); return { data }; },
+    exportReport: async () => { const data = await AdminService.exportReport(); return { data }; },
   },
 };

@@ -63,15 +63,14 @@ export default function TelegramAutoAuth() {
       tg.expand();
     } catch {}
 
-    // Already logged in locally
+    // Already logged in locally (Optimistic UI)
     const existingToken = localStorage.getItem("access_token");
     const existingUser = localStorage.getItem("zenfit_user");
     if (existingToken && existingUser) {
       try {
         const user = JSON.parse(existingUser);
         setAuth(user, existingToken);
-        router.push(user.role === "member" ? "/dashboard" : "/gym");
-        return;
+        // Do not return here! We must validate initData and get a fresh token from backend
       } catch {}
     }
 

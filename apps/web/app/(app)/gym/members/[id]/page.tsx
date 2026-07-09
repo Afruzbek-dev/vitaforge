@@ -1,7 +1,9 @@
 "use client";
 import Link from "next/link";
-import { use } from "react";
+import { use, useState } from "react";
 import { Avatar, KpiCard, InsightCard, Panel, Pill } from "@/components/vf";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 const MEMBERS_DATA = {
   3: { name: "Doniyor Raxmonov", init: "DR", plan: "Pro", joined: "12 Mar 2026", status: "risk" }
@@ -11,6 +13,28 @@ export default function MemberDetail({ params }: { params: Promise<{ id: string 
   const resolvedParams = use(params);
   const data = MEMBERS_DATA[Number(resolvedParams.id) as keyof typeof MEMBERS_DATA] || {
     name: "Jasur Toshmatov", init: "JT", plan: "Pro", joined: "01 Yan 2026", status: "ok"
+  };
+
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [localStreak, setLocalStreak] = useState(data.status === 'risk' ? 0 : 14);
+  const [localPoints, setLocalPoints] = useState(data.status === 'risk' ? 340 : 2340);
+
+  const handleCheckIn = async () => {
+    setCheckingIn(true);
+    try {
+      const res = await api.gym.checkIn(resolvedParams.id);
+      if (res.data?.success) {
+        toast("Tashrif qayd etildi! Gamifikatsiya xabari yuborildi.", {
+          style: { background: "#d5ff45", color: "#000", border: "none" }
+        });
+        if (res.data.streak) setLocalStreak(res.data.streak);
+        if (res.data.points) setLocalPoints(res.data.points);
+      }
+    } catch(e) {
+      toast.error("Xatolik yuz berdi");
+    } finally {
+      setCheckingIn(false);
+    }
   };
 
   return (
@@ -28,18 +52,24 @@ export default function MemberDetail({ params }: { params: Promise<{ id: string 
           </div>
         </div>
         <div className="flex gap-2">
+          <button 
+            onClick={handleCheckIn}
+            disabled={checkingIn}
+            className="bg-accent text-bg font-semibold text-xs px-4 py-2.5 rounded-[9px] hover:opacity-90 disabled:opacity-50 transition-opacity">
+            {checkingIn ? "Qayd etilmoqda..." : "Keldi (Check-in)"}
+          </button>
           <button className="border border-[#2a2a3a] text-vtext text-xs px-4 py-2.5 rounded-[9px] hover:bg-surface2">
             Qo'ng'iroq
           </button>
-          <button className="bg-accent text-bg font-semibold text-xs px-4 py-2.5 rounded-[9px] hover:opacity-90">
-            Xabar yuborish
+          <button className="bg-surface2 border border-[#2a2a3a] text-vtext font-semibold text-xs px-4 py-2.5 rounded-[9px] hover:bg-surface3">
+            Xabar
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-4 gap-3.5">
-        <KpiCard label="STREAK" value={data.status === 'risk' ? '0 kun' : '🔥 14'} delta={data.status === 'risk' ? 'yoqotilgan' : 'yaxshi'} warn={data.status === 'risk'} />
-        <KpiCard label="BALL" value={data.status === 'risk' ? '340' : '2340'} />
+        <KpiCard label="STREAK" value={localStreak > 0 ? `🔥 ${localStreak}` : '0 kun'} delta={data.status === 'risk' ? 'yoqotilgan' : 'yaxshi'} warn={data.status === 'risk' && localStreak === 0} />
+        <KpiCard label="BALL" value={localPoints.toString()} />
         <KpiCard label="HOLAT" value={data.status === 'risk' ? 'XAVF' : 'FAOL'} warn={data.status === 'risk'} />
         <KpiCard label="DARAJA" value={data.status === 'risk' ? '2' : '4'} />
       </div>

@@ -40,8 +40,8 @@ export default function Copilot() {
           <div className="p-4 border-b border-border bg-[#0d0d16] z-10 flex justify-between items-center">
             <span className="font-bold text-[13px] text-vtext">Copilot Chat</span>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((m: any) => (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[60vh]">
+            {messages.map((m: { id: string; sender: "user" | "ai"; text: string }) => (
               m.sender === 'ai' ? (
                 <div key={m.id} className="flex flex-col self-start max-w-[80%] bg-surface2 border border-border rounded-[12px_12px_12px_4px] p-3 text-[12px] text-vtext">
                   {m.text}
