@@ -84,7 +84,7 @@ export default function MembersList() {
                   </Link>
                 </td>
                 <td className="py-2.5 border-b border-[#15151f] text-xs text-[#8888a0]">{m.goal || "Oziq-ovqat"}</td>
-                <td className="py-2.5 border-b border-[#15151f] text-xs text-vtext">{new Date(m.joined_at).toLocaleDateString()}</td>
+                <td className="py-2.5 border-b border-[#15151f] text-xs text-vtext">{new Date(m.joined_at || new Date().toISOString()).toLocaleDateString()}</td>
                 <td className="py-2.5 border-b border-[#15151f] text-xs text-right">
                   <Pill variant={m.churn_risk ? "risk" : "ok"}>{m.churn_risk ? "risk" : "ok"}</Pill>
                 </td>
