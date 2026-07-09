@@ -3,7 +3,7 @@ import Link from "next/link";
 import { use, useState } from "react";
 import { Avatar, KpiCard, InsightCard, Panel, Pill } from "@/components/vf";
 import { api } from "@/lib/api";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/toast";
 
 const MEMBERS_DATA = {
   3: { name: "Doniyor Raxmonov", init: "DR", plan: "Pro", joined: "12 Mar 2026", status: "risk" }
@@ -11,6 +11,7 @@ const MEMBERS_DATA = {
 
 export default function MemberDetail({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const { toast } = useToast();
   const data = MEMBERS_DATA[Number(resolvedParams.id) as keyof typeof MEMBERS_DATA] || {
     name: "Jasur Toshmatov", init: "JT", plan: "Pro", joined: "01 Yan 2026", status: "ok"
   };
@@ -24,14 +25,12 @@ export default function MemberDetail({ params }: { params: Promise<{ id: string 
     try {
       const res = await api.gym.checkIn(resolvedParams.id);
       if (res.data?.success) {
-        toast("Tashrif qayd etildi! Gamifikatsiya xabari yuborildi.", {
-          style: { background: "#d5ff45", color: "#000", border: "none" }
-        });
+        toast("Tashrif qayd etildi! Gamifikatsiya xabari yuborildi.", "success");
         if (res.data.streak) setLocalStreak(res.data.streak);
         if (res.data.points) setLocalPoints(res.data.points);
       }
     } catch(e) {
-      toast.error("Xatolik yuz berdi");
+      toast("Xatolik yuz berdi", "error");
     } finally {
       setCheckingIn(false);
     }
