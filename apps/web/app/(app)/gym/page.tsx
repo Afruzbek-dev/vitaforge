@@ -19,33 +19,25 @@ export default function OwnerDashboard() {
   const retention = retentionRes?.data || { mrr: 0, ltv: 0, active_users: 0, churn_rate: 0 };
   const leaderboard = leaderboardRes?.data || [];
 
-  const activityData = [
-    { name: "Du", val: 58 },
-    { name: "Se", val: 72 },
-    { name: "Ch", val: 65 },
-    { name: "Pa", val: 88 },
-    { name: "Ju", val: 80 },
-    { name: "Sh", val: 75 },
-    { name: "Ya", val: 70 },
-  ];
+  const activityData: any[] = [];
 
   return (
     <div className="space-y-4 pb-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display font-bold text-[20px] text-vtext">
-            Xush kelibsiz, {user?.full_name?.split(" ")[0] || "Botir"} 👋
+            Xush kelibsiz, {user?.full_name?.split(" ")[0] || "Egasi"} 👋
           </h1>
-          <p className="text-muted text-xs mt-1">FitZone Gym · Yunusobod, Toshkent</p>
+          <p className="text-muted text-xs mt-1">Gym · Asosiy panel</p>
         </div>
         <Pill variant="ok">PRO TARIF</Pill>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <KpiCard label="RETENTION" value={`${Math.round(100 - (retention.churn_rate || 4.1))}%`} delta="↑ 12%" />
-        <KpiCard label="JAMI A'ZOLAR" value={members.length || 214} delta="+18 yangi" />
-        <KpiCard label="CHURN RISK" value={churnList.length || 9} delta="↓ kuzatuv kerak" warn />
-        <KpiCard label="FAOL BUGUN" value={retention.active_users || 87} delta="41% DAU" />
+        <KpiCard label="RETENTION" value={`${Math.round(100 - (retention.churn_rate || 0))}%`} delta="" />
+        <KpiCard label="JAMI A'ZOLAR" value={members.length || 0} delta="" />
+        <KpiCard label="CHURN RISK" value={churnList.length || 0} delta="" warn />
+        <KpiCard label="FAOL BUGUN" value={retention.active_users || 0} delta="" />
       </div>
 
       {churnList.length > 0 && (

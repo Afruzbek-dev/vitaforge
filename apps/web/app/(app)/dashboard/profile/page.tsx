@@ -26,17 +26,17 @@ export default function Profile() {
   if (isUserError) return <div className="p-4 text-center text-vred mt-10">Ma'lumotlarni yuklashda xatolik yuz berdi.</div>;
 
   const initials = user?.name ? user.name.split(" ").map((n: string) => n[0]).join("").substring(0,2).toUpperCase() : "U";
-  const streak = stats?.streak?.current || 14;
-  const bestStreak = stats?.streak?.best || 21;
-  const level = user?.level || 4;
-  const levelName = user?.levelName || "Professional";
+  const streak = stats?.current_streak || 0;
+  const bestStreak = stats?.longest_streak || 0;
+  const level = user?.level || 1;
+  const levelName = user?.levelName || "Boshlang'ich";
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4 mb-2">
          <Avatar initials={initials} size="lg" />
          <div>
-            <h1 className="font-display font-bold text-[17px] text-vtext">{user?.name || "Jasur Toshmatov"}</h1>
+            <h1 className="font-display font-bold text-[17px] text-vtext">{user?.name || user?.full_name || "Foydalanuvchi"}</h1>
             <div className="mt-1 inline-flex bg-[rgba(232,255,71,0.12)] px-2.5 py-0.5 rounded-full text-[10px] font-mono text-accent uppercase">
                👑 DARAJA {level} · {levelName}
             </div>

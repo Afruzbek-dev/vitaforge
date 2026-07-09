@@ -38,8 +38,8 @@ export default function MobileHome() {
     return <div className="p-4 text-center text-vred mt-10">Ma'lumotlarni yuklashda xatolik yuz berdi.</div>;
   }
 
-  const caloriesConsumed = stats?.calories?.consumed || 1200;
-  const caloriesGoal = stats?.calories?.goal || 2400;
+  const caloriesConsumed = stats?.calories?.consumed || 0;
+  const caloriesGoal = stats?.calories?.goal || 2000;
   const progress = caloriesGoal > 0 ? (caloriesConsumed / caloriesGoal) * 100 : 0;
   const todayDate = new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
 
@@ -82,10 +82,12 @@ export default function MobileHome() {
         </Link>
       </div>
 
-      <InsightCard 
-        title="🤖 AI Tavsiya" 
-        body="Kechagi mashqdan so'ng mushaklarda toliqish bo'lishi mumkin. Bugun faqat kardio qilishni tavsiya qilaman." 
-      />
+      {stats?.insight && (
+        <InsightCard 
+          title="🤖 AI Tavsiya" 
+          body={stats.insight} 
+        />
+      )}
     </div>
   );
 }

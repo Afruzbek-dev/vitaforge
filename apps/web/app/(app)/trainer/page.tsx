@@ -37,8 +37,8 @@ export default function TrainerToday() {
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display font-bold text-[20px] text-vtext">Bugun, Coach Aziz 👋</h1>
-          <p className="text-muted text-xs mt-1">Dushanba · {data.sessions?.length || 0} seans</p>
+          <h1 className="font-display font-bold text-[20px] text-vtext">Bugun 👋</h1>
+          <p className="text-muted text-xs mt-1">Sizning seanslaringiz</p>
         </div>
         <button 
           onClick={() => addSessionMutation.mutate()}
@@ -49,11 +49,13 @@ export default function TrainerToday() {
         </button>
       </div>
 
-      <InsightCard 
-        warn 
-        title="🤖 AI Copilot" 
-        body="Madina bilan bog'lanish vaqti keldi (3 kun checkin yo'q). Bugun unga dam olish tavsiya etiladi." 
-      />
+      {data.alerts && data.alerts.length > 0 && (
+        <InsightCard 
+          warn 
+          title="🤖 AI Copilot" 
+          body={data.alerts[0]} 
+        />
+      )}
 
       <div className="grid grid-cols-[1.4fr_1fr] gap-4">
         <Panel title="BUGUNGI SEANSLAR">

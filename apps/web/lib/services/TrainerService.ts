@@ -3,14 +3,17 @@ import { getUser } from "@/lib/auth";
 
 export class TrainerService {
   static async getToday() {
+    const user = await getUser();
+    const sb = getSupabase();
+    
+    // As there is no specific sessions table, we count their active plans
+    const { data: members } = await sb.from("member_profiles").select("user_id").eq("trainer_id", user?.id);
+    const activeClients = members?.length || 0;
+    
     return {
-      sessions: [
-        { time: "14:00", name: "Jasur", workout: "Kuch", status: "ok" },
-        { time: "15:30", name: "Madina", workout: "Cardio", status: "risk" },
-        { time: "17:00", name: "Otabek", workout: "Yelka", status: "ok" }
-      ],
-      activeClients: 22,
-      avgAdherence: 81
+      sessions: [], // Real data should come from a schedule/sessions table
+      activeClients,
+      avgAdherence: 0 // Real adherence requires logging logic
     };
   }
 
@@ -18,41 +21,47 @@ export class TrainerService {
     const user = await getUser();
     const sb = getSupabase();
     
-    // trainer_id is user.id
     const { data: members } = await sb.from("member_profiles").select("user_id").eq("trainer_id", user?.id);
     const memberIds = (members ?? []).map(m => m.user_id);
     
+    if (memberIds.length === 0) return [];
+
     const { data: users } = await sb.from("users").select("id, full_name").in("id", memberIds);
     
-    if (!users || users.length === 0) {
-      return [{ id: 1, name: "Jasur Toshmatov", adh: 81, status: "ok" }, { id: 2, name: "Dilnoza Karimova", adh: 42, status: "risk" }];
-    }
-    return users.map(u => ({
+    return (users ?? []).map(u => ({
       id: u.id,
       name: u.full_name,
-      adh: Math.floor(Math.random() * 50) + 40, // fallback adherence logic
-      status: Math.random() > 0.8 ? "risk" : "ok"
+      adh: 0, 
+      status: "ok"
     }));
   }
 
   static async getSchedule() {
-    return [
-      { day: "Dushanba", sessions: 6 },
-      { day: "Seshanba", sessions: 8, active: true },
-      { day: "Chorshanba", sessions: 5 },
-      { day: "Payshanba", sessions: 7 }
-    ];
+    return []; // No real schedule table yet
   }
 
   static async getAnalytics() {
-    return { totalSessions: 96, avgAdherence: 81, riskClients: 2, revenue: 1840 };
+    const user = await getUser();
+    const sb = getSupabase();
+    
+    const { data: members } = await sb.from("member_profiles").select("user_id").eq("trainer_id", user?.id);
+    
+    return { 
+      totalSessions: 0, 
+      avgAdherence: 0, 
+      riskClients: 0, 
+      revenue: 0 
+    };
   }
 
   static async getCopilot() {
-    return { messages: [{ id: 1, sender: "ai", text: "Salom, Coach! Sizning profilingiz tayyor." }] };
+    const sb = getSupabase();
+    // Assuming you have chat_messages or copilot table, otherwise return empty
+    return { messages: [] };
   }
 
   static async sendMessage(data: any) {
+    // Should insert to chat_messages in real implementation
     return { id: Date.now(), sender: 'user', text: data.message };
   }
 

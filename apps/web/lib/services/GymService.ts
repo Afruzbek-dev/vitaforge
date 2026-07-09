@@ -230,7 +230,6 @@ export class GymService {
     });
 
     const result = Object.entries(aggregated).map(([label, value]) => ({ label, value }));
-    if (result.length === 0) return [ { label: "Yan", value: 4100 }, { label: "Fev", value: 4800 } ]; // fallback if empty
     return result;
   }
 
@@ -254,23 +253,17 @@ export class GymService {
       return { label, value: cumulative };
     });
     
-    if (result.length === 0) return [ { label: "Yan", value: 120 }, { label: "Fev", value: 145 } ]; // fallback
     return result;
   }
 
   static async getActivityDistribution() {
-    return [
-      { name: "3+ marta keluvchilar (Haftasiga)", pct: "42%" },
-      { name: "1-2 marta keluvchilar", pct: "38%" },
-      { name: "Xavf ostida (0 marta)", pct: "15%" },
-      { name: "Muzlatilgan", pct: "5%" }
-    ];
+    return [];
   }
 
   static async getChallenge() {
     const sb = getSupabase();
     const { data: challenge } = await sb.from("challenges").select("*").limit(1).single();
-    return challenge ?? { title: "30 kunlik temir", days_passed: 18, total_days: 30, progress: 60, participants: 64 };
+    return challenge ?? null;
   }
 
   static async createChallenge(data: any) {
@@ -280,9 +273,7 @@ export class GymService {
   }
 
   static async getCopilotMessages() {
-    return [
-      { id: 1, sender: 'ai', text: "Salom! Men VitaForge AI. Qanday yordam bera olaman?" }
-    ];
+    return [];
   }
 
   static async sendCopilotMessage(msg: string) {
@@ -294,7 +285,7 @@ export class GymService {
     const sb = getSupabase();
     const { data: me } = await sb.from("users").select("gym_id").eq("id", user?.id).single();
     const { data: gym } = await sb.from("gyms").select("*").eq("id", me?.gym_id).single();
-    return gym ?? { name: "FitZone Gym", location: "Toshkent", churn_alerts: true };
+    return gym ?? null;
   }
 
   static async updateSettings(data: any) {

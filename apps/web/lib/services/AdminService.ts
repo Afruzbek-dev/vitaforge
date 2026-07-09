@@ -5,45 +5,50 @@ export class AdminService {
     const sb = getSupabase();
     const { count: totalGyms } = await sb.from("gyms").select("*", { count: "exact", head: true });
     
+    // In a fully real scenario, MRR is calculated from payments/subscriptions table.
+    // We will return 0 for now since payments might not exist or be empty.
     return {
-      totalGyms: totalGyms || 412,
-      mrr: 18420,
-      apiCost: 1240,
-      churnedGyms: 6,
-      mrrChart: [
-        { label: "Yan", value: 12 },
-        { label: "Fev", value: 14 },
-        { label: "Mar", value: 15 },
-        { label: "Apr", value: 16 },
-        { label: "May", value: 17 },
-        { label: "Iyun", value: 18.4, peak: true }
-      ]
+      totalGyms: totalGyms || 0,
+      mrr: 0,
+      apiCost: 0,
+      churnedGyms: 0,
+      mrrChart: []
     };
   }
 
   static async getGyms() {
     const sb = getSupabase();
     const { data: gyms } = await sb.from("gyms").select("*").limit(20);
-    if (!gyms || gyms.length === 0) {
-      return [{ name: "FitZone", plan: "Pro", status: "ok" }, { name: "PowerFit", plan: "Scale", status: "risk" }];
-    }
+    
+    if (!gyms || gyms.length === 0) return [];
+    
     return gyms.map(g => ({
       name: g.name,
-      plan: g.subscription_plan || "basic",
-      status: Math.random() > 0.8 ? "risk" : "ok"
+      plan: g.plan || "pilot",
+      status: g.is_active ? "ok" : "risk"
     }));
   }
 
   static async getBilling() {
-    return { starter: 186, pro: 158, scale: 58, enterprise: 10 };
+    const sb = getSupabase();
+    const { data: gyms } = await sb.from("gyms").select("plan");
+    
+    const counts = { starter: 0, pro: 0, scale: 0, enterprise: 0 };
+    (gyms ?? []).forEach(g => {
+      const plan = (g.plan || "starter").toLowerCase();
+      if (counts[plan as keyof typeof counts] !== undefined) {
+        counts[plan as keyof typeof counts]++;
+      }
+    });
+    return counts;
   }
 
   static async getAiUsage() {
-    return { chart: [{ label: "Du", value: 1200 }, { label: "Juma", value: 2500, peak: true }] };
+    return { chart: [] }; // Real data needs chat_messages tokens_used aggregation
   }
 
   static async getCopilot() {
-    return { messages: [{ id: 1, sender: "ai", text: "Salom! Men VitaForge Admin Copilotman." }] };
+    return { messages: [], alerts: [] };
   }
 
   static async exportReport() {
