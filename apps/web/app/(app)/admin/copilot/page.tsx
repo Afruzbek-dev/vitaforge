@@ -1,14 +1,14 @@
 "use client";
+import { CopilotService } from "@/lib/services/CopilotService";
 import { Panel, InsightCard } from "@/components/vf";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 
 export default function AdminCopilot() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin", "copilot"],
     queryFn: async () => {
-      const res = await api.admin.copilot();
-      return res.data;
+      const res = await CopilotService.getMessages("admin");
+      return res;
     }
   });
 

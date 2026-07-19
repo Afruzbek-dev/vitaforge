@@ -1,23 +1,25 @@
 "use client";
+import { UserService } from "@/lib/services/UserService";
+import { GymService } from "@/lib/services/GymService";
+import { LeaderboardService } from "@/lib/services/LeaderboardService";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { KpiCard, Panel, Pill, Avatar, InsightCard, BarChart } from "@/components/vf";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 export default function OwnerDashboard() {
   const { toast } = useToast();
   
-  const { data: user } = useQuery({ queryKey: ["user"], queryFn: () => api.users.me() });
-  const { data: membersRes, isLoading: membersLoading } = useQuery({ queryKey: ["gym", "members"], queryFn: () => api.gym.members() });
-  const { data: churnRes } = useQuery({ queryKey: ["gym", "churnRisk"], queryFn: () => api.gym.churnRisk() });
-  const { data: retentionRes } = useQuery({ queryKey: ["gym", "retention"], queryFn: () => api.gym.retention() });
-  const { data: leaderboardRes } = useQuery({ queryKey: ["leaderboard"], queryFn: () => api.leaderboard.get() });
+  const { data: user } = useQuery({ queryKey: ["user"], queryFn: () => UserService.getMe() });
+  const { data: membersRes, isLoading: membersLoading } = useQuery({ queryKey: ["gym", "members"], queryFn: () => GymService.getMembers() });
+  const { data: churnRes } = useQuery({ queryKey: ["gym", "churnRisk"], queryFn: () => GymService.getDeepChurnAnalysis() });
+  const { data: retentionRes } = useQuery({ queryKey: ["gym", "retention"], queryFn: () => GymService.getRetentionAnalytics() });
+  const { data: leaderboardRes } = useQuery({ queryKey: ["leaderboard"], queryFn: () => LeaderboardService.getTopUsers() });
 
-  const members = membersRes?.data || [];
-  const churnList = churnRes?.data || [];
-  const retention = retentionRes?.data || { mrr: 0, ltv: 0, active_users: 0, churn_rate: 0 };
-  const leaderboard = leaderboardRes?.data || [];
+  const members = (membersRes as any) || [];
+  const churnList = (churnRes as any) || [];
+  const retention = (retentionRes as any) || { mrr: 0, ltv: 0, active_users: 0, churn_rate: 0 };
+  const leaderboard = (leaderboardRes as any) || [];
 
   const activityData: any[] = [];
 
@@ -49,7 +51,7 @@ export default function OwnerDashboard() {
           onAction={async () => {
             try {
               for (const c of churnList) {
-                await api.gym.sendMessage({ userId: c.id, message: "Sizni zalda kutyapmiz! Qaytishingiz uchun 10% chegirma taqdim etamiz." });
+                await GymService.sendMessage({ userId: c.id, message: "Sizni zalda kutyapmiz! Qaytishingiz uchun 10% chegirma taqdim etamiz." });
               }
               toast("Xavf ostidagi barcha mijozlarga xabar yuborildi.", "success");
             } catch (e) {

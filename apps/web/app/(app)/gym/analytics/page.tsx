@@ -1,21 +1,21 @@
 "use client";
+import { GymService } from "@/lib/services/GymService";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { KpiCard, Panel, ChartBars } from "@/components/vf";
 import { useToast } from "@/components/ui/toast";
 
 export default function Analytics() {
   const { toast } = useToast();
   
-  const { data: summaryRes, isLoading: summaryLoading, isError: summaryError } = useQuery({ queryKey: ["gym", "analyticsSummary"], queryFn: () => api.gym.analyticsSummary() });
-  const { data: revenueRes, isLoading: revenueLoading, isError: revenueError } = useQuery({ queryKey: ["gym", "revenueDynamics"], queryFn: () => api.gym.revenueDynamics() });
-  const { data: growthRes, isLoading: growthLoading, isError: growthError } = useQuery({ queryKey: ["gym", "memberGrowth"], queryFn: () => api.gym.memberGrowth() });
-  const { data: activityRes, isLoading: activityLoading, isError: activityError } = useQuery({ queryKey: ["gym", "activityDistribution"], queryFn: () => api.gym.activityDistribution() });
+  const { data: summaryRes, isLoading: summaryLoading, isError: summaryError } = useQuery({ queryKey: ["gym", "analyticsSummary"], queryFn: () => GymService.getAnalyticsSummary() });
+  const { data: revenueRes, isLoading: revenueLoading, isError: revenueError } = useQuery({ queryKey: ["gym", "revenueDynamics"], queryFn: () => GymService.getRevenueDynamics() });
+  const { data: growthRes, isLoading: growthLoading, isError: growthError } = useQuery({ queryKey: ["gym", "memberGrowth"], queryFn: () => GymService.getMemberGrowth() });
+  const { data: activityRes, isLoading: activityLoading, isError: activityError } = useQuery({ queryKey: ["gym", "activityDistribution"], queryFn: () => GymService.getActivityDistribution() });
 
-  const summary = summaryRes?.data;
-  const revenue = revenueRes?.data || [];
-  const growth = growthRes?.data || [];
-  const activity = activityRes?.data || [];
+  const summary = summaryRes;
+  const revenue = (revenueRes as any) || [];
+  const growth = (growthRes as any) || [];
+  const activity = (activityRes as any) || [];
 
   if (summaryLoading || revenueLoading || growthLoading || activityLoading) return <div className="p-4 text-muted">Yuklanmoqda...</div>;
   if (summaryError || revenueError || growthError || activityError) return <div className="p-4 text-red-500">Xatolik yuz berdi</div>;
@@ -36,10 +36,10 @@ export default function Analytics() {
       </div>
 
       <div className="grid grid-cols-4 gap-3.5">
-        <KpiCard label="MRR" value={`$${summary?.mrr}`} delta={summary?.mrr_delta} />
-        <KpiCard label="O'RTACHA LTV" value={`$${summary?.ltv}`} delta={summary?.ltv_delta} />
-        <KpiCard label="CHURN OYLIK" value={summary?.churn_rate} delta={summary?.churn_delta} warn />
-        <KpiCard label="AI SARFI" value={`$${summary?.ai_spend}`} delta="Bu oy" />
+        <KpiCard label="MRR" value={`$${summary?.mrr || 0}`} delta={summary?.mrr_delta || ""} />
+        <KpiCard label="O'RTACHA LTV" value={`$${summary?.ltv || 0}`} delta={summary?.ltv_delta || ""} />
+        <KpiCard label="CHURN OYLIK" value={summary?.churn_rate || "0%"} delta={summary?.churn_delta || ""} warn />
+        <KpiCard label="AI SARFI" value={`$${summary?.ai_spend || 0}`} delta="Bu oy" />
       </div>
 
       <div className="grid grid-cols-[1.4fr_1fr] gap-4">

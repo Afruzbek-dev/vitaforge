@@ -1,7 +1,7 @@
 "use client";
+import { CopilotService } from "@/lib/services/CopilotService";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Panel, InsightCard } from "@/components/vf";
 import { useToast } from "@/components/ui/toast";
 
@@ -12,14 +12,14 @@ export default function Copilot() {
 
   const { data: msgsRes, isLoading, isError } = useQuery({ 
     queryKey: ["gym", "copilotMessages"], 
-    queryFn: () => api.gym.copilotMessages() 
+    queryFn: () => CopilotService.getMessages("gym") 
   });
 
   const sendMutation = useMutation({
-    mutationFn: (text: string) => api.gym.sendCopilotMessage(text),
+    mutationFn: (text: string) => CopilotService.sendMessage("gym", text),
     onSuccess: (newMsg: any) => {
       queryClient.setQueryData(["gym", "copilotMessages"], (old: any) => {
-        return { ...old, data: [...(old?.data || []), newMsg.data] };
+        return { ...old, data: [...((old as any) || []), newMsg] };
       });
       setMsg("");
     },
@@ -29,7 +29,7 @@ export default function Copilot() {
   if (isLoading) return <div className="p-4 text-muted">Yuklanmoqda...</div>;
   if (isError) return <div className="p-4 text-red-500">Xatolik yuz berdi</div>;
 
-  const messages = msgsRes?.data || [];
+  const messages = (msgsRes as any) || [];
 
   return (
     <div className="space-y-4 h-full flex flex-col">

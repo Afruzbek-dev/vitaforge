@@ -1,6 +1,6 @@
 "use client";
+import { GymService } from "@/lib/services/GymService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { Panel, ProgressBar } from "@/components/vf";
 
@@ -10,11 +10,11 @@ export default function Challenge() {
   
   const { data: challengeRes, isLoading, isError } = useQuery({ 
     queryKey: ["gym", "challenge"], 
-    queryFn: () => api.gym.challenge() 
+    queryFn: () => GymService.getChallenge() 
   });
 
   const createMutation = useMutation({
-    mutationFn: () => api.gym.createChallenge({ title: "Yangi challenge" }),
+    mutationFn: () => GymService.createChallenge({ title: "Yangi challenge" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gym", "challenge"] });
       toast("Yangi challenge muvaffaqiyatli yaratildi", "success");
@@ -25,7 +25,7 @@ export default function Challenge() {
   if (isLoading) return <div className="p-4 text-muted">Yuklanmoqda...</div>;
   if (isError) return <div className="p-4 text-red-500">Xatolik yuz berdi</div>;
 
-  const challenge = challengeRes?.data;
+  const challenge = (challengeRes as any);
 
   return (
     <div className="space-y-4">

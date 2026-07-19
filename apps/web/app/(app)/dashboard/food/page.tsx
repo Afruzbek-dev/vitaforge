@@ -1,7 +1,7 @@
 "use client";
+import { NutritionService } from "@/lib/services/NutritionService";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 export default function Food() {
@@ -11,11 +11,11 @@ export default function Food() {
 
   const { data: foodLog, isLoading, isError } = useQuery({
     queryKey: ["foodLog"],
-    queryFn: () => api.food.getLog()
+    queryFn: () => NutritionService.getLogForDate()
   });
 
   const logFoodMutation = useMutation({
-    mutationFn: (text: string) => api.food.parse(text),
+    mutationFn: (text: string) => NutritionService.parseFoodText(text),
     onSuccess: () => {
       toast("Ovqat yozildi!", "success");
       setFoodText("");
@@ -30,7 +30,7 @@ export default function Food() {
   if (isLoading) return <div className="p-4 text-center text-muted mt-10">Yuklanmoqda...</div>;
   if (isError) return <div className="p-4 text-center text-vred mt-10">Ma'lumotlarni yuklashda xatolik yuz berdi.</div>;
 
-  const items = foodLog?.items || foodLog || [];
+  const items = (foodLog as any)?.items || foodLog || [];
 
   return (
     <div className="space-y-4">

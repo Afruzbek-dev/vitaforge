@@ -1,8 +1,8 @@
 "use client";
+import { GymService } from "@/lib/services/GymService";
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Avatar, Pill, Panel } from "@/components/vf";
 import { useToast } from "@/components/ui/toast";
 
@@ -13,13 +13,13 @@ export default function MembersList() {
 
   const { data: membersRes, isLoading, isError } = useQuery({ 
     queryKey: ["gym", "members"], 
-    queryFn: () => api.gym.members() 
+    queryFn: () => GymService.getMembers() 
   });
 
   if (isLoading) return <div className="p-4 text-muted">Yuklanmoqda...</div>;
   if (isError) return <div className="p-4 text-red-500">Xatolik yuz berdi</div>;
 
-  const members = membersRes?.data || [];
+  const members = (membersRes as any) || [];
   
   const filteredMembers = members.filter((m: { full_name: string; id: string; churn_risk?: boolean }) => {
     if (search && !m.full_name.toLowerCase().includes(search.toLowerCase())) return false;

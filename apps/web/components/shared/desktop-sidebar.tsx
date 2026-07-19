@@ -1,8 +1,8 @@
 "use client";
+import { GymService } from "@/lib/services/GymService";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import ThemeToggle from "./theme-toggle";
 
 const DESKTOP_NAV: Record<"gym_owner" | "trainer" | "superadmin", { id: string; icon: string; label: string; href: string }[]> = {
@@ -46,11 +46,11 @@ export function DesktopSidebar({ role }: { role: "gym_owner" | "trainer" | "supe
 
   const { data: churnRes } = useQuery({
     queryKey: ["gym", "churnRisk"],
-    queryFn: () => api.gym.churnRisk(),
+    queryFn: () => GymService.getDeepChurnAnalysis(),
     refetchInterval: 30000,
     enabled: role === "gym_owner",
   });
-  const churnCount = churnRes?.data?.count || churnRes?.data?.at_risk_members?.length || 0;
+  const churnCount = (churnRes as any)?.count || (churnRes as any)?.at_risk_members?.length || 0;
 
   return (
     <aside className="w-[220px] bg-sidebar border-r border-border p-5 flex flex-col shrink-0 min-h-screen">

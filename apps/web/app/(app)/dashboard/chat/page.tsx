@@ -1,7 +1,7 @@
 "use client";
+import { CopilotService } from "@/lib/services/CopilotService";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 export default function Chat() {
@@ -11,11 +11,11 @@ export default function Chat() {
 
   const { data: messages, isLoading, isError } = useQuery({
     queryKey: ["chatMessages"],
-    queryFn: () => api.gym.copilotMessages() // assuming this is the endpoint
+    queryFn: () => CopilotService.getMessages("gym") // assuming this is the endpoint
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (msg: string) => api.gym.sendCopilotMessage(msg),
+    mutationFn: (msg: string) => CopilotService.sendMessage("gym", msg),
     onSuccess: () => {
       setMessage("");
       queryClient.invalidateQueries({ queryKey: ["chatMessages"] });
@@ -32,9 +32,7 @@ export default function Chat() {
     }
   };
 
-  const msgs = messages?.items || messages || [
-    { role: "assistant", content: "Salom! Bugungi mashq bo'yicha yordam kerakmi?" }
-  ];
+  const msgs = (messages as any)?.items || messages || [];
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] -mx-4 px-4 pt-2">

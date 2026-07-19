@@ -1,6 +1,6 @@
 "use client";
+import { GymService } from "@/lib/services/GymService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Panel } from "@/components/vf";
 import { useToast } from "@/components/ui/toast";
 
@@ -10,11 +10,11 @@ export default function Settings() {
 
   const { data: settingsRes, isLoading, isError } = useQuery({ 
     queryKey: ["gym", "settings"], 
-    queryFn: () => api.gym.settings() 
+    queryFn: () => GymService.getSettings() 
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => api.gym.updateSettings({ ...settingsRes?.data, ...data }),
+    mutationFn: (data: any) => GymService.updateSettings({ ...(settingsRes as any), ...data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gym", "settings"] });
       toast("Sozlamalar saqlandi", "success");
@@ -25,7 +25,7 @@ export default function Settings() {
   if (isLoading) return <div className="p-4 text-muted">Yuklanmoqda...</div>;
   if (isError) return <div className="p-4 text-red-500">Xatolik yuz berdi</div>;
 
-  const settings = settingsRes?.data;
+  const settings = (settingsRes as any);
 
   return (
     <div className="space-y-4 max-w-2xl">

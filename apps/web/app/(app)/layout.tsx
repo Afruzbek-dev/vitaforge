@@ -1,8 +1,8 @@
 "use client";
+import { UserService } from "@/lib/services/UserService";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { api } from "@/lib/api";
 import { getSession } from "@/lib/auth";
 import { isTelegramWebApp, getTelegramInitData, expandWebApp } from "@/lib/telegram";
 import { DesktopSidebar } from "@/components/shared/desktop-sidebar";
@@ -44,7 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const session = await getSession();
         if (!session) { router.push("/login"); return; }
 
-        const me = await api.users.me();
+        const me = await UserService.getMe();
         const userData = me?.data ?? me;
         if (!(userData as any).plan) (userData as any).plan = "free";
         localStorage.setItem("zenfit_user", JSON.stringify(userData));

@@ -1,7 +1,7 @@
 "use client";
+import { AdminService } from "@/lib/services/AdminService";
 import { KpiCard, Panel, InsightCard, ChartBars } from "@/components/vf";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 export default function AdminOverview() {
@@ -10,15 +10,15 @@ export default function AdminOverview() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin", "overview"],
     queryFn: async () => {
-      const res = await api.admin.overview();
-      return res.data;
+      const res = await AdminService.getOverview();
+      return res;
     }
   });
 
   const exportMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.admin.exportReport();
-      return res.data;
+      const res = await AdminService.exportReport();
+      return res;
     },
     onSuccess: () => {
       toast("Hisobot export qilindi", "success");

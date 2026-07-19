@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { OnboardingService } from "@/lib/services/OnboardingService";
+import { FitnessPlanService } from "@/lib/services/FitnessPlanService";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,10 +38,10 @@ export default function OnboardingPage() {
   const submit = async () => {
     setLoading(true);
     try {
-      await api.onboarding.saveProfile({ ...form, age: +form.age, height_cm: +form.height_cm, weight_kg: +form.weight_kg });
+      await OnboardingService.saveProfile({ ...form, age: +form.age, height_cm: +form.height_cm, weight_kg: +form.weight_kg });
       setStep(3); // Wow moment screen
       try {
-        await api.plans.generate();
+        await FitnessPlanService.generatePlan();
       } catch (e) {
         // even if it fails, proceed so user doesn't get stuck
       }

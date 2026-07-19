@@ -1,8 +1,9 @@
 "use client";
+import { UserService } from "@/lib/services/UserService";
+import { GymService } from "@/lib/services/GymService";
 import Link from "next/link";
 import { ProgressBar, InsightCard } from "@/components/vf";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 export default function MobileHome() {
@@ -11,16 +12,16 @@ export default function MobileHome() {
 
   const { data: user, isLoading: isUserLoading, isError: isUserError } = useQuery({
     queryKey: ["user"],
-    queryFn: () => api.users.me()
+    queryFn: () => UserService.getMe()
   });
 
   const { data: stats, isLoading: isStatsLoading } = useQuery({
     queryKey: ["userStats"],
-    queryFn: () => api.users.stats()
+    queryFn: () => UserService.getStats()
   });
 
   const checkinMutation = useMutation({
-    mutationFn: () => api.gym.challenge(),
+    mutationFn: () => GymService.getChallenge(),
     onSuccess: () => {
       toast("Zalga kelganingiz tasdiqlandi! 🎯", "success");
       queryClient.invalidateQueries({ queryKey: ["userStats"] });
@@ -38,8 +39,8 @@ export default function MobileHome() {
     return <div className="p-4 text-center text-vred mt-10">Ma'lumotlarni yuklashda xatolik yuz berdi.</div>;
   }
 
-  const caloriesConsumed = stats?.calories?.consumed || 0;
-  const caloriesGoal = stats?.calories?.goal || 2000;
+  const caloriesConsumed = (stats as any)?.calories?.consumed || 0;
+  const caloriesGoal = (stats as any)?.calories?.goal || 2000;
   const progress = caloriesGoal > 0 ? (caloriesConsumed / caloriesGoal) * 100 : 0;
   const todayDate = new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
 
@@ -82,10 +83,10 @@ export default function MobileHome() {
         </Link>
       </div>
 
-      {stats?.insight && (
+      {(stats as any)?.insight && (
         <InsightCard 
           title="🤖 AI Tavsiya" 
-          body={stats.insight} 
+          body={(stats as any).insight} 
         />
       )}
     </div>

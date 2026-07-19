@@ -1,7 +1,8 @@
 "use client";
+import { GymService } from "@/lib/services/GymService";
+import { FitnessPlanService } from "@/lib/services/FitnessPlanService";
 import { InsightCard } from "@/components/vf";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 export default function Plan() {
@@ -10,11 +11,11 @@ export default function Plan() {
 
   const { data: plan, isLoading, isError } = useQuery({
     queryKey: ["currentPlan"],
-    queryFn: () => api.plans.current()
+    queryFn: () => FitnessPlanService.getCurrentPlan()
   });
 
   const finishWorkoutMutation = useMutation({
-    mutationFn: () => api.gym.challenge(), // assuming this logs the workout for now
+    mutationFn: () => GymService.getChallenge(), // assuming this logs the workout for now
     onSuccess: () => {
       toast("Mashq yakunlandi! Qoyilmaqom!", "success");
       queryClient.invalidateQueries({ queryKey: ["currentPlan"] });

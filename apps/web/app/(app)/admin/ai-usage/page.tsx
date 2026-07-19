@@ -1,14 +1,14 @@
 "use client";
+import { AdminService } from "@/lib/services/AdminService";
 import { Panel, ChartBars } from "@/components/vf";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 
 export default function AdminAiUsage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin", "aiUsage"],
     queryFn: async () => {
-      const res = await api.admin.aiUsage();
-      return res.data;
+      const res = await AdminService.getAiUsage();
+      return res;
     }
   });
 

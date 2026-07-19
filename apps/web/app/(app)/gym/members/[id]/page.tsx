@@ -1,8 +1,8 @@
 "use client";
+import { GymService } from "@/lib/services/GymService";
 import Link from "next/link";
 import { use, useState } from "react";
 import { Avatar, KpiCard, InsightCard, Panel, Pill } from "@/components/vf";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 const MEMBERS_DATA = {
@@ -23,11 +23,11 @@ export default function MemberDetail({ params }: { params: Promise<{ id: string 
   const handleCheckIn = async () => {
     setCheckingIn(true);
     try {
-      const res = await api.gym.checkIn(resolvedParams.id);
-      if (res.data?.success) {
+      const res = await GymService.checkIn(resolvedParams.id);
+      if (res?.success) {
         toast("Tashrif qayd etildi! Gamifikatsiya xabari yuborildi.", "success");
-        if (res.data.streak) setLocalStreak(res.data.streak);
-        if (res.data.points) setLocalPoints(res.data.points);
+        if (res.streak) setLocalStreak(res.streak);
+        if (res.points) setLocalPoints(res.points);
       }
     } catch(e) {
       toast("Xatolik yuz berdi", "error");

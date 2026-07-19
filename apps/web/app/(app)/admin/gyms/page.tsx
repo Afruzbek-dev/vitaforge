@@ -1,14 +1,14 @@
 "use client";
+import { AdminService } from "@/lib/services/AdminService";
 import { Panel, Pill } from "@/components/vf";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 
 export default function AdminGyms() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin", "gyms"],
     queryFn: async () => {
-      const res = await api.admin.gyms();
-      return res.data;
+      const res = await AdminService.getGyms();
+      return res;
     }
   });
 

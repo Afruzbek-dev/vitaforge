@@ -1,14 +1,14 @@
 "use client";
+import { TrainerService } from "@/lib/services/TrainerService";
 import { Panel, Pill } from "@/components/vf";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 
 export default function TrainerClients() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["trainer", "clients"],
     queryFn: async () => {
-      const res = await api.trainer.clients();
-      return res.data;
+      const res = await TrainerService.getClients();
+      return res;
     }
   });
 

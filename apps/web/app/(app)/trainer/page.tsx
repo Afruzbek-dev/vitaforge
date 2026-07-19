@@ -1,7 +1,7 @@
 "use client";
+import { TrainerService } from "@/lib/services/TrainerService";
 import { KpiCard, Panel, Pill, InsightCard } from "@/components/vf";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 export default function TrainerToday() {
@@ -11,15 +11,15 @@ export default function TrainerToday() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["trainer", "today"],
     queryFn: async () => {
-      const res = await api.trainer.today();
-      return res.data;
+      const res = await TrainerService.getToday();
+      return res;
     }
   });
 
   const addSessionMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.trainer.addSession();
-      return res.data;
+      const res = await TrainerService.addSession();
+      return res;
     },
     onSuccess: () => {
       toast("Seans qo'shildi!", "success");
@@ -49,11 +49,11 @@ export default function TrainerToday() {
         </button>
       </div>
 
-      {data.alerts && data.alerts.length > 0 && (
+      {(data as any).alerts && (data as any).alerts.length > 0 && (
         <InsightCard 
           warn 
           title="🤖 AI Copilot" 
-          body={data.alerts[0]} 
+          body={(data as any).alerts[0]} 
         />
       )}
 

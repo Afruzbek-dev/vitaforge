@@ -1,7 +1,7 @@
 "use client";
+import { TrainerService } from "@/lib/services/TrainerService";
 import { Panel } from "@/components/vf";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 
 export default function TrainerSchedule() {
@@ -11,15 +11,15 @@ export default function TrainerSchedule() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["trainer", "schedule"],
     queryFn: async () => {
-      const res = await api.trainer.schedule();
-      return res.data;
+      const res = await TrainerService.getSchedule();
+      return res;
     }
   });
 
   const addSessionMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.trainer.addSession();
-      return res.data;
+      const res = await TrainerService.addSession();
+      return res;
     },
     onSuccess: () => {
       toast("Vaqt qo'shildi!", "success");

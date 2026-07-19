@@ -3,8 +3,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+
 import { useAuthStore } from "@/lib/store/auth";
+import { AuthService } from "@/lib/services/AuthService";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await api.auth.register(data);
+      await AuthService.register(data);
       router.push("/login?registered=1");
     } catch (e: any) {
       setError("root", { message: e.message ?? "Ro'yxatdan o'tishda xatolik" });

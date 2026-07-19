@@ -3,8 +3,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+
 import { useAuthStore } from "@/lib/store/auth";
+import { AuthService } from "@/lib/services/AuthService";
+import { UserService } from "@/lib/services/UserService";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,10 +29,10 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await api.auth.login(data.email, data.password);
+      const res = await AuthService.login(data.email, data.password);
       const token = res.data?.access_token ?? "session";
       localStorage.setItem("access_token", token);
-      const me = await api.users.me();
+      const me = await UserService.getMe();
       const user = me?.data ?? me;
       localStorage.setItem("zenfit_user", JSON.stringify(user));
       setAuth(user, token);

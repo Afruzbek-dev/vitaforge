@@ -1,25 +1,26 @@
 "use client";
+import { UserService } from "@/lib/services/UserService";
+import { NotificationService } from "@/lib/services/NotificationService";
 import { useState } from "react";
 import { Avatar, Panel } from "@/components/vf";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 
 export default function Profile() {
   const [tab, setTab] = useState("UMUMIY");
 
   const { data: user, isLoading: isUserLoading, isError: isUserError } = useQuery({
     queryKey: ["user"],
-    queryFn: () => api.users.me()
+    queryFn: () => UserService.getMe()
   });
 
   const { data: stats, isLoading: isStatsLoading } = useQuery({
     queryKey: ["userStats"],
-    queryFn: () => api.users.stats()
+    queryFn: () => UserService.getStats()
   });
 
   const { data: notifications } = useQuery({
     queryKey: ["notifications"],
-    queryFn: () => api.notifications.list()
+    queryFn: () => NotificationService.getList()
   });
 
   if (isUserLoading || isStatsLoading) return <div className="p-4 text-center text-muted mt-10">Yuklanmoqda...</div>;
@@ -75,7 +76,7 @@ export default function Profile() {
 
       {tab === 'BILDIRISHNOMA' && (
         <div className="space-y-2">
-          {notifications?.items?.length > 0 ? notifications.items.map((n: any, i: number) => (
+          {(notifications as any)?.items?.length > 0 ? (notifications as any).items.map((n: any, i: number) => (
              <div key={i} className="bg-surface border border-border rounded-[13px] p-3.5">
                 <div className="text-[12px] text-vtext">{n.message || n.title}</div>
              </div>

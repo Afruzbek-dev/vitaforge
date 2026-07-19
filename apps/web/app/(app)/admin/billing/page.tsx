@@ -1,14 +1,14 @@
 "use client";
+import { AdminService } from "@/lib/services/AdminService";
 import { KpiCard } from "@/components/vf";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 
 export default function AdminBilling() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin", "billing"],
     queryFn: async () => {
-      const res = await api.admin.billing();
-      return res.data;
+      const res = await AdminService.getBilling();
+      return res;
     }
   });
 

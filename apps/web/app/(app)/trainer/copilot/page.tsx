@@ -1,7 +1,7 @@
 "use client";
+import { CopilotService } from "@/lib/services/CopilotService";
 import { Panel, InsightCard } from "@/components/vf";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { useState } from "react";
 
@@ -13,15 +13,15 @@ export default function TrainerCopilot() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["trainer", "copilot"],
     queryFn: async () => {
-      const res = await api.trainer.copilot();
-      return res.data;
+      const res = await CopilotService.getMessages("trainer");
+      return res;
     }
   });
 
   const sendMsgMutation = useMutation({
     mutationFn: async (message: string) => {
-      const res = await api.trainer.sendMessage({ message });
-      return res.data;
+      const res = await CopilotService.sendMessage("trainer", message);
+      return res;
     },
     onSuccess: () => {
       toast("Xabar yuborildi!", "success");

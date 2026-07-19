@@ -1,16 +1,17 @@
 "use client";
+import { UserService } from "@/lib/services/UserService";
+import { LeaderboardService } from "@/lib/services/LeaderboardService";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 
 export default function Top() {
   const { data: leaderboard, isLoading, isError } = useQuery({
     queryKey: ["leaderboard"],
-    queryFn: () => api.leaderboard.get()
+    queryFn: () => LeaderboardService.getTopUsers()
   });
 
   const { data: user } = useQuery({
     queryKey: ["user"],
-    queryFn: () => api.users.me()
+    queryFn: () => UserService.getMe()
   });
 
   if (isLoading) return <div className="p-4 text-center text-muted mt-10">Yuklanmoqda...</div>;
@@ -30,7 +31,7 @@ export default function Top() {
     { name: "Doniyor Raxmonov", score: 1950 }
   ];
 
-  const items = leaderboard?.items || leaderboard || defaultMock;
+  const items = (leaderboard as any)?.items || leaderboard || defaultMock;
 
   return (
     <div className="space-y-4">
