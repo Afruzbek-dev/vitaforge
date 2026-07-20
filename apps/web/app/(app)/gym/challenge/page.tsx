@@ -2,7 +2,7 @@
 import { GymService } from "@/lib/services/GymService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
-import { Panel, ProgressBar } from "@/components/vf";
+import { Panel, ProgressBar } from "@/components/features";
 
 export default function Challenge() {
   const { toast } = useToast();

@@ -1,6 +1,6 @@
 "use client";
 import { TrainerService } from "@/lib/services/TrainerService";
-import { KpiCard, Panel, Pill, InsightCard } from "@/components/vf";
+import { KpiCard, Panel, Pill, InsightCard } from "@/components/features";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 

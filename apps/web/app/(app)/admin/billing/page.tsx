@@ -1,6 +1,6 @@
 "use client";
 import { AdminService } from "@/lib/services/AdminService";
-import { KpiCard } from "@/components/vf";
+import { KpiCard } from "@/components/features";
 import { useQuery } from "@tanstack/react-query";
 
 export default function AdminBilling() {

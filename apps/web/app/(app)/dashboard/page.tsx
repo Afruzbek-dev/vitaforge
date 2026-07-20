@@ -2,7 +2,7 @@
 import { UserService } from "@/lib/services/UserService";
 import { GymService } from "@/lib/services/GymService";
 import Link from "next/link";
-import { ProgressBar, InsightCard } from "@/components/vf";
+import { ProgressBar, InsightCard } from "@/components/features";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 

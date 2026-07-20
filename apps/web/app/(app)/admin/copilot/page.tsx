@@ -1,6 +1,6 @@
 "use client";
 import { CopilotService } from "@/lib/services/CopilotService";
-import { Panel, InsightCard } from "@/components/vf";
+import { Panel, InsightCard } from "@/components/features";
 import { useQuery } from "@tanstack/react-query";
 
 export default function AdminCopilot() {

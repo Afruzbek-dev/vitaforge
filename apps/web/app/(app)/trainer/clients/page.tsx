@@ -1,6 +1,6 @@
 "use client";
 import { TrainerService } from "@/lib/services/TrainerService";
-import { Panel, Pill } from "@/components/vf";
+import { Panel, Pill } from "@/components/features";
 import { useQuery } from "@tanstack/react-query";
 
 export default function TrainerClients() {

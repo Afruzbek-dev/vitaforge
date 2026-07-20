@@ -2,7 +2,7 @@
 import { UserService } from "@/lib/services/UserService";
 import { NotificationService } from "@/lib/services/NotificationService";
 import { useState } from "react";
-import { Avatar, Panel } from "@/components/vf";
+import { Avatar, Panel } from "@/components/features";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Profile() {

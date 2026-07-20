@@ -1,7 +1,7 @@
 "use client";
 import { GymService } from "@/lib/services/GymService";
 import { useQuery } from "@tanstack/react-query";
-import { KpiCard, Panel, ChartBars } from "@/components/vf";
+import { KpiCard, Panel, ChartBars } from "@/components/features";
 import { useToast } from "@/components/ui/toast";
 
 export default function Analytics() {

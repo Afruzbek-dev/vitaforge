@@ -1,5 +1,6 @@
 "use client";
 import { GymService } from "@/lib/services/GymService";
+import { ChurnEngine } from "@/lib/domain/ChurnEngine";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -46,7 +47,7 @@ export function DesktopSidebar({ role }: { role: "gym_owner" | "trainer" | "supe
 
   const { data: churnRes } = useQuery({
     queryKey: ["gym", "churnRisk"],
-    queryFn: () => GymService.getDeepChurnAnalysis(),
+    queryFn: () => ChurnEngine.calculateRisk(),
     refetchInterval: 30000,
     enabled: role === "gym_owner",
   });

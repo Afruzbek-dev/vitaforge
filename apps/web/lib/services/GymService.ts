@@ -1,3 +1,4 @@
+import { ChurnEngine } from "@/lib/domain/ChurnEngine";
 import { getSupabase } from "@/lib/supabase";
 import { getUser } from "@/lib/auth";
 
@@ -199,7 +200,7 @@ export class GymService {
     const { data: payments } = await sb.from("payments").select("amount").eq("gym_id", me.gym_id).gte("created_at", new Date(Date.now() - 30*86400000).toISOString());
     const mrr = (payments ?? []).reduce((acc, p) => acc + p.amount, 0);
 
-    const churnRes = await GymService.getDeepChurnAnalysis();
+    const churnRes = await ChurnEngine.calculateRisk();
     const { count: total } = await sb.from("users").select("*", { count: "exact", head: true }).eq("gym_id", me.gym_id).eq("role", "member");
     const churnRate = total ? Math.round((churnRes.count / total) * 100) : 0;
 

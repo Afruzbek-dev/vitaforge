@@ -1,5 +1,5 @@
 "use client";
-import { Panel } from "@/components/vf";
+import { Panel } from "@/components/features";
 export default function TrainerSettings() {
   return (
     <div className="space-y-4 max-w-2xl">

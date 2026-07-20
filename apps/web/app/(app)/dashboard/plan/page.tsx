@@ -1,7 +1,7 @@
 "use client";
 import { GymService } from "@/lib/services/GymService";
 import { FitnessPlanService } from "@/lib/services/FitnessPlanService";
-import { InsightCard } from "@/components/vf";
+import { InsightCard } from "@/components/features";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 

@@ -1,6 +1,6 @@
 "use client";
 import { AdminService } from "@/lib/services/AdminService";
-import { KpiCard, Panel, InsightCard, ChartBars } from "@/components/vf";
+import { KpiCard, Panel, InsightCard, ChartBars } from "@/components/features";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 

@@ -1,6 +1,6 @@
 "use client";
 import { AdminService } from "@/lib/services/AdminService";
-import { Panel, ChartBars } from "@/components/vf";
+import { Panel, ChartBars } from "@/components/features";
 import { useQuery } from "@tanstack/react-query";
 
 export default function AdminAiUsage() {

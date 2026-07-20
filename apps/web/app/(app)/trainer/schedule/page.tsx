@@ -1,6 +1,6 @@
 "use client";
 import { TrainerService } from "@/lib/services/TrainerService";
-import { Panel } from "@/components/vf";
+import { Panel } from "@/components/features";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 

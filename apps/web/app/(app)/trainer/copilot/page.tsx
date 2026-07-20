@@ -1,6 +1,6 @@
 "use client";
 import { CopilotService } from "@/lib/services/CopilotService";
-import { Panel, InsightCard } from "@/components/vf";
+import { Panel, InsightCard } from "@/components/features";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
 import { useState } from "react";

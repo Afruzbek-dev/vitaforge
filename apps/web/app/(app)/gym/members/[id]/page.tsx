@@ -2,7 +2,7 @@
 import { GymService } from "@/lib/services/GymService";
 import Link from "next/link";
 import { use, useState } from "react";
-import { Avatar, KpiCard, InsightCard, Panel, Pill } from "@/components/vf";
+import { Avatar, KpiCard, InsightCard, Panel, Pill } from "@/components/features";
 import { useToast } from "@/components/ui/toast";
 
 const MEMBERS_DATA = {

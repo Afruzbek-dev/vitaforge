@@ -1,6 +1,6 @@
 "use client";
 import { TrainerService } from "@/lib/services/TrainerService";
-import { KpiCard, Panel } from "@/components/vf";
+import { KpiCard, Panel } from "@/components/features";
 import { useQuery } from "@tanstack/react-query";
 
 export default function TrainerAnalytics() {

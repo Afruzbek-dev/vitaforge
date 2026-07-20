@@ -1,7 +1,7 @@
 "use client";
 import { GymService } from "@/lib/services/GymService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Panel } from "@/components/vf";
+import { Panel } from "@/components/features";
 import { useToast } from "@/components/ui/toast";
 
 export default function Settings() {

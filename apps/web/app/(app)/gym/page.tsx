@@ -1,10 +1,11 @@
 "use client";
 import { UserService } from "@/lib/services/UserService";
 import { GymService } from "@/lib/services/GymService";
+import { ChurnEngine } from "@/lib/domain/ChurnEngine";
 import { LeaderboardService } from "@/lib/services/LeaderboardService";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { KpiCard, Panel, Pill, Avatar, InsightCard, BarChart } from "@/components/vf";
+import { KpiCard, Panel, Pill, Avatar, InsightCard, BarChart } from "@/components/features";
 import { useToast } from "@/components/ui/toast";
 
 export default function OwnerDashboard() {
@@ -12,7 +13,7 @@ export default function OwnerDashboard() {
   
   const { data: user } = useQuery({ queryKey: ["user"], queryFn: () => UserService.getMe() });
   const { data: membersRes, isLoading: membersLoading } = useQuery({ queryKey: ["gym", "members"], queryFn: () => GymService.getMembers() });
-  const { data: churnRes } = useQuery({ queryKey: ["gym", "churnRisk"], queryFn: () => GymService.getDeepChurnAnalysis() });
+  const { data: churnRes } = useQuery({ queryKey: ["gym", "churnRisk"], queryFn: () => ChurnEngine.calculateRisk() });
   const { data: retentionRes } = useQuery({ queryKey: ["gym", "retention"], queryFn: () => GymService.getRetentionAnalytics() });
   const { data: leaderboardRes } = useQuery({ queryKey: ["leaderboard"], queryFn: () => LeaderboardService.getTopUsers() });
 

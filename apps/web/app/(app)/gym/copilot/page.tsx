@@ -2,7 +2,7 @@
 import { CopilotService } from "@/lib/services/CopilotService";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Panel, InsightCard } from "@/components/vf";
+import { Panel, InsightCard } from "@/components/features";
 import { useToast } from "@/components/ui/toast";
 
 export default function Copilot() {

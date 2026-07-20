@@ -2,7 +2,7 @@
 import { GymService } from "@/lib/services/GymService";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Panel } from "@/components/vf";
+import { Panel } from "@/components/features";
 import { useToast } from "@/components/ui/toast";
 
 export default function Messages() {

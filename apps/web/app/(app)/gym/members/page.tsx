@@ -3,7 +3,7 @@ import { GymService } from "@/lib/services/GymService";
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Avatar, Pill, Panel } from "@/components/vf";
+import { Avatar, Pill, Panel } from "@/components/features";
 import { useToast } from "@/components/ui/toast";
 
 export default function MembersList() {
